@@ -2,7 +2,7 @@
 
 This document walks through one full end-to-end run of DualBalance on Minnesota's 4,110 Voting Tabulation Districts (VTDs), explains every metric the scoring harness reports, and gives recipes for visualizing the output. Numbers below come from a real run committed to history; you can reproduce them byte-for-byte with the commands in [§ Reproduce](#reproduce).
 
-The run uses **2020 PL 94-171 total population** (`P1_001N`) per VTD, fetched from the Census Data API via [`scripts/prep_mn_units.py`](../scripts/prep_mn_units.py). Total population across the 4,110 VTDs: **5,706,494**. Set `CENSUS_API_KEY` in a gitignored `.env` to refresh the data; without a key the script falls back to synthesizing uniform population (1,000 per VTD) — the same algorithm and pipeline still runs, but the numbers below won't match.
+The numbers below are from **real 2020 PL 94-171 total population** (`P1_001N`) per VTD, fetched from the Census Data API via [`scripts/prep_mn_units.py`](../scripts/prep_mn_units.py). Total population across the 4,110 VTDs: **5,706,494** — the actual 2020 redistricting-data count for Minnesota. To reproduce, set `CENSUS_API_KEY` in a gitignored `.env` (a free key from <https://api.census.gov/data/key_signup.html>) before running the prep script. If no key is set, the script falls back to synthesizing uniform population (1,000 per VTD) and clearly warns you — the algorithm and pipeline still run, but the numbers below won't match.
 
 ## Reproduce
 
