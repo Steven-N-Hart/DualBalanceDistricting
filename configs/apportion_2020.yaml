@@ -1,0 +1,6 @@
+# Run with:  dualbalance apportion --config configs/apportion_2020.yaml
+# `populations` must point to a CSV with header "state,population" or a JSON
+# mapping of state code -> population. The 2020 U.S. apportionment used 435 seats.
+populations: data/state_populations_2020.csv
+seats: 435
+out: out/apportionment_2020.json

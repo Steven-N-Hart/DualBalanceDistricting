@@ -1,0 +1,12 @@
+# Canonical Minnesota PoC config. Run with:
+#   dualbalance generate --config configs/mn_vtd.yaml
+state: MN
+districts: 8
+units: data/mn_vtd.geojson
+geography: vtd
+id_column: GEOID20
+pop_column: population
+out: out/mn_yaml
+alpha: 1.0
+beta: 1.0
+max_iter: 100

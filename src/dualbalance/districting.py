@@ -1,15 +1,29 @@
 """Core DualBalance districting algorithm.
 
-Assigns atomic units to N districts by minimizing the weighted cost function
+A deterministic, capacity-constrained variant of the Lloyd / Hess 1965
+districting iteration: assign each atomic unit to its lowest-cost district
+*subject to a per-district population capacity* ``P*``, then recenter
+seeds to the population-weighted centroid of their assigned units. Repeat
+until the assignment stops changing.
 
-    cost(u, i) = alpha * dist(centroid(u), seed_i) / norm
-               + beta  * |pop_prev(D_i)  + pop(u)  - P*| / P*
-               + beta  * |area_prev(D_i) + area(u) - A*| / A*
+The assignment step processes all ``(unit, district)`` pairs in ascending
+order of normalized geographic distance and gives each unit its first
+district that still has remaining population capacity. Distance is
+normalized by the units' total bounding-box diagonal so the cost term is
+unit-free.
 
-iterated Lloyd-style with deterministic seed recentering until the assignment
-is stable (or ``max_iter`` is reached). Distance is normalized by the units'
-total bounding-box diagonal so all three cost terms are commensurable
-(approximately bounded by [0, 1]).
+Why capacity-constrained rather than the soft-penalty form once written in
+docs/Formalism.md §3: the soft-penalty form (cost = distance + |pop - P*|/P* +
+|area - A*|/A*) attracts every unit to whichever district is nearest target
+in the previous iteration, producing a 2-cycle that never converges on real
+data. A hard capacity is the canonical Hess 1965 / Mehrotra-Johnson-Nemhauser
+1998 formulation and avoids the cycle. The DualBalance score still measures
+population and area balance equally; area balance is reported but not
+enforced as a second capacity (a future extension may turn this into a
+true 2D transportation problem).
+
+After iteration, a contiguity-repair pass uses the rook-adjacency dual
+graph (built via gerrychain) to dissolve isolated components.
 
 ``pop_prev`` and ``area_prev`` are the per-district totals from the previous
 iteration's final assignment (zero on iteration 1). Using previous-iteration
@@ -20,11 +34,6 @@ order-independence cascade still matters for tie-breaking: ties on minimum
 cost resolve to lower pop penalty -> lower area penalty -> shorter distance
 -> smaller district ID.
 
-After iteration converges, a contiguity-repair pass uses the rook-adjacency
-dual graph (built via gerrychain) to dissolve isolated components: each
-district keeps its largest population-weighted component; smaller components
-are reassigned, one unit at a time in ascending unit_id order, to the
-lowest-cost adjacent district (same cost formula, using current totals).
 """
 
 from __future__ import annotations
@@ -56,65 +65,63 @@ def _assign(
     cx: np.ndarray,
     cy: np.ndarray,
     pops: np.ndarray,
-    areas: np.ndarray,
     unit_ids: list[str],
     seeds: list[Seed],
     targets: Targets,
-    alpha: float,
-    beta: float,
     norm: float,
-    pop_prev: np.ndarray,
-    area_prev: np.ndarray,
+    capacity_slack: float = 0.0,
 ) -> dict[str, int]:
-    """Run one full assignment pass using previous-iteration totals as the
-    penalty basis (so the result is independent of unit-processing order)."""
-    n = len(seeds)
-    seed_x = np.fromiter((s.x for s in seeds), dtype=float, count=n)
-    seed_y = np.fromiter((s.y for s in seeds), dtype=float, count=n)
-    p_star = targets.population
-    a_star = targets.area
+    """Capacity-constrained assignment.
 
+    Builds the full list of ``(unit, district)`` pairs, sorts by normalized
+    geographic distance ascending, and assigns each unit to its first district
+    with remaining population capacity ``P* * (1 + capacity_slack)``. Ties on
+    distance break by ``(unit_id ascending, district_id ascending)``.
+
+    Any unit that finds no district with capacity (a rare integer-rounding
+    edge case) is assigned to the district with the largest remaining
+    capacity. This guarantees every unit ends up in some district.
+    """
+    n_districts = len(seeds)
+    n_units = len(unit_ids)
+    seed_x = np.fromiter((s.x for s in seeds), dtype=float, count=n_districts)
+    seed_y = np.fromiter((s.y for s in seeds), dtype=float, count=n_districts)
+
+    dx = cx[:, None] - seed_x[None, :]
+    dy = cy[:, None] - seed_y[None, :]
+    dist = np.sqrt(dx * dx + dy * dy) / norm  # shape (n_units, n_districts)
+
+    # Flatten to a list of (cost, unit_idx, district_idx) and sort.
+    flat = []
+    for u in range(n_units):
+        for d in range(n_districts):
+            flat.append((float(dist[u, d]), u, d))
+    flat.sort()
+
+    capacity = np.full(n_districts, targets.population * (1.0 + capacity_slack))
     assignment: dict[str, int] = {}
-    for idx in range(len(unit_ids)):
-        dx = seed_x - cx[idx]
-        dy = seed_y - cy[idx]
-        dist = np.sqrt(dx * dx + dy * dy) / norm
-        pop_pen = np.abs(pop_prev + pops[idx] - p_star) / p_star
-        area_pen = np.abs(area_prev + areas[idx] - a_star) / a_star
-        cost = alpha * dist + beta * pop_pen + beta * area_pen
+    assigned = np.zeros(n_units, dtype=bool)
+    pops_arr = pops  # alias
 
-        min_cost = cost.min()
-        candidates = np.where(cost == min_cost)[0]
-        if candidates.size > 1:
-            best = int(
-                min(
-                    candidates.tolist(),
-                    key=lambda i: (pop_pen[i], area_pen[i], dist[i], i),
-                )
-            )
-        else:
-            best = int(candidates[0])
+    for _, u, d in flat:
+        if assigned[u]:
+            continue
+        if capacity[d] >= pops_arr[u]:
+            assignment[unit_ids[u]] = d
+            capacity[d] -= pops_arr[u]
+            assigned[u] = True
 
-        assignment[unit_ids[idx]] = best
+    # Sweep leftovers (integer-rounding case): give them to the district with
+    # most remaining capacity, breaking ties by ascending district id.
+    for u in range(n_units):
+        if assigned[u]:
+            continue
+        d = int(np.argmax(capacity))
+        assignment[unit_ids[u]] = d
+        capacity[d] -= pops_arr[u]
+        assigned[u] = True
 
     return assignment
-
-
-def _totals_for(
-    assignment: dict[str, int],
-    unit_ids: list[str],
-    pops: np.ndarray,
-    areas: np.ndarray,
-    n_districts: int,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Compute per-district population and area totals from an assignment."""
-    pop_totals = np.zeros(n_districts)
-    area_totals = np.zeros(n_districts)
-    for i, uid in enumerate(unit_ids):
-        d = assignment[uid]
-        pop_totals[d] += pops[i]
-        area_totals[d] += areas[i]
-    return pop_totals, area_totals
 
 
 def _recenter(
@@ -205,29 +212,20 @@ def generate_plan(
     cx = np.asarray(centroids.x, dtype=float)
     cy = np.asarray(centroids.y, dtype=float)
     pops = np.asarray(units_sorted["population"], dtype=float)
-    areas = np.asarray(units_sorted["area"], dtype=float)
     unit_ids: list[str] = units_sorted["unit_id"].tolist()
 
     seeds = place_seeds(units_sorted, n_districts)
-    pop_prev = np.zeros(n_districts)
-    area_prev = np.zeros(n_districts)
     previous_assignment: dict[str, int] | None = None
     assignment: dict[str, int] = {}
     converged = False
     n_iters = 0
 
     for n_iters in range(1, max_iter + 1):  # noqa: B007 — n_iters read after loop
-        assignment = _assign(
-            cx, cy, pops, areas, unit_ids, seeds,
-            targets, alpha, beta, norm, pop_prev, area_prev,
-        )
+        assignment = _assign(cx, cy, pops, unit_ids, seeds, targets, norm)
         if assignment == previous_assignment:
             converged = True
             break
         previous_assignment = assignment
-        pop_prev, area_prev = _totals_for(
-            assignment, unit_ids, pops, areas, n_districts
-        )
         seeds = _recenter(cx, cy, pops, unit_ids, assignment, n_districts, seeds)
 
     repair_iters = 0

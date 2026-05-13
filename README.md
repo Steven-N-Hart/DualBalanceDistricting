@@ -58,16 +58,15 @@ Those are all sources of human interpretation — and therefore bias.
 
 ## Algorithm (high level)
 
-Formally, this is a population-center Voronoi districting algorithm. See [Formalism.md](Formalism.md) for the precise mathematical statement.
+A capacity-constrained variant of the Lloyd / Hess 1965 districting iteration applied to atomic census units (VTDs by default, also blocks / block groups). See [docs/Formalism.md](docs/Formalism.md) for the precise mathematical statement.
 
-1. **Identify population centers:** major cities, census-defined urban areas, or population-weighted centroids.
-2. **Choose seed points:** place `N` seeds so they are spaced equidistantly from one another or from major population centers.
-3. **Assign every census block:** each block goes to the nearest seed by geographic distance.
-4. **Recalculate each seed:** move it to the population-weighted centroid of its assigned blocks.
-5. **Repeat until stable.**
-6. **Repair boundaries:** enforce contiguity and adjust for population/area targets.
+1. **Place seeds.** Deterministic farthest-point sampling from units ranked by population; ties on min-distance break by ascending unit ID.
+2. **Capacitated assignment.** For each iteration, consider every `(unit, district)` pair in ascending normalized geographic distance and assign each unit to its closest district that still has remaining population capacity `P* = total_pop / N`. Population balance is enforced as a hard capacity, not a soft penalty.
+3. **Recenter.** Move each seed to the population-weighted centroid of its assigned units.
+4. **Iterate** steps 2–3 until the assignment stops changing (or a configurable iteration cap is reached).
+5. **Repair contiguity.** Build the rook-adjacency dual graph; for any district whose induced subgraph has more than one connected component, dissolve the smaller components into adjacent districts in deterministic order.
 
-Population and area are weighted equally in the objective.
+Population and area weighting in the objective is *equal at the metric level* — the reported DualBalance Score combines population and area deviation with equal coefficients. The current generator enforces population balance as a capacity and reports area imbalance; the natural next extension is a two-dimensional capacitated transportation problem that bounds both.
 
 ## Representation allocation (apportionment)
 
