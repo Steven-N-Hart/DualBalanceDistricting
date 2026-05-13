@@ -2,7 +2,7 @@
 
 This document walks through one full end-to-end run of DualBalance on Minnesota's 4,110 Voting Tabulation Districts (VTDs), explains every metric the scoring harness reports, and gives recipes for visualizing the output. Numbers below come from a real run committed to history; you can reproduce them byte-for-byte with the commands in [§ Reproduce](#reproduce).
 
-> **Important caveat up front.** This run uses **synthetic uniform population** (1,000 per VTD), because the prep script's Census Data API path was rejecting our key at the time the run was committed. The algorithm and pipeline are the same with real PL 94-171 population — only the per-district population numbers change. Re-run `scripts/prep_mn_units.py` once your `CENSUS_API_KEY` activates to refresh `data/mn_vtd.geojson` with real counts.
+The run uses **2020 PL 94-171 total population** (`P1_001N`) per VTD, fetched from the Census Data API via [`scripts/prep_mn_units.py`](../scripts/prep_mn_units.py). Total population across the 4,110 VTDs: **5,706,494**. Set `CENSUS_API_KEY` in a gitignored `.env` to refresh the data; without a key the script falls back to synthesizing uniform population (1,000 per VTD) — the same algorithm and pipeline still runs, but the numbers below won't match.
 
 ## Reproduce
 
@@ -11,7 +11,8 @@ pip install -e ".[dev]"
 python scripts/prep_mn_units.py --geography vtd                                  # writes data/mn_vtd.geojson
 dualbalance generate --config configs/mn_vtd.yaml                                # writes out/mn_yaml/{map.geojson,metrics.json}
 python scripts/plot_mn_poc.py --plan out/mn_yaml/map.geojson `
-    --metrics out/mn_yaml/metrics.json --out docs/figures/mn_poc_districts.png   # renders the figure
+    --metrics out/mn_yaml/metrics.json --out docs/figures/mn_poc_districts.png `
+    --note "2020 PL 94-171 population"                                           # renders the figure
 ```
 
 [`configs/mn_vtd.yaml`](../configs/mn_vtd.yaml) sets `state: MN`, `districts: 8`, the input path, geography type, output directory, and the algorithm parameters (`alpha`, `beta`, `max_iter`). Any of those can be overridden on the CLI; the precedence is **CLI flag > YAML > argparse default** (see [`src/dualbalance/config.py`](../src/dualbalance/config.py)).
@@ -39,10 +40,11 @@ Both files are deterministic — re-running with identical inputs produces a byt
 
 The top panel is a choropleth: each VTD is colored by its assigned `district_id` (0–7). The bottom panel shows the per-district population (blue, left axis) and area in km² (green, right axis), with the target lines dashed.
 
-Two things to read off the figure:
+Three things to read off the figure:
 
-1. **Districts 4 and 7 are small Twin Cities footprints.** They each contain ~510 VTDs of suburban density. Their populations match target almost exactly, but their land area is far below `A*` because each VTD is geographically tiny.
-2. **District 6 is the rural-north blob.** It carries ~70,000 km² of land but the same ~515 VTDs as everyone else, because we enforce population (not area) at the assignment step. This is the structural tradeoff the project's "DualBalance Score" deliberately surfaces — it does *not* hide it.
+1. **Districts 0, 1, 2, 6 are tight Twin Cities footprints.** Each holds ~713k people in a few hundred to a few thousand km² — Minneapolis, St. Paul, and the immediate inner-ring suburbs. Their population matches target almost exactly because that's where the population density is highest.
+2. **District 4 is the rural-north blob.** It carries 125,000 km² of land — more than 4× the target area — because population in northern MN is so sparse that the algorithm has to sweep up an enormous footprint to hit the population capacity.
+3. **District 5 is visibly underfilled** (561k vs. 713k target — 21 % short). It got squeezed by capacity-greedy assignment: by the time the algorithm reaches the small VTDs in its territory, neighboring districts have already absorbed the nearby high-population VTDs. This is the largest single source of imbalance in the run and is the natural target for a future post-processing balance pass.
 
 ## Metric-by-metric interpretation
 
@@ -73,14 +75,14 @@ DualBalance does **not** optimize for compactness; the PP and Reock numbers here
 
 ```
 dualbalance_score = 1 / (1 + pop_deviation_mean + area_deviation_mean)
-                  = 0.6516
+                  = 0.4583
 ```
 
 This is the project's own metric. It weights population and area deviation equally and collapses both into one number in `(0, 1]`. Anchor values:
 
 - **1.0** = perfect balance on both pop and area. The synthetic 4×4 grid hits this exactly.
-- **0.625** = 10 % mean pop deviation + 50 % mean area deviation (roughly where we are).
 - **0.500** = 50 % deviation on each. Bad but not catastrophic.
+- **0.458** = where this MN run lands — driven by the extreme area imbalance that the urban-vs-rural population density of Minnesota forces on any pop-balanced plan.
 - **< 0.30** = at least one of pop or area is wildly out of balance.
 
 Comparing two plans against the *same* state geometry, **higher is better**. Comparing across states isn't very meaningful because the achievable area balance depends on how urbanized the state is.
@@ -89,30 +91,30 @@ Comparing two plans against the *same* state geometry, **higher is better**. Com
 
 | Metric | Value | Meaning |
 |---|---|---|
-| `pop_deviation_mean` | **2.82 %** | Mean of \|pop(D) − P\*\| / P\* across the 8 districts. |
-| `pop_deviation_max` | **9.59 %** | Worst single-district deviation. |
+| `pop_deviation_mean` | **5.37 %** | Mean of \|pop(D) − P\*\| / P\* across the 8 districts. |
+| `pop_deviation_max` | **21.27 %** | Worst single-district deviation (D5 — 561,621 vs. P\* = 713,312). |
 
-`P* = 4,110,000 / 8 = 513,750`. The capacitated assignment caps each district at `P*`, so the only sources of pop deviation are (a) integer rounding when a unit's population doesn't divide cleanly into remaining capacity, and (b) the contiguity-repair pass moving units between districts after assignment.
+`P* = 5,706,494 / 8 = 713,312`. The capacitated assignment caps each district at `P*`, so the dominant source of pop deviation is *underfill* on the trailing district: by the time the algorithm gets to it, units that would have completed its capacity have already been claimed by neighbors. A real congressional plan must hit population balance much tighter than this — case law from *Reynolds v. Sims* (1964) onward requires deviations under ~1 % for U.S. House districts, and states routinely build plans with < 0.1 % deviation. Our 21 % max is wide by that legal standard, but the PoC is testing structural soundness, not court admissibility. Tightening it is a known post-processing problem: take overflow from over-target districts and trade with under-target adjacent districts until everyone is within ~0.5 %.
 
-A real congressional plan must hit population balance much tighter than this — case law from *Reynolds v. Sims* (1964) onward requires deviations under ~1 % for U.S. House districts, and states routinely build plans with < 0.1 % deviation. Our 9.6 % max is "wide" by that legal standard, but the PoC isn't targeting court admissibility yet; it's targeting the algorithm's structural soundness. Tightening it is mostly a matter of post-processing pass: take overflow units and trade them between adjacent districts until everyone is within 0.5 %.
+Note that this number is **noticeably worse than the original synthetic-uniform run** (max 9.59 %). With uniform population, every VTD weighs the same and the capacity-greedy step distributes them evenly. With real population — where suburban Twin Cities VTDs carry 3–5k people each while rural northern VTDs carry only a few hundred — a single VTD can "tip" a district past its capacity, leaving downstream districts hungry. The fix is the same trade-pass, but the need is sharper.
 
 ### Area balance (reported, **not** enforced)
 
 | Metric | Value | Meaning |
 |---|---|---|
-| `area_deviation_mean` | **50.6 %** | Mean of \|area(D) − A\*\| / A\* across districts. |
-| `area_deviation_max` | **151.1 %** | Worst-district deviation (this is D6: 70,677 km² vs. target 28,148 km²). |
+| `area_deviation_mean` | **112.8 %** | Mean of \|area(D) − A\*\| / A\* across districts. |
+| `area_deviation_max` | **345.5 %** | Worst-district deviation (D4: 125,410 km² vs. A\* = 28,148 km²). |
 
-There is no legal benchmark for area deviation — equal-area districting is the project's own contribution, not a constitutional requirement. The current generator only treats population as a hard capacity, so area gets whatever falls out of the geometry. The MN numbers reflect the structural reality that Minneapolis–St.~Paul holds ~half the state's population in ~3 % of the state's area: any pop-balanced plan *must* give the urban district(s) a tiny footprint and the rural district(s) a huge one. The natural fix — a two-dimensional capacitated transportation step that bounds both — would force some intermediate split. It's documented as future work and tracked in [docs/Formalism.md § 4](Formalism.md).
+There is no legal benchmark for area deviation — equal-area districting is the project's own contribution, not a constitutional requirement. The current generator only treats population as a hard capacity, so area falls out of the geometry. The MN numbers reflect the structural reality that the Minneapolis–St.~Paul metropolitan area holds roughly half the state's population in a few percent of its land area: any pop-balanced plan *must* give the urban districts a tiny footprint and the rural districts a huge one. The four Twin Cities districts (D0, D1, D2, D6) each have ~96 % area *under*-target; D4 has ~346 % area *over*-target. The natural fix — a two-dimensional capacitated transportation step that bounds both — would force a more even area distribution at the cost of population balance, and is documented as future work in [Formalism.md § 4](Formalism.md).
 
 ### Compactness (reported)
 
 | Metric | Value | Reference | Read |
 |---|---|---|---|
-| `polsby_popper_mean` | **0.36** | typical enacted: 0.15–0.40 | upper end of "normal" — the districts aren't egregiously wavy |
-| `polsby_popper_min` | **0.22** | < 0.10 raises eyebrows | within the normal range; this is D7 (Twin Cities), which has a naturally irregular suburban boundary |
-| `reock_mean` | **0.52** | typical enacted: 0.25–0.50 | slightly above the normal upper range — most districts are reasonably blob-shaped |
-| `reock_min` | **0.28** | within typical | D5, a rural district that stretches in one direction along a natural geographic feature |
+| `polsby_popper_mean` | **0.35** | typical enacted: 0.15–0.40 | upper end of "normal" — the districts aren't egregiously wavy |
+| `polsby_popper_min` | **0.27** | < 0.10 raises eyebrows | well within the normal range |
+| `reock_mean` | **0.56** | typical enacted: 0.25–0.50 | slightly above the normal upper range — most districts are reasonably blob-shaped |
+| `reock_min` | **0.43** | within typical | the most-elongated district is still reasonably contained |
 
 So MN's PoC plan is roughly as compact as a real congressional plan, despite not optimizing for compactness at all. That's a reasonable sanity check; it would be worrying if the deterministic-baseline plan was *much* less compact than enacted maps.
 
@@ -120,16 +122,16 @@ So MN's PoC plan is roughly as compact as a real congressional plan, despite not
 
 | District | Population | Area (km²) | Pop dev | Area dev | PP | Reock |
 |---|---|---|---|---|---|---|
-| 0 | 521,000 | 27,423 | 1.41 % | 2.57 % | 0.410 | 0.648 |
-| 1 | 512,000 | 27,551 | 0.34 % | 2.12 % | 0.556 | 0.770 |
-| 2 | 490,000 | 20,862 | 4.62 % | 25.89 % | 0.462 | 0.441 |
-| 3 | 563,000 | 42,242 | 9.59 % | 50.07 % | 0.312 | 0.515 |
-| 4 | 514,000 | 2,297 | 0.05 % | 91.84 % | 0.415 | 0.665 |
-| 5 | 482,000 | 28,535 | 6.18 % | 1.38 % | 0.271 | 0.280 |
-| 6 | 515,000 | 70,677 | 0.24 % | 151.09 % | 0.230 | 0.330 |
-| 7 | 513,000 | 5,595 | 0.15 % | 80.12 % | 0.221 | 0.536 |
+| 0 | 713,244 | 346 | 0.01 % | 98.77 % | 0.350 | 0.753 |
+| 1 | 712,222 | 1,102 | 0.15 % | 96.08 % | 0.269 | 0.564 |
+| 2 | 713,039 | 1,138 | 0.04 % | 95.96 % | 0.397 | 0.612 |
+| 3 | 725,860 | 11,060 | 1.76 % | 60.71 % | 0.287 | 0.585 |
+| 4 | 788,044 | 125,410 | 10.48 % | 345.54 % | 0.293 | 0.449 |
+| 5 | 561,621 | 57,924 | **21.27 %** | 105.78 % | 0.356 | 0.430 |
+| 6 | 713,195 | 1,092 | 0.02 % | 96.12 % | 0.355 | 0.615 |
+| 7 | 779,269 | 27,109 | 9.25 % | 3.69 % | 0.497 | 0.457 |
 
-District IDs are an artifact of seed-placement order — the same partition with relabeled IDs would score identically. Don't read political meaning into a particular index.
+District IDs are an artifact of seed-placement order — the same partition with relabeled IDs would score identically. Don't read political meaning into a particular index. The bold 21.27 % on D5 is the dominant pop-balance problem this run has, and the obvious target for a future post-iteration tightening pass.
 
 ## Recipes for further visualization
 
@@ -173,9 +175,9 @@ A future `dualbalance compare` subcommand (out of PoC scope) will formalize this
 
 ## What this PoC does **not** demonstrate
 
-- **Real population.** Synthetic uniform pop hides whether the algorithm picks defensible districts when urban VTDs carry an order of magnitude more people than rural ones. Refresh with `CENSUS_API_KEY` set to test that.
-- **Area balance enforcement.** D6's 151 % area deviation is the symptom; the fix is a 2-D capacitated transportation step.
-- **Comparison against enacted plans.** The Wisconsin / Texas / North Carolina enacted maps are the natural benchmarks once `dualbalance compare` lands.
+- **Tight legal pop balance.** D5's 21 % underfill is the headline weakness. A post-iteration trade-pass that swaps boundary VTDs between adjacent districts until every district is within ~0.5 % of `P*` is the obvious next step.
+- **Area balance enforcement.** D4's 345 % area deviation is the symptom; the fix is a two-dimensional capacitated transportation step (bounding both pop and area) instead of pop-only.
+- **Comparison against enacted plans.** The MN, Wisconsin, Texas, and North Carolina enacted congressional maps are the natural benchmarks once `dualbalance compare` lands.
 - **Partisan or compactness optimization.** Both are explicitly out of scope (see [README.md § What it does NOT do](../README.md#what-it-does-not-do)).
 
-A natural next milestone is to redo this walkthrough with real PL 94-171 population, then a second one comparing the DualBalance plan against MN's enacted congressional map on the same metrics.
+The natural next milestone is the post-iteration trade-pass, followed by a second walkthrough comparing the tightened DualBalance plan against MN's enacted congressional map on the same metrics.

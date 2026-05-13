@@ -31,6 +31,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--out", type=Path, default=Path("docs/figures/mn_poc_districts.png")
     )
+    parser.add_argument(
+        "--note",
+        default="",
+        help="Optional parenthetical to add to the figure title "
+        "(e.g. 'synthetic uniform pop' or '2020 PL 94-171 pop').",
+    )
     args = parser.parse_args(argv)
 
     gdf = gpd.read_file(args.plan)
@@ -51,10 +57,11 @@ def main(argv: list[str] | None = None) -> int:
         legend_kwds={"title": "District", "loc": "lower right", "fontsize": 8},
         ax=ax_map,
     )
+    subtitle = f"DualBalance Score = {metrics['dualbalance_score']:.4f}"
+    if args.note:
+        subtitle += f"; {args.note}"
     ax_map.set_title(
-        "Minnesota DualBalance PoC — 8 districts on 4,110 VTDs\n"
-        f"(DualBalance Score = {metrics['dualbalance_score']:.4f}; "
-        f"synthetic uniform population)",
+        f"Minnesota DualBalance PoC — 8 districts on 4,110 VTDs\n({subtitle})",
         fontsize=12,
     )
     ax_map.set_axis_off()
