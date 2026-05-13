@@ -68,6 +68,8 @@ A capacity-constrained variant of the Lloyd / Hess 1965 districting iteration ap
 
 Population and area weighting in the objective is *equal at the metric level* — the reported DualBalance Score combines population and area deviation with equal coefficients. The current generator enforces population balance as a capacity and reports area imbalance; the natural next extension is a two-dimensional capacitated transportation problem that bounds both.
 
+For a worked example with reproduction commands, the actual MN PoC metrics, and visualization recipes, see [docs/mn-poc-walkthrough.md](docs/mn-poc-walkthrough.md).
+
 ## Representation allocation (apportionment)
 
 DualBalance extends beyond district drawing. It can also incorporate a deterministic method for assigning the total number of districts per state based on census population.
