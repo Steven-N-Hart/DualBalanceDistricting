@@ -27,6 +27,8 @@ from dualbalance.io import (
     write_plan,
 )
 from dualbalance.scoring import score_plan
+from dualbalance.seeds import SEED_METHODS
+from dualbalance.trades import tighten_to_reynolds
 
 
 def _apply_config(
@@ -62,7 +64,16 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
         max_iter=args.max_iter,
         geography=geography.cli_name,
         repair=not args.no_repair,
+        seed_method=args.seed_method,
+        capacity_slack=args.capacity_slack,
     )
+    if args.reynolds_tighten:
+        plan = tighten_to_reynolds(
+            plan,
+            units,
+            pop_tolerance=args.pop_tolerance,
+            reduce_area=not args.no_area_reduction,
+        )
     metrics = score_plan(plan, units)
 
     out_dir = Path(args.out)
@@ -191,6 +202,31 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
     generate.add_argument(
         "--no-repair", dest="no_repair", action="store_true",
         help="Skip the contiguity repair pass.",
+    )
+    generate.add_argument(
+        "--seed-method", dest="seed_method", default="farthest-point",
+        choices=list(SEED_METHODS),
+        help="Seed placement strategy (default: farthest-point). "
+             "population-slice puts more seeds in dense regions.",
+    )
+    generate.add_argument(
+        "--capacity-slack", dest="capacity_slack", type=float, default=0.0,
+        help="Extra capacity per district as fraction of P* "
+             "(default 0.0; 0.005 absorbs integer-rounding edge cases).",
+    )
+    generate.add_argument(
+        "--reynolds-tighten", dest="reynolds_tighten", action="store_true",
+        help="Run the post-iteration trade pass (Reynolds-compliant pop "
+             "tightening + pop-neutral area reduction).",
+    )
+    generate.add_argument(
+        "--pop-tolerance", dest="pop_tolerance", type=float, default=0.005,
+        help="Target |pop - P*| / P* tolerance for --reynolds-tighten "
+             "(default 0.005 = 0.5%%).",
+    )
+    generate.add_argument(
+        "--no-area-reduction", dest="no_area_reduction", action="store_true",
+        help="With --reynolds-tighten, skip Phase B (pop-neutral area swaps).",
     )
 
     apportion = subparsers.add_parser(

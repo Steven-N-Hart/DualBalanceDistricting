@@ -171,6 +171,8 @@ def generate_plan(
     geography: str = "unknown",
     repair: bool = True,
     max_repair_iter: int = 10,
+    seed_method: str = "farthest-point",
+    capacity_slack: float = 0.0,
 ) -> Plan:
     """Generate a deterministic district plan.
 
@@ -187,6 +189,12 @@ def generate_plan(
         repair: whether to run the contiguity-repair pass after iteration.
         max_repair_iter: hard cap on repair sweeps (each sweep dissolves all
             currently-isolated components).
+        seed_method: ``"farthest-point"`` (default; spreads seeds
+            geographically) or ``"population-slice"`` (places more seeds in
+            high-density regions; recommended for urbanized states).
+        capacity_slack: extra population capacity per district as a fraction
+            of ``P*``. ``0.0`` enforces ``P*`` exactly; ``0.005`` gives a
+            0.5 % slack absorbing integer-rounding edge cases.
 
     Raises:
         ValueError: for non-positive ``n_districts``, ``max_iter``, or a
@@ -214,14 +222,17 @@ def generate_plan(
     pops = np.asarray(units_sorted["population"], dtype=float)
     unit_ids: list[str] = units_sorted["unit_id"].tolist()
 
-    seeds = place_seeds(units_sorted, n_districts)
+    seeds = place_seeds(units_sorted, n_districts, method=seed_method)
     previous_assignment: dict[str, int] | None = None
     assignment: dict[str, int] = {}
     converged = False
     n_iters = 0
 
     for n_iters in range(1, max_iter + 1):  # noqa: B007 — n_iters read after loop
-        assignment = _assign(cx, cy, pops, unit_ids, seeds, targets, norm)
+        assignment = _assign(
+            cx, cy, pops, unit_ids, seeds, targets, norm,
+            capacity_slack=capacity_slack,
+        )
         if assignment == previous_assignment:
             converged = True
             break
@@ -247,6 +258,8 @@ def generate_plan(
             "contiguous": contiguous,
             "alpha": alpha,
             "beta": beta,
+            "seed_method": seed_method,
+            "capacity_slack": capacity_slack,
             "targets": {
                 "population": targets.population,
                 "area": targets.area,

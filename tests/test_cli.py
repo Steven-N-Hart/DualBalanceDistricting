@@ -164,6 +164,38 @@ def test_generate_via_yaml_config(tmp_path: Path, synthetic_grid_4x4) -> None:
     assert (tmp_path / "yaml_out" / "map.geojson").is_file()
 
 
+def test_generate_with_population_slice_seeding(tmp_path: Path, synthetic_grid_4x4) -> None:
+    units_path = tmp_path / "units.geojson"
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
+    src.to_file(units_path, driver="GeoJSON")
+    rc = main([
+        "generate", "--districts", "4", "--units", str(units_path),
+        "--geography", "vtd", "--out", str(tmp_path / "ps"),
+        "--seed-method", "population-slice",
+    ])
+    assert rc == 0
+    assert (tmp_path / "ps" / "map.geojson").is_file()
+    metrics = json.loads((tmp_path / "ps" / "metrics.json").read_text())
+    # Population is uniform; either seeding method produces a balanced plan.
+    assert metrics["dualbalance_score"] == 1.0
+
+
+def test_generate_with_reynolds_tighten(tmp_path: Path, synthetic_grid_4x4) -> None:
+    units_path = tmp_path / "units.geojson"
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
+    src.to_file(units_path, driver="GeoJSON")
+    rc = main([
+        "generate", "--districts", "4", "--units", str(units_path),
+        "--geography", "vtd", "--out", str(tmp_path / "rt"),
+        "--reynolds-tighten",
+    ])
+    assert rc == 0
+
+
 def test_score_via_cli(tmp_path: Path, synthetic_grid_4x4) -> None:
     units_path = tmp_path / "units.geojson"
     out_dir = tmp_path / "out"

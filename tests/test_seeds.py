@@ -65,3 +65,52 @@ def test_place_seeds_highest_pop_wins_first(
     units.loc[units["unit_id"] == "R2C2", "population"] = 1000
     seeds = place_seeds(units, n=1)
     assert seeds[0] == Seed(district_id=0, x=2.5, y=2.5)
+
+
+def test_place_seeds_dispatcher_rejects_unknown() -> None:
+    import geopandas as _gpd
+    import pytest as _pt
+    from shapely.geometry import Polygon
+    g = _gpd.GeoDataFrame(
+        {"unit_id": ["A"], "population": [1], "area": [1.0],
+         "geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])]},
+        crs="EPSG:5070",
+    )
+    with _pt.raises(ValueError, match="unknown seed method"):
+        place_seeds(g, n=1, method="not-a-method")
+
+
+def test_population_slice_returns_n_seeds(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
+    seeds = place_seeds(synthetic_grid_4x4, n=4, method="population-slice")
+    assert len(seeds) == 4
+    assert [s.district_id for s in seeds] == [0, 1, 2, 3]
+
+
+def test_population_slice_is_deterministic(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
+    a = place_seeds(synthetic_grid_4x4, n=4, method="population-slice")
+    b = place_seeds(synthetic_grid_4x4, n=4, method="population-slice")
+    assert a == b
+
+
+def test_population_slice_invariant_to_row_order(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    shuffled = synthetic_grid_4x4.sample(frac=1.0, random_state=7).reset_index(drop=True)
+    assert (
+        place_seeds(synthetic_grid_4x4, 4, method="population-slice")
+        == place_seeds(shuffled, 4, method="population-slice")
+    )
+
+
+def test_population_slice_concentrates_seeds_in_dense_region(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    # Make the bottom row carry 10x the population. Expect at least one seed
+    # to sit in the bottom row's spatial band (y > 3.0) instead of the
+    # evenly-spaced layout that farthest-point would produce.
+    units = synthetic_grid_4x4.copy()
+    units.loc[units["unit_id"].str.startswith("R3"), "population"] = 10_000
+    slice_seeds = place_seeds(units, n=4, method="population-slice")
+    # At least one seed should land inside the bottom row (y between 3 and 4).
+    bottom_seeds = [s for s in slice_seeds if 3.0 < s.y < 4.0]
+    assert len(bottom_seeds) >= 1, slice_seeds
