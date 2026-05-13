@@ -24,6 +24,9 @@ manuscript/*.fdb_latexmk
 manuscript/main.pdf
 manuscript/sections/*.aux
 
+# Claude Code per-user settings
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
