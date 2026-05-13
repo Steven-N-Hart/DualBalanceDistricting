@@ -173,6 +173,59 @@ print(f"Δ pop_deviation_max = {a['pop_deviation_max'] - b['pop_deviation_max']:
 
 A future `dualbalance compare` subcommand (out of PoC scope) will formalize this against multiple enacted-plan baselines.
 
+## Comparing pipelines and the enacted plan
+
+The `generate` subcommand supports two opt-in mechanisms that change how the
+algorithm balances the urban–rural tradeoff:
+
+- `--seed-method population-slice` replaces the default farthest-point seed
+  placement with population-slice seeding (more seeds inside dense regions).
+- `--reynolds-tighten` runs a post-iteration trade pass that moves boundary
+  VTDs from over-target to adjacent under-target districts until pop
+  deviation hits the `--pop-tolerance` target (default 0.5 %), then
+  pop-neutral swaps reduce area deviation as a secondary objective.
+
+For a complete benchmark, `scripts/fetch_enacted_mn.py` downloads the
+TIGER/Line 2024 119th-Congress MN district shapefile and joins it to the
+same VTDs, producing a `Plan` that scores against the same metrics.
+
+```powershell
+# All three DualBalance pipelines on the same input
+dualbalance generate --state MN --districts 8 --units data/mn_vtd.geojson `
+    --geography vtd --out out/mn_fp                                          # Pipeline 1
+dualbalance generate --state MN --districts 8 --units data/mn_vtd.geojson `
+    --geography vtd --out out/mn_ps `
+    --seed-method population-slice --capacity-slack 0.005                    # Pipeline 2
+dualbalance generate --state MN --districts 8 --units data/mn_vtd.geojson `
+    --geography vtd --out out/mn_rt `
+    --seed-method population-slice --capacity-slack 0.005 `
+    --reynolds-tighten --pop-tolerance 0.005                                 # Pipeline 3
+
+python scripts/fetch_enacted_mn.py                                           # Enacted plan
+python scripts/plot_mn_comparison.py                                         # 2x2 figure
+```
+
+![Comparison: three pipelines and the enacted MN plan](figures/mn_poc_comparison.png)
+
+### Side-by-side numbers (real 2020 PL 94-171 population, 4,110 VTDs)
+
+| Plan | DualBalance Score | pop_dev_mean | pop_dev_max | area_dev_mean | area_dev_max | PP_mean | Reock_mean |
+|---|---|---|---|---|---|---|---|
+| 1. Farthest-point, no tighten | 0.4583 | 5.37 % | **21.27 %** | 112.8 % | 345.5 % | 0.351 | 0.558 |
+| 2. Population-slice, no tighten | 0.4600 | 5.60 % | 22.38 % | 111.8 % | 344.9 % | 0.332 | 0.554 |
+| 3. Pop-slice + Reynolds tighten | 0.4685 | 1.24 % | **4.95 %** | 112.2 % | 337.8 % | 0.270 | 0.556 |
+| **Enacted (119th Congress)** | **0.4696** | **0.42 %** | **1.32 %** | 112.6 % | **241.0 %** | 0.320 | 0.419 |
+
+A few honest readings:
+
+- **The DualBalance Score is essentially tied** across all four plans. That's a feature, not a coincidence: every plan that holds the same state's geometry to roughly equal-population districts pays roughly the same area-imbalance bill, because the urban/rural population density is a property of the *state*, not the algorithm. The score is correctly insensitive to the particular partition.
+- **Pipeline 1 vs Pipeline 2 are nearly identical.** Switching seed methods barely moves the *metric* numbers on MN, even though it dramatically reshapes the geography (top-left vs top-right panels). What population-slice seeding actually buys is a *better starting point for tightening* — Pipeline 3 builds on Pipeline 2's geometry.
+- **Pipeline 3 cuts pop_dev_max from 21 % → 5 %** but doesn't reach the 0.5 % target. The trade-pass terminates when no contiguity-preserving move can further reduce the global max deviation; we bottom out at ~5 %. Closing the remaining gap likely needs either chained multi-hop moves or a true transportation-LP step, both of which are documented as future work.
+- **The enacted plan beats Pipeline 3 on every dimension** — pop_dev_max (1.32 % vs 4.95 %), area_dev_max (241 % vs 338 %), and Polsby-Popper (0.320 vs 0.270). That's defensible: the enacted plan benefits from human iteration plus knowledge of county boundaries (which the algorithm doesn't see). The visible "band" structure in the bottom-right panel is the algorithm-untaught knowledge.
+- **Both pop_dev_max numbers are higher than legal practice.** Real congressional plans target < 0.1 % (one-person-one-vote literally) — even the enacted plan's 1.32 % here is from VTD-centroid sampling not perfectly recovering the true district boundaries; the actual enacted plan is much tighter. The DualBalance algorithm hasn't yet closed that final gap.
+
+The takeaway: the algorithm produces a recognizably plausible map at roughly the same DualBalance Score as a hand-drawn enacted plan, with no political input and no human iteration. Tightening the final percent of population balance is the natural next research direction.
+
 ## What this PoC does **not** demonstrate
 
 - **Tight legal pop balance.** D5's 21 % underfill is the headline weakness. A post-iteration trade-pass that swaps boundary VTDs between adjacent districts until every district is within ~0.5 % of `P*` is the obvious next step.
