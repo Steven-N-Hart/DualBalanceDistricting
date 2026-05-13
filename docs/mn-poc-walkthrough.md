@@ -48,14 +48,42 @@ Two things to read off the figure:
 
 `metrics.json` reports the following numbers for this run. Cross-reference against [`src/dualbalance/scoring.py`](../src/dualbalance/scoring.py) for the exact formulas.
 
-### Headline number
+### How to read these numbers at a glance
+
+If you've never seen these metrics before, the cheat sheet:
+
+| Metric | Direction | Scale | 1.0 (or 0) means | Reference range for enacted U.S. congressional plans |
+|---|---|---|---|---|
+| `dualbalance_score` | **higher** | 0 to 1 | 1.0 = perfect pop *and* area balance | no published benchmark — DualBalance is its own metric |
+| `pop_deviation_*` | **lower** | 0 and up | 0 = exact target | < 1 % is the legal expectation (*Reynolds v. Sims*, 1964) |
+| `area_deviation_*` | **lower** | 0 and up | 0 = exact target | no legal benchmark; typically large because urban VTDs are tiny and rural VTDs are huge |
+| `polsby_popper` | **higher** | 0 to 1 | 1.0 = perfect circle | most enacted districts fall in **0.15–0.40**; below 0.10 is a red flag in court testimony |
+| `reock` | **higher** | 0 to 1 | 1.0 = perfect circle | most enacted districts fall in **0.25–0.50** |
+
+Polsby-Popper and Reock are both "compactness" measures — how blob-shaped a district is — but they catch *different* problems, so you usually report both:
+
+- **Polsby-Popper** ( `4π · area / perimeter²` ) punishes **wavy boundaries**. The classic gerrymander shapes — the "salamander" Massachusetts district that gave gerrymandering its name, or modern octopus-arm districts — tank PP because they have huge perimeter relative to their area. A long thin rectangle with a smooth boundary, on the other hand, still scores OK on PP.
+- **Reock** ( `area / area(minimum bounding circle)` ) punishes **elongated shapes**. A district shaped like a long thin strip scores poorly on Reock even if its boundary is perfectly smooth, because the bounding circle around it is much larger than the district itself.
+
+A district is "compact" only if it scores reasonably on *both*. A district can score well on one and poorly on the other — that's a real signal about which kind of shape problem it has.
+
+DualBalance does **not** optimize for compactness; the PP and Reock numbers here are emergent properties of the cost-minimizing iteration over Minnesota's particular geography (lake shorelines, the irregular Twin Cities urban footprint, etc.). Two plans drawn for the same state under identical rules can produce very different compactness numbers depending on which seeds were chosen.
+
+### DualBalance Score — the headline number
 
 ```
 dualbalance_score = 1 / (1 + pop_deviation_mean + area_deviation_mean)
                   = 0.6516
 ```
 
-The DualBalance Score weights population and area deviation equally. A perfect plan would score 1.0 (achieved by the synthetic 4×4 grid). Real geometry with population-only capacity yields a score in the ~0.4–0.7 band depending on how lopsided the urban/rural split of the state is. Comparing two plans against the same data, **higher is better**.
+This is the project's own metric. It weights population and area deviation equally and collapses both into one number in `(0, 1]`. Anchor values:
+
+- **1.0** = perfect balance on both pop and area. The synthetic 4×4 grid hits this exactly.
+- **0.625** = 10 % mean pop deviation + 50 % mean area deviation (roughly where we are).
+- **0.500** = 50 % deviation on each. Bad but not catastrophic.
+- **< 0.30** = at least one of pop or area is wildly out of balance.
+
+Comparing two plans against the *same* state geometry, **higher is better**. Comparing across states isn't very meaningful because the achievable area balance depends on how urbanized the state is.
 
 ### Population balance (enforced)
 
@@ -64,7 +92,9 @@ The DualBalance Score weights population and area deviation equally. A perfect p
 | `pop_deviation_mean` | **2.82 %** | Mean of \|pop(D) − P\*\| / P\* across the 8 districts. |
 | `pop_deviation_max` | **9.59 %** | Worst single-district deviation. |
 
-`P* = 4,110,000 / 8 = 513,750`. The capacitated assignment caps each district at `P*` exactly, so the only sources of pop deviation are (a) integer rounding when a unit's population doesn't divide cleanly into remaining capacity, and (b) the contiguity-repair pass moving units between districts after assignment. Both are bounded; 9.6 % is within the project's "< 10 % for PoC" target.
+`P* = 4,110,000 / 8 = 513,750`. The capacitated assignment caps each district at `P*`, so the only sources of pop deviation are (a) integer rounding when a unit's population doesn't divide cleanly into remaining capacity, and (b) the contiguity-repair pass moving units between districts after assignment.
+
+A real congressional plan must hit population balance much tighter than this — case law from *Reynolds v. Sims* (1964) onward requires deviations under ~1 % for U.S. House districts, and states routinely build plans with < 0.1 % deviation. Our 9.6 % max is "wide" by that legal standard, but the PoC isn't targeting court admissibility yet; it's targeting the algorithm's structural soundness. Tightening it is mostly a matter of post-processing pass: take overflow units and trade them between adjacent districts until everyone is within 0.5 %.
 
 ### Area balance (reported, **not** enforced)
 
@@ -73,18 +103,18 @@ The DualBalance Score weights population and area deviation equally. A perfect p
 | `area_deviation_mean` | **50.6 %** | Mean of \|area(D) − A\*\| / A\* across districts. |
 | `area_deviation_max` | **151.1 %** | Worst-district deviation (this is D6: 70,677 km² vs. target 28,148 km²). |
 
-The current generator only treats population as a hard capacity. Area is computed but not bounded — the natural extension is a two-dimensional capacitated transportation problem that caps both. Reporting both numbers makes the tradeoff visible rather than papering over it.
+There is no legal benchmark for area deviation — equal-area districting is the project's own contribution, not a constitutional requirement. The current generator only treats population as a hard capacity, so area gets whatever falls out of the geometry. The MN numbers reflect the structural reality that Minneapolis–St.~Paul holds ~half the state's population in ~3 % of the state's area: any pop-balanced plan *must* give the urban district(s) a tiny footprint and the rural district(s) a huge one. The natural fix — a two-dimensional capacitated transportation step that bounds both — would force some intermediate split. It's documented as future work and tracked in [docs/Formalism.md § 4](Formalism.md).
 
 ### Compactness (reported)
 
-| Metric | Value | Meaning |
-|---|---|---|
-| `polsby_popper_mean` | **0.36** | 4π·area / perimeter², averaged over districts. 1.0 = perfect circle. |
-| `polsby_popper_min` | **0.22** | Least-compact district (D7 — Twin Cities, irregular suburban boundary). |
-| `reock_mean` | **0.52** | area / area(minimum bounding circle), averaged. 1.0 = perfect circle. |
-| `reock_min` | **0.28** | Least-compact district (D5 — stretched rural shape). |
+| Metric | Value | Reference | Read |
+|---|---|---|---|
+| `polsby_popper_mean` | **0.36** | typical enacted: 0.15–0.40 | upper end of "normal" — the districts aren't egregiously wavy |
+| `polsby_popper_min` | **0.22** | < 0.10 raises eyebrows | within the normal range; this is D7 (Twin Cities), which has a naturally irregular suburban boundary |
+| `reock_mean` | **0.52** | typical enacted: 0.25–0.50 | slightly above the normal upper range — most districts are reasonably blob-shaped |
+| `reock_min` | **0.28** | within typical | D5, a rural district that stretches in one direction along a natural geographic feature |
 
-For reference, enacted Congressional plans typically fall between 0.15 and 0.40 on Polsby-Popper. The DualBalance generator does **not** optimize for compactness; these values are emergent properties of the cost-min iteration over a state's geometry.
+So MN's PoC plan is roughly as compact as a real congressional plan, despite not optimizing for compactness at all. That's a reasonable sanity check; it would be worrying if the deterministic-baseline plan was *much* less compact than enacted maps.
 
 ### Per-district breakdown
 
