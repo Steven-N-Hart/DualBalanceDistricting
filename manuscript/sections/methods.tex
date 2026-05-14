@@ -133,6 +133,50 @@ population-capacitated geographic assignment cost with radial seeding,
 which on the Minnesota PoC produces a higher DBS than the enacted plan
 ($0.6472$ vs $0.6390$) despite its weaker compactness profile.
 
+\subsection{Optional: L\textsuperscript{1} pop-tightening}
+\label{sec:methods-tighten}
+
+The radial pipeline produces per-district pop deviation in the
+5--15\% range on real census geometry, well above the
+\textasciitilde{}0.5\% threshold required by \textit{Reynolds v.~Sims}
+for U.S.~congressional districts~\cite{reynolds1964}. An optional
+post-pass (\verb|--tighten-pop|) closes this gap via greedy
+boundary-unit swaps under an L$^1$ objective. Each pass:
+
+\begin{enumerate}
+  \item Compute the signed deviations $\delta_i = P(D_i) - P^{*}$.
+  \item For every boundary unit $u$ in district $d_{\mathrm{src}}$ and
+        every neighboring district $d_{\mathrm{dest}}$, compute the
+        L$^1$ change after moving $u$:
+        \[
+          \Delta(u, d_{\mathrm{dest}}) =
+            |\delta_{d_{\mathrm{src}}} - p_u| - |\delta_{d_{\mathrm{src}}}|
+          + |\delta_{d_{\mathrm{dest}}} + p_u| - |\delta_{d_{\mathrm{dest}}}|.
+        \]
+  \item Sort candidates by ascending $\Delta$ and accept the most
+        negative one whose source district remains contiguous after
+        the move. Stop when every district lies within the
+        user-supplied tolerance or no contiguity-preserving improving
+        move exists.
+\end{enumerate}
+
+The L$^1$ objective is essential here. The radial seed placement puts
+the most over-target and most under-target districts on opposite sides
+of the population centroid, so no single adjacent-slice swap reduces
+the L$^\infty$ maximum --- but many such swaps reduce the sum. The
+canonical Reynolds-tightening literature uses L$^\infty$ and bottoms
+out at \textasciitilde{}5\% on this geometry; the L$^1$ formulation
+runs to completion in \textasciitilde{}80 swaps on Minnesota,
+reducing $\mathrm{pop\_dev\_max}$ from $0.1124$ to $0.0021$ (i.e.~well
+inside the 0.5\% target) while leaving $\mathrm{area\_dev\_mean}$
+essentially unchanged at $1.04$. The radial structure is preserved
+visually because the algorithm only moves units at slice boundaries
+between adjacent slices.
+
+The pass is off by default and gated by an explicit flag. Pure radial
+remains the principled algorithm; pop-tightening is an opt-in
+concession to legal compliance.
+
 \subsection{Determinism and tie-breaking}
 
 The pipeline is deterministic at every step. The only sources of

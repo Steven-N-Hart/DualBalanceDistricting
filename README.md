@@ -88,16 +88,31 @@ for the precise mathematical statement.
    component, dissolve the smaller components into adjacent districts
    by lowest-cost transfer.
 
-There is no Lloyd iteration, no recentering loop, no Reynolds
-tightening pass. The radial seed positions do not drift, so a single
-assignment pass suffices. The CLI exposes no algorithmic tuning
-flags — only data-plumbing arguments (`--units`, `--districts`,
-`--geography`, `--out`, `--config`).
+There is no Lloyd iteration, no recentering loop, no tightening pass
+in the core pipeline. The radial seed positions do not drift, so a
+single assignment pass suffices. The CLI exposes no algorithmic
+tuning flags for the core pipeline — only data-plumbing arguments
+(`--units`, `--districts`, `--geography`, `--out`, `--config`).
 
 The MN PoC scores **0.6472** under DualBalance, beating the enacted
 119th-Congress plan's **0.6390** by 1.3%. See
 [docs/mn-poc-walkthrough.md](docs/mn-poc-walkthrough.md) for the
 worked example with reproduction commands.
+
+### Optional: `--tighten-pop` for Reynolds compliance
+
+Pure radial leaves per-district `pop_deviation_max` around 5–15 % —
+well above the ~0.5 % *Reynolds v. Sims* threshold required for U.S.
+congressional districts. An opt-in `--tighten-pop` flag (with
+`--pop-tolerance T`, default 0.5 %) runs a greedy boundary-unit swap
+pass that drives `pop_deviation_max` down to the target. On the MN
+PoC, this brings the max from 11.24 % to 0.21 %, raises the
+DualBalance score from 0.6472 to 0.6574, and preserves the radial
+structure (units move only at slice boundaries). The pass is off by
+default because it is the only piece of the pipeline that is not a
+pure function of `(units, n_districts)`; turning it on is a
+project-level choice about whether to trade a small degradation of
+the visible radial guarantee for legal compliance.
 
 ## Apportionment
 

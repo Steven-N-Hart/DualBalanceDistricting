@@ -132,11 +132,44 @@ dualbalance score --plan out/mn_enacted/map.geojson `
 A few honest readings:
 
 - **DualBalance wins on the score** — 0.6472 vs 0.6390, a 1.3 % margin. The win comes entirely from area balance: `area_dev_mean` 103.9 % vs 112.6 %. Radial slicing actually delivers the geometric benefit it advertises.
-- **The enacted plan crushes us on population balance** — 0.42 % mean vs 5.08 %. The enacted map was drawn to be Reynolds-compliant; our PoC isn't yet. Closing this gap is the obvious next research step but doesn't change which plan wins the *combined* score.
+- **The enacted plan crushes us on population balance** — 0.42 % mean vs 5.08 %. The enacted map was drawn to be Reynolds-compliant; the pure radial pass is not. Closing this gap is what `--tighten-pop` is for (see below).
 - **The enacted plan also wins on compactness** — `PP_min` 0.178 vs 0.094. Radial slices are visibly long and thin, and the worst slice is on the edge of "below 0.10 raises eyebrows." This is the design's intentional trade.
 - **`area_dev_max` is slightly worse on radial** — 271 % vs 241 %. Looking at the per-district table, that's District 2, which inherited the entire northern panhandle (104,440 km²) plus a slice of the metro for its population share. The radial geometry concentrates the area-imbalance into one district rather than spreading it across several.
 
-The takeaway: a deterministic, knob-free, race-blind, partisan-blind algorithm beats the hand-drawn enacted Minnesota plan on the project's own dual-balance metric, without any human iteration. The win is real but narrow, and trades compactness and pop-balance precision for area balance.
+## Closing the population gap: `--tighten-pop`
+
+The pure radial pipeline isn't Reynolds-compliant out of the box (pop_dev_max ≈ 11 % vs the ~0.5 % courts expect). The opt-in `--tighten-pop` flag runs a greedy boundary-unit swap pass that closes this gap:
+
+```powershell
+dualbalance generate --config configs/mn_vtd.yaml `
+    --tighten-pop --pop-tolerance 0.005 --out out/mn_yaml_tight
+```
+
+What changes:
+
+| Metric | Pure radial | + `--tighten-pop 0.005` | Enacted |
+|---|---|---|---|
+| `dualbalance_score` | 0.6472 | **0.6574** | 0.6390 |
+| `pop_deviation_max` | 11.24 % | **0.21 %** | 1.32 % |
+| `pop_deviation_mean` | 5.08 % | **0.08 %** | 0.42 % |
+| `area_deviation_mean` | 103.9 % | 104.2 % | 112.6 % |
+| `polsby_popper_min` | 0.094 | 0.094 | 0.178 |
+
+The pass uses an **L¹ objective** (`Σ |Pop(D_i) - P*|`) rather than the L∞ max objective used by typical Reynolds-tightening passes. This matters on radial geometries: the most over-target and most under-target districts sit on opposite sides of the population centroid, so no single adjacent-slice swap reduces the max — but many such swaps reduce the sum. The algorithm walks the L¹-ranked list of improving moves each pass and accepts the best one whose source district remains contiguous.
+
+On MN, the pass executes ~80 swaps in ~18 s of compute and:
+
+- Closes `pop_dev_max` from 11.24 % to 0.21 % (well inside the Reynolds 1 % threshold).
+- Improves the DualBalance Score by 1 % (the pop balance gain dominates the tiny area balance loss).
+- Preserves the radial structure visually — units move only at slice boundaries, not deep into other slices.
+
+The pass is **off by default**. Pure radial is the project's principled algorithm; pop-tightening is an opt-in concession to legal compliance. Whether to ship a plan with or without tightening is a project-level decision.
+
+![DualBalance radial with optional tightening](figures/mn_radial_with_tighten.png)
+
+Left: enacted MN plan. Center: pure radial (default). Right: radial + `--tighten-pop 0.005`. The right map is visually nearly identical to the center one, but its pop balance is now better than the enacted plan's.
+
+The takeaway: a deterministic, race-blind, partisan-blind algorithm can produce a Minnesota plan that beats the hand-drawn enacted map on every dimension of the DualBalance objective — population balance, area balance, and the combined score — while being a pure function of the inputs plus one explicit legal-compliance switch.
 
 ## Recipes for further visualization
 
@@ -180,7 +213,6 @@ A future `dualbalance compare` subcommand (out of PoC scope) will formalize this
 
 ## What this PoC does **not** demonstrate
 
-- **Tight legal pop balance.** The radial generator hits 5 % mean pop deviation, well above the 0.1 %–0.5 % that real congressional plans target. Closing this gap is the natural research direction — likely via a true two-dimensional transportation step at assignment time — but is out of scope for the PoC.
 - **Beating the enacted plan on compactness.** Radial slices have lower compactness by construction. The project's defense is the legal one (see manuscript): a deterministic race-blind rule does not carry the racial intent that triggers *Shaw*. Whether the public would accept the resulting maps is a separate political question.
 - **Cross-state generalization.** Minnesota's particular density profile makes it a hard test for area balance (Twin Cities concentrates ~55 % of the population in ~3 % of the land area). Other states may show larger or smaller margins over enacted plans.
 - **Partisan analysis.** Both partisan and demographic analysis are explicitly out of scope (see [README.md § What it does NOT do](../README.md#what-it-does-not-do)).

@@ -33,6 +33,7 @@ from dualbalance.io import (
     write_plan,
 )
 from dualbalance.scoring import score_plan
+from dualbalance.tighten import tighten_population
 
 
 def _apply_config(args: argparse.Namespace, defaults: dict[str, Any]) -> argparse.Namespace:
@@ -59,6 +60,8 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
 
     units = load_units(args.units, id_column=id_column, pop_column=pop_column)
     plan = generate_plan(units, args.districts, geography=geography.cli_name)
+    if args.tighten_pop:
+        plan = tighten_population(plan, units, pop_tolerance=args.pop_tolerance)
     metrics = score_plan(plan, units)
 
     out_dir = Path(args.out)
@@ -176,6 +179,22 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         help="Column with population (default: population).",
     )
     generate.add_argument("--out", type=Path, help="Output directory.")
+    generate.add_argument(
+        "--tighten-pop",
+        dest="tighten_pop",
+        action="store_true",
+        help="Opt-in post-assignment pass: greedy boundary-unit swaps "
+        "to close the per-district pop_deviation gap to --pop-tolerance. "
+        "Off by default; turning it on weakens the pure-radial guarantee.",
+    )
+    generate.add_argument(
+        "--pop-tolerance",
+        dest="pop_tolerance",
+        type=float,
+        default=0.005,
+        help="Target |pop - P*|/P* for --tighten-pop (default 0.005 = 0.5%%, "
+        "the typical Reynolds v. Sims threshold).",
+    )
 
     apportion = subparsers.add_parser(
         "apportion",

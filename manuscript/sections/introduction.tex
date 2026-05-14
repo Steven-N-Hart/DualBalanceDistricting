@@ -192,12 +192,17 @@ the population center, each slice naturally spanning both dense
 
 Seats are apportioned among the states by the Method of Equal
 Proportions (Huntington--Hill), the standard since
-1941~\cite{balinskiyoung}. The entire pipeline --- seed placement,
+1941~\cite{balinskiyoung}. The core pipeline --- seed placement,
 assignment, contiguity repair --- is a pure function of $(\text{units},
 N)$. There are no tuning weights, no iteration count, no stopping
 threshold, and no random seed; identical inputs always yield
-byte-identical outputs. Updates occur only when the underlying census
-changes, every ten years.
+byte-identical outputs. A single optional post-pass
+(\verb|--tighten-pop|) is provided to close the residual per-district
+population deviation to a user-supplied \emph{Reynolds v.~Sims}
+tolerance via greedy L$^1$ boundary-unit swaps; this is the only piece
+of the pipeline that is not a pure function of the inputs and is off
+by default. Updates occur only when the underlying census changes,
+every ten years.
 
 The algorithm reads neither party registration, vote history, nor
 race. After \emph{Alexander} and \emph{Callais}, a generator that does

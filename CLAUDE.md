@@ -11,6 +11,7 @@ src/dualbalance/   Python package — implementation of the algorithm + CLI
   io.py            load_units, write_plan, load_plan, write_metrics, etc.
   seeds.py         deterministic radial seed placement
   districting.py   single-pass capacitated assignment + contiguity repair
+  tighten.py       opt-in L¹ pop-balance tightening pass (--tighten-pop)
   scoring.py       pop/area deviation, DualBalance Score, Polsby-Popper, Reock
   config.py        YAML --config support (CLI > YAML > argparse-default)
   cli.py           argparse CLI: generate / apportion / score / compare
@@ -67,6 +68,10 @@ A deterministic, single-pass pipeline. No iteration, no tuning weights, no post-
 
 With seeds arranged on a small circle, the Voronoi cells degenerate to near-perfect radial slices through the population center. Each slice naturally spans both dense (near-center) and sparse (toward-the-boundary) territory, so each district holds roughly 1/N of the population *and* a coherent slice of the state's geography.
 
+### Optional post-pass: `--tighten-pop`
+
+The radial pipeline's per-district `pop_deviation` typically sits in the 5–15 % range on real census geometry, well above the ~0.5 % *Reynolds v. Sims* threshold. The opt-in `--tighten-pop` flag runs an L¹-greedy boundary-unit swap pass (`src/dualbalance/tighten.py`) that closes this gap to the user-supplied `--pop-tolerance` (default 0.5 %). The L¹ objective `Σ_i |Pop(D_i) - P*|` is used rather than the L∞ `max_i |Pop(D_i) - P*|` because radial geometries place over-target and under-target districts on opposite sides of the population centroid: no single move between adjacent slices reduces the max, but many such moves reduce the sum. On the MN PoC the pass takes ~80 swaps and ~18 s to drive `pop_dev_max` from 11.24 % to 0.21 %, with `area_dev_mean` essentially unchanged and the visible radial structure preserved (units move only at slice boundaries).
+
 ## Core algorithm invariants
 
 Non-negotiable. Check every design decision against them:
@@ -76,7 +81,7 @@ Non-negotiable. Check every design decision against them:
 - **Population balance is a hard cap.** Each district receives at most `P* = total_population / N` (a capacitated transportation step in the lineage of Hess-style models). Soft penalty forms destabilize on real census geometry; do not re-introduce them.
 - **Area balance is reported, not enforced.** The algorithm draws geometry that naturally trades pop-balance and area-balance equally via radial slicing; the score reports area deviation as a diagnostic.
 - **Contiguity, non-empty, full coverage.** Every unit belongs to exactly one district; the repair pass guarantees every district is contiguous.
-- **No tuning knobs.** The CLI exposes only data-plumbing flags (`--districts`, `--units`, `--geography`, `--id-column`, `--pop-column`, `--out`, `--config`). There is no `--seed-method`, `--alpha`, `--max-iter`, `--reynolds-tighten`, `--enforce-area`, etc.: the algorithm has no behavior to tune.
+- **No tuning knobs on the core algorithm.** The CLI exposes only data-plumbing flags for the radial generator itself: `--districts`, `--units`, `--geography`, `--id-column`, `--pop-column`, `--out`, `--config`. There is no `--seed-method`, `--alpha`, `--max-iter`, `--reynolds-tighten`, `--enforce-area`, etc.: the core algorithm has no behavior to tune. One **opt-in** post-pass is available — `--tighten-pop` plus `--pop-tolerance T` — that performs L¹-greedy boundary-unit swaps to close the per-district pop_deviation gap to `T` (default 0.5 %). This is the only piece of the pipeline that is not a pure function of `(units, n_districts)`; it is off by default, and turning it on is a project-level decision about whether to trade a small degradation of the visible radial structure for *Reynolds v. Sims* compliance.
 - **Out-of-scope inputs.** Politics, race/demographics, communities of interest, competitiveness — the generator must not read these. Partisan metrics may be *reported* by the scoring harness but never fed back into the generator.
 
 ## Objective function

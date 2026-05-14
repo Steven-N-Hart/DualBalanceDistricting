@@ -41,10 +41,12 @@ def test_generate_rejects_unknown_geography() -> None:
         parser.parse_args(["generate", "--geography", "precinct"])
 
 
-def test_generate_has_no_algorithm_knobs() -> None:
-    # The CLI exposes only data-plumbing flags; the algorithm itself takes
-    # no tuning knobs (no --max-iter, --seed-method, --alpha, --reynolds-*,
-    # --enforce-area, --score-variant, etc).
+def test_generate_has_no_core_algorithm_knobs() -> None:
+    # The CLI exposes only data-plumbing flags plus the opt-in
+    # --tighten-pop / --pop-tolerance pair (see test_generate_supports_tighten_pop_flag).
+    # The core radial generator itself takes no tuning knobs (no --max-iter,
+    # --seed-method, --alpha, --reynolds-tighten, --enforce-area,
+    # --score-variant, etc).
     _, defaults = build_parser()
     forbidden = {
         "alpha",
@@ -53,7 +55,6 @@ def test_generate_has_no_algorithm_knobs() -> None:
         "seed_method",
         "capacity_slack",
         "reynolds_tighten",
-        "pop_tolerance",
         "no_area_reduction",
         "score_variant",
         "enforce_area",
@@ -61,6 +62,38 @@ def test_generate_has_no_algorithm_knobs() -> None:
         "no_repair",
     }
     assert defaults["generate"].keys().isdisjoint(forbidden)
+
+
+def test_generate_supports_tighten_pop_flag() -> None:
+    _, defaults = build_parser()
+    assert defaults["generate"]["tighten_pop"] is False
+    assert defaults["generate"]["pop_tolerance"] == 0.005
+
+
+def test_generate_with_tighten_pop(tmp_path, synthetic_grid_4x4) -> None:
+    units_path = tmp_path / "units.geojson"
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
+    src.to_file(units_path, driver="GeoJSON")
+    rc = main(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--out",
+            str(tmp_path / "tight"),
+            "--tighten-pop",
+            "--pop-tolerance",
+            "0.01",
+        ]
+    )
+    assert rc == 0
+    assert (tmp_path / "tight" / "metrics.json").is_file()
 
 
 def test_generate_defaults_dict_has_data_plumbing_keys() -> None:
