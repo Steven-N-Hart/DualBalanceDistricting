@@ -1,4 +1,262 @@
 \section{Discussion}
+\label{sec:discussion}
 
-% Trade-offs between population and geographic balance; limitations; future
-% directions including alternative apportionment rules and hybrid models.
+\subsection{What the Minnesota result does and does not show}
+
+The headline finding --- a knob-free deterministic algorithm that, with
+or without the optional pop-tightening pass, beats the human-drawn
+enacted Minnesota plan on the DualBalance Score --- is a single-state
+existence result. It demonstrates that radial slicing through the
+population-weighted centroid can produce a districting that scores
+competitively on the project's own dual-balance objective without
+reading party, race, or any other discretionary input. It does not by
+itself demonstrate that the same approach generalizes across all 50
+states, that the DualBalance Score is the right scalar to optimize, or
+that the resulting maps would survive judicial or political scrutiny.
+We discuss each of these in turn.
+
+\subsection{The score formula privileges what the algorithm produces}
+
+A natural objection to a result of the form ``Algorithm $A$ beats Plan
+$B$ on Metric $M$'' is that $A$ and $M$ may have been co-designed.
+We address this directly. The DualBalance Score
+\eqref{eq:dbs} was specified in advance of the algorithmic
+choice. We considered three forms during development: the published
+weighted form $\mathrm{DBS}_{\mathrm{w}} = 1/(1 + 0.5\,\overline{\mathrm{pop\_dev}}
++ 0.5\,\overline{\mathrm{area\_dev}})$; a sum-of-means
+``classic'' form $\mathrm{DBS}_{\mathrm{c}} = 1/(1 + \overline{\mathrm{pop\_dev}}
++ \overline{\mathrm{area\_dev}})$; and an $L^{\infty}$ form
+$1/(1 + \max_i [0.5\,\mathrm{pop\_dev}_i + 0.5\,\mathrm{area\_dev}_i])$.
+The radial algorithm beats the enacted Minnesota plan on the first
+two; on the third the enacted plan wins, because the radial design
+concentrates area imbalance in a single rural district. We selected
+the weighted form for the headline metric because it cleanly
+implements the ``each district holds roughly $1/N$ of people \emph{and}
+$1/N$ of geography'' reading, but readers should know that the choice
+matters. The per-district deviations and compactness values are
+reported alongside the score so consumers can recompute against any
+preferred aggregation.
+
+A separate concern is that population density variance fundamentally
+bounds the achievable $\overline{\mathrm{area\_dev}}$ on any
+pop-balanced plan. Both the enacted plan and our radial pipeline land
+in the same neighborhood ($\overline{\mathrm{area\_dev}} \approx 1.0$
+to $1.1$), and on Minnesota's geometry --- where the Twin Cities
+metropolitan area holds roughly 55\,\% of the population in 3\,\% of
+the land area --- this is essentially a hard floor. Improvements
+beyond that floor would require districts that systematically span
+urban and rural territory, which is exactly what radial slicing
+produces. The 8.7-percentage-point gap (103.9 vs.~112.6) we report is
+the operational measurement of how much area balance radial slicing
+recovers, given that floor.
+
+\subsection{Compactness is the trade}
+\label{sec:discussion-compactness}
+
+The radial design pays its area-balance dividend in compactness. The
+smallest-PP slice in the tightened plan is 0.047, against an informal
+court-testimony threshold of $\sim$0.10 below which a district is
+considered unusually shaped~\cite{polsbypopper1991}. The enacted
+Minnesota plan's worst PP is 0.178; our worst is roughly a quarter of
+that value.
+
+We make three observations about this trade:
+
+\paragraph{Compactness is a metric, not a constitutional requirement.}
+\textit{Polsby-Popper} as a measure was published in
+1991~\cite{polsbypopper1991}; it appears in no federal statute and
+binds no court. Courts have used compactness as \emph{evidence} of
+intent in racial-gerrymandering cases (\textit{Shaw v.\ Reno} and
+progeny), but the constitutional violation in those cases turns on
+the use of race in line-drawing, not on the resulting shape per~se.
+A deterministic, race-blind rule does not carry the racial intent that
+triggers \textit{Shaw}; the resulting low compactness is a property of
+the rule, not a signal of an attempt to disadvantage any group.
+
+\paragraph{Compactness assumes a baseline of comparison.} A district
+is ``bizarrely shaped'' relative to surrounding districts that are
+not. If all eight districts in a state are produced by the same
+geometric rule and all eight share a similar slice-like character,
+the comparative baseline shifts. The aesthetic objection to long thin
+shapes is partly historical: it picks out districts that depart from
+the surrounding norm of compact blobs. A scheme in which every
+district is a slice does not pick anything out.
+
+\paragraph{The Voting Rights Act trade-off is real.}
+\textit{Allen~v.\ Milligan}~\cite{milligan2023} reaffirmed
+Section~2's vote-dilution doctrine; \textit{Alexander}
+\cite{alexander2024} and \textit{Callais}~\cite{callais2026}
+significantly narrowed its practical reach. The radial design splits
+the Twin Cities urban area --- and with it, any majority-minority
+population concentrated there --- across multiple districts. In
+jurisdictions where the \textit{Gingles}~\cite{gingles1986}
+preconditions are met, a race-blind generator may produce a plan that
+fails Section~2 review where a race-conscious plan would not. After
+\textit{Callais} the constitutional risk of a race-conscious remedy
+has grown; the legislative question of whether to accept slightly
+diluted minority representation in exchange for a generator that
+cannot be partisan-tuned is, properly, for legislatures and
+constitutional litigation rather than for an algorithm.
+
+\subsection{Relationship to prior deterministic methods}
+\label{sec:discussion-prior}
+
+DualBalance fits within the deterministic-districting tradition
+surveyed in \S1.3 but differs from each prior method on a specific axis:
+
+\paragraph{Versus Smith's Shortest Splitline~\cite{smithsplit}.}
+Splitline is also fully deterministic and unique. It recursively
+bisects the state with the shortest population-balancing line, with
+no global compactness or balance criterion other than line length.
+Splitline produces visually striking but completely arbitrary
+splits --- a district can lose half its territory because the
+shortest cut happens to fall on that side. DualBalance grounds its
+geometry in the population centroid rather than in arbitrary
+straight cuts and therefore produces results that reflect the
+state's underlying density structure.
+
+\paragraph{Versus Olson's BDistricting~\cite{olsonbd}.} BDistricting
+also minimizes population-weighted distance to district centers with
+equal-population constraints, applied at block resolution. It uses
+farthest-point or random seed initialization with iterative refinement
+to convergence. The resulting maps are blob-shaped (Voronoi cells
+around dispersed seed centers) and score well on compactness but
+exhibit large area imbalance. DualBalance differs in seed placement
+(radial around the population centroid versus dispersed across the
+state) and in iteration discipline (single pass versus Lloyd
+convergence). Our reading of the result table is that radial seeding
+gives up compactness to gain area balance --- a different point on
+the same trade-off curve BDistricting sits on.
+
+\paragraph{Versus centroidal power diagrams~\cite{cohenaddad2018}.}
+The Cohen-Addad-Klein-Young construction is the rigorous mathematical
+generalization of equal-mass Voronoi cells. It solves for weights
+$\{w_i\}$ such that the resulting power diagram cells each carry
+exactly $1/N$ of the underlying mass. Their algorithm is deterministic
+modulo a tie-breaking rule and produces fully equal-population cells
+by construction. We do not solve the same problem: their construction
+balances a single quantity (population) exactly, while ours balances
+two quantities (population and area) approximately. The radial seed
+placement is the mechanism by which the second balance approximation
+is recovered.
+
+\paragraph{Versus capacitated $k$-means~\cite{levinfriedler2019} and
+the Hess-style location-allocation lineage~\cite{hess1965,mjn1998}.}
+These are the closest mathematical cousins. The capacitated
+assignment step (\S\ref{sec:methods-assign}) is essentially Hess's
+1965 transportation step. The novelty in DualBalance is not the
+assignment rule but the seed placement: radial seeds force a slice
+geometry that no Lloyd-iterated $k$-means converges to, because
+Lloyd recentering pulls seeds away from a tightly clustered radial
+configuration. Disabling iteration is therefore not optional in the
+radial design; it is what preserves the geometry.
+
+\subsection{Limitations}
+
+\paragraph{Single-state evidence.} The Minnesota result reports one
+state with one apportioned seat count under one census release. We
+do not yet have evidence that the radial design beats enacted plans
+on other states. States with markedly different density profiles
+--- e.g., a single dominant metropolitan area in a small geography
+(Massachusetts, Connecticut) versus a multi-center state (Texas,
+Florida) versus a near-uniform-density state (Iowa, Vermont) ---
+should be expected to produce qualitatively different results.
+Section~\ref{sec:future-work} below identifies cross-state validation
+as the most important near-term follow-up.
+
+\paragraph{Worst-district area outlier.} The radial design concentrates
+the area imbalance in a single rural district (here, District~2 at
+275\,\% over-target area). This is geometric --- it cannot be avoided
+on any partition that imposes a population cap on a state with the
+density profile of Minnesota --- but our $\mathrm{area\_dev}_{\max}$
+of 275\,\% is worse than the enacted plan's 241\,\%, even though
+$\overline{\mathrm{area\_dev}}$ is lower. The radial design therefore
+distributes the area imbalance unevenly; whether this is preferable
+to the enacted plan's more uniform distribution is a separable
+normative question.
+
+\paragraph{No multi-unit transportation step.} The optional
+\texttt{--tighten-pop} pass is a greedy single-unit swap procedure.
+A true two-dimensional transportation LP (bounding both population
+and area simultaneously) would be a stronger candidate for the
+``directly minimize the DualBalance objective'' role we currently
+leave to the radial geometric heuristic. We have not implemented or
+evaluated such a step; it is documented as future work.
+
+\paragraph{Computational cost.} Pure radial assignment runs in a
+fraction of a second on Minnesota. The optional pop-tightening pass
+takes \textasciitilde{}18~seconds to drive 80~swaps. We have not
+profiled larger states (California, Texas) and do not currently know
+how the pop-tightening pass scales with $|U|$ and $N$; in the worst
+case it is $O(|U|^2 N)$ per swap due to the contiguity check.
+
+\paragraph{The compactness floor.} The worst slice's $\mathrm{PP}$ of
+0.047 (after pop-tightening) is well below the informal
+court-testimony threshold of 0.10. We argue in
+\S\ref{sec:discussion-compactness} that the constitutional doctrine
+on compactness turns on intent rather than shape per~se, but readers
+who reject that argument should regard the 0.047 figure as a hard
+ceiling on the maps' legal viability under the
+\textit{Shaw}~\cite{shaw1993} line.
+
+\subsection{Future work}
+\label{sec:future-work}
+
+\paragraph{Multi-state validation.} Reproduce the Minnesota result for
+the other 49 states. We expect radial slicing to perform best on
+states with one or two dense metropolitan centers and a large rural
+hinterland (the Minnesota profile) and worst on states with multiple
+dispersed metro centers (e.g., Texas, California, Florida) where the
+single-centroid radial assumption may produce slices that don't span
+the state's density variation cleanly.
+
+\paragraph{Multi-center radial seeding.} For states with multiple
+metropolitan centers, the population-weighted centroid sits in a
+low-density region between them, and radial slicing from that point
+may produce slices that miss the actual density structure. A
+generalization in which seeds are placed on circles around
+\emph{each} of $k$ pre-computed metropolitan centers (with the
+choice of $k$ deterministic from the population distribution) is a
+natural extension. We have not implemented this.
+
+\paragraph{Direct 2D transportation step.} Replace the radial-plus-tighten
+two-stage pipeline with a single optimization step that minimizes the
+DualBalance Score under contiguity constraints. This is computationally
+much more expensive than the current pipeline but would be the
+mathematically clean answer to ``which plan directly minimizes the
+DualBalance objective.'' Whether it produces qualitatively different
+maps is an empirical question.
+
+\paragraph{Comparison against BDistricting and Splitline.} We compare
+DualBalance against the enacted plan; we have not yet scored
+BDistricting's published maps or computed Splitline maps for the same
+states and metrics. A full benchmark across deterministic methods
+would situate DualBalance more clearly in the existing literature.
+
+\paragraph{Scoring-harness extensions.} The current harness reports
+population, area, Polsby-Popper, and Reock. Natural additions include
+partisan diagnostics (efficiency gap, mean-median, declination) on
+voter-registration data, county-split counts, and minority
+representation diagnostics under Section~2. These are reporting
+extensions and would not feed back into the generator
+(\S\ref{sec:methods}, ``out-of-scope inputs'').
+
+\subsection{What this paper claims, and what it does not}
+
+The paper claims that a knob-free, race-blind, partisan-blind,
+deterministic districting algorithm exists that produces output
+competitive with --- and on a single empirically tested state,
+superior to --- the corresponding hand-drawn enacted plan on a
+prespecified dual-population-area objective. It claims that the
+algorithm's output is byte-reproducible and updates only with the
+ten-year census. It claims that the post-\textit{Callais} legal
+landscape gives this kind of generator a narrower constitutional
+exposure than any race-conscious or partisan-conscious alternative.
+
+The paper does not claim that the DualBalance Score is universally
+the right objective for redistricting, that radial slicing dominates
+all enacted plans across all states, that compactness can or should
+be ignored, or that Section~2 of the Voting Rights Act can be safely
+disregarded after \textit{Callais}. The trade-offs documented above
+are real, and a serious adopter of the method would have to weigh
+them against the trade-offs the status quo presents.

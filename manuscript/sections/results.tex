@@ -1,3 +1,182 @@
 \section{Results}
+\label{sec:results}
 
-% Generated maps, computed metrics, and comparison to enacted plans.
+\subsection{Test bed: Minnesota, 2020 PL 94-171}
+
+We evaluate the algorithm on Minnesota's congressional districting
+($N = 8$ apportioned seats) using the 2020 PL 94-171 redistricting
+data file. The input is the TIGER/Line 2020 VTD (voting tabulation
+district) shapefile for Minnesota --- 4{,}110 atomic units, total
+population $P = 5{,}706{,}494$, total land area $A = 225{,}187$~km$^2$
+--- joined to the Census Data API's \verb|P1_001N| total-population
+field, projected to EPSG:5070 (CONUS Albers, equal area) at load
+time. Per-district targets are
+$P^{*} = P/8 = 713{,}312$ and $A^{*} = A/8 = 28{,}148$~km$^2$. All
+runs are deterministic and reproducible from the script
+\verb|scripts/prep_mn_units.py| (which fetches TIGER and joins the
+Census API output) plus the CLI invocation. The data pipeline is
+documented end-to-end in \verb|docs/mn-poc-walkthrough.md|.
+
+We compare three plans on the same 4{,}110-VTD input:
+
+\begin{itemize}
+  \item \textbf{Pure radial.} The default algorithm
+        (\S\ref{sec:methods-seeds}--\S\ref{sec:methods-repair}). No
+        tuning knobs.
+  \item \textbf{Radial $+$ tighten-pop ($\tau = 0.005$).} The default
+        algorithm followed by the optional L$^1$ population-tightening
+        pass (\S\ref{sec:methods-tighten}) targeting per-district
+        deviation within 0.5\,\% of $P^{*}$.
+  \item \textbf{Enacted Minnesota 119th-Congress plan.} The
+        court-drawn, legislatively enacted U.S.~House districts
+        currently in force, joined to the same VTDs and scored with
+        the same harness.
+\end{itemize}
+
+\subsection{Headline scores}
+
+Table~\ref{tab:mn-results} reports the DualBalance Score and supporting
+metrics for the three plans.
+
+\begin{table}[h]
+\centering
+\caption{DualBalance metrics on the Minnesota PoC (4{,}110 VTDs,
+8~districts, 2020 PL 94-171 population). $\mathrm{PP}$ is
+Polsby-Popper, Reock is Reock; subscripts $\mathrm{min}$, $\mathrm{mean}$
+denote per-district min and mean over the eight districts.
+$\mathrm{pop\_dev}$, $\mathrm{area\_dev}$ are the relative deviations
+defined in \S\ref{sec:methods}. Best result per row in bold.}
+\label{tab:mn-results}
+\begin{tabular}{lrrr}
+\toprule
+Metric & Pure radial & Radial $+$ tighten-pop & Enacted (119th) \\
+\midrule
+$\mathrm{DBS}$ & 0.6472 & \textbf{0.6574} & 0.6390 \\
+$\overline{\mathrm{pop\_dev}}$ & 5.08\,\% & \textbf{0.08\,\%} & 0.42\,\% \\
+$\mathrm{pop\_dev}_{\max}$ & 11.24\,\% & \textbf{0.21\,\%} & 1.32\,\% \\
+$\overline{\mathrm{area\_dev}}$ & \textbf{103.9\,\%} & 104.2\,\% & 112.6\,\% \\
+$\mathrm{area\_dev}_{\max}$ & 271.0\,\% & 275.1\,\% & \textbf{241.0\,\%} \\
+$\mathrm{PP}_{\mathrm{mean}}$ & 0.200 & 0.162 & \textbf{0.320} \\
+$\mathrm{PP}_{\min}$ & 0.094 & 0.047 & \textbf{0.178} \\
+$\mathrm{Reock}_{\mathrm{mean}}$ & 0.361 & 0.342 & \textbf{0.419} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three findings:
+
+\paragraph{Pure radial beats the enacted plan on the DualBalance Score.}
+The pure-radial pipeline scores 0.6472 against the enacted plan's
+0.6390 --- a margin of $+1.3$\,\% on the project's own metric ---
+without any iteration, tuning, or post-processing. The advantage comes
+entirely from area balance ($\overline{\mathrm{area\_dev}}$ 103.9\,\%
+vs 112.6\,\%): radial slicing assigns each district a coherent slice of
+the state's geometry that mixes high- and low-density territory, while
+the enacted plan carves the Twin Cities metro into four compact urban
+seats and leaves four large rural seats. The DualBalance Score
+penalizes the latter pattern more heavily because it weights area
+deviation equally with population deviation.
+
+\paragraph{The optional tighten-pop pass closes the legal gap and
+improves the DualBalance Score.} The pure-radial plan's
+$\mathrm{pop\_dev}_{\max}$ of 11.24\,\% is well above the
+\textasciitilde{}0.5\,\% deviation typical of enacted U.S.~House
+plans~\cite{reynolds1964}. Running the optional L$^1$ pop-tightening
+pass (\S\ref{sec:methods-tighten}) executed 81 boundary-unit swaps in
+\textasciitilde{}18\,seconds of compute, driving
+$\mathrm{pop\_dev}_{\max}$ from 11.24\,\% to 0.21\,\% --- well inside
+the Reynolds-compliant range and tighter than the enacted plan's
+1.32\,\%. $\overline{\mathrm{area\_dev}}$ rose by only 0.3 percentage
+points; the DualBalance Score \emph{improved} from 0.6472 to 0.6574,
+because the pop-balance gain dominates the small area-balance loss.
+The tightened plan exceeds the enacted plan on the two DualBalance
+inputs (population and mean area deviation) and on the combined
+score.
+
+\paragraph{Compactness is the price.} The enacted plan beats DualBalance
+on every compactness measure: $\mathrm{PP}_{\min}$ 0.178 vs 0.094 in
+the radial plan and 0.047 after pop-tightening, $\mathrm{PP}_{\mathrm{mean}}$
+0.320 vs 0.200 / 0.162, $\mathrm{Reock}_{\mathrm{mean}}$ 0.419 vs
+0.361 / 0.342. The radial geometry is structurally less compact than
+hand-drawn blob shapes: long thin slices from the population centroid
+score lower on circular-shape metrics by construction. Pop-tightening
+makes this worse --- it moves units across slice boundaries, which
+inserts small indentations into otherwise smooth radial cuts ---
+pushing the smallest-PP slice from 0.094 (already at the
+``0.10 raises eyebrows'' informal threshold) down to 0.047. Whether
+the trade is acceptable is a normative question we return to in
+\S\ref{sec:discussion-compactness}; on the algorithm's own metric,
+the trade is favorable.
+
+\subsection{Map comparison}
+
+Figure~\ref{fig:mn-comparison} displays the three plans side by side.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{mn_radial_with_tighten.png}
+\caption{Minnesota congressional districts under three plans.
+\textbf{Left:} the enacted 119th-Congress plan, with four compact
+Twin Cities seats and four large rural seats.
+\textbf{Center:} pure-radial DualBalance (score $0.6472$); eight
+slices radiate from the population-weighted centroid (near
+Minneapolis-St.\ Paul), each spanning both dense and sparse
+territory. \textbf{Right:} radial $+$ \texttt{--tighten-pop 0.005}
+(score $0.6574$); the radial structure is preserved --- units have
+moved only at slice boundaries --- but per-district population is
+now Reynolds-compliant.}
+\label{fig:mn-comparison}
+\end{figure}
+
+\subsection{Determinism check}
+
+We re-ran \verb|dualbalance generate --config configs/mn_vtd.yaml|
+ten times in succession, comparing each run's \verb|map.geojson| and
+\verb|metrics.json| by byte hash. All ten outputs are identical,
+including the order of features in the GeoJSON. We also re-ran the
+same configuration after randomly shuffling the input rows; the
+output remained byte-identical. The CLI integration test
+\verb|test_generate_determinism_via_cli| pins this property in CI.
+
+\subsection{Per-district breakdown}
+
+Table~\ref{tab:mn-perdistrict} reports the per-district metrics for
+the radial $+$ tighten-pop plan, indexed by seed angle (district 0
+sits due east of the population-weighted centroid; subsequent
+districts advance counter-clockwise in steps of $2\pi/8$ rad).
+District IDs are a deterministic function of seed angle and carry
+no political meaning.
+
+\begin{table}[h]
+\centering
+\caption{Per-district breakdown, radial $+$ tighten-pop 0.5\,\%.
+Areas are in km$^2$.}
+\label{tab:mn-perdistrict}
+\begin{tabular}{rrrrrrr}
+\toprule
+District & Population & Area & $\mathrm{pop\_dev}$ & $\mathrm{area\_dev}$ & $\mathrm{PP}$ & $\mathrm{Reock}$ \\
+\midrule
+0 & 712{,}841 &   1{,}010 & 0.07\,\% &  96.4\,\% & 0.228 & 0.454 \\
+1 & 714{,}816 &   9{,}620 & 0.21\,\% &  65.8\,\% & 0.047 & 0.147 \\
+2 & 712{,}145 & 105{,}594 & 0.16\,\% & 275.1\,\% & 0.152 & 0.369 \\
+3 & 713{,}263 &  50{,}054 & 0.01\,\% &  77.8\,\% & 0.146 & 0.268 \\
+4 & 714{,}168 &  46{,}060 & 0.12\,\% &  63.6\,\% & 0.150 & 0.267 \\
+5 & 713{,}368 &  10{,}882 & 0.01\,\% &  61.3\,\% & 0.137 & 0.422 \\
+6 & 713{,}013 &   1{,}481 & 0.04\,\% &  94.7\,\% & 0.117 & 0.301 \\
+7 & 712{,}880 &      477 & 0.06\,\% &  98.3\,\% & 0.318 & 0.510 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+District 2 inherits Minnesota's northern panhandle and is the largest
+by area ($\sim$3.8$\times A^{*}$), while District 7 contains only the
+Twin Cities urban core ($\sim$0.02$\times A^{*}$). All eight districts
+are within 0.21\,\% of $P^{*}$. The largest single source of area
+imbalance --- District 2's 275\,\% over-target area --- is geometric:
+the population density in the northern panhandle is roughly two orders
+of magnitude lower than in the Twin Cities, so any partition that
+holds each district to $P^{*}$ must give the rural districts
+disproportionate area. This is a property of Minnesota's density
+profile, not the algorithm; the enacted plan exhibits the same
+phenomenon (District~7 of the enacted plan covers 241\,\% over-target
+area for the same reason).
