@@ -1,39 +1,26 @@
 """Scoring harness for evaluating districting plans.
 
-Primary metrics (the ones the algorithm optimizes against):
+Primary metric:
 
-- ``pop_deviation_mean`` / ``pop_deviation_max`` -- |pop(D) - P*| / P*
-- ``area_deviation_mean`` / ``area_deviation_max`` -- |area(D) - A*| / A*
-- ``dualbalance_score = 1 / (1 + 0.5 * (pop_deviation_mean + area_deviation_mean))``
+- ``dualbalance_score = 1 / (1 + 0.5 * pop_deviation_mean + 0.5 * area_deviation_mean)``
 
-  Equivalently: ``1 / (1 + dualbalance_error)`` where
-  ``dualbalance_error = mean_i [0.5 * pop_dev_i + 0.5 * area_dev_i]``.
-  The 0.5/0.5 weighting is the explicit "each district should be ~1/N of
-  the people *and* ~1/N of the state's geography" statement; it makes the
-  score behave as a convex combination of pop- and area-deviation rather
-  than a sum, so adding the area term cannot push the score below what an
-  area-blind capacitated-Voronoi pass would already report.
+  Per-district deviations are
+  ``pop_dev_i  = |Pop(D_i)  - P*| / P*`` and
+  ``area_dev_i = |Area(D_i) - A*| / A*``,
+  averaged over districts. The 0.5/0.5 weighting makes the error a
+  convex combination — each district is judged on representing roughly
+  1/N of the people *and* roughly 1/N of the state's geography (the
+  House and Senate balance, applied within a single chamber).
 
-- ``dualbalance_score_classic = 1 / (1 + pop_deviation_mean + area_deviation_mean)``
+Secondary metrics:
 
-  The "classic" sum-of-means variant: same per-district deviations, but
-  pop and area are *summed* rather than averaged. Strictly more punishing
-  than the weighted form when either deviation is nonzero (at
-  ``pop_dev = area_dev = 1.0``, weighted = 0.5 vs. classic = 1/3). Both
-  scores reach 1.0 for a perfectly balanced plan and 0.0 in the limit of
-  unbounded deviation. Reported alongside ``dualbalance_score`` so callers
-  can pick the form that best fits how their downstream analysis weights
-  the area term.
-
-Secondary metrics (reported, not optimized):
-
-- ``polsby_popper`` -- 4 * pi * area / perimeter^2  (via gerrychain.metrics)
-- ``reock`` -- area / area(minimum bounding circle)  (via shapely 2.x)
+- ``polsby_popper`` — 4π · area / perimeter² (via gerrychain)
+- ``reock`` — area / area(minimum bounding circle) (via shapely 2.x)
 
 The harness is intentionally decoupled from the generator: ``score_plan``
 accepts any ``Plan`` + matching ``units`` and computes the same metrics,
-making enacted/court-drawn/third-party plans directly comparable to the
-DualBalance baseline. See README.md, section "Output and evaluation".
+so enacted/court-drawn/third-party plans are directly comparable to a
+DualBalance plan.
 """
 
 from __future__ import annotations
@@ -131,12 +118,9 @@ def score_plan(plan: Plan, units: gpd.GeoDataFrame) -> dict[str, Any]:
     area_dev_max = float(np.max(area_devs))
     dual_error = 0.5 * pop_dev_mean + 0.5 * area_dev_mean
     dual_score = 1.0 / (1.0 + dual_error)
-    dual_error_classic = pop_dev_mean + area_dev_mean
-    dual_score_classic = 1.0 / (1.0 + dual_error_classic)
 
     return {
         "dualbalance_score": dual_score,
-        "dualbalance_score_classic": dual_score_classic,
         "pop_deviation_mean": pop_dev_mean,
         "pop_deviation_max": pop_dev_max,
         "area_deviation_mean": area_dev_mean,

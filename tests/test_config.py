@@ -67,11 +67,3 @@ def test_merge_empty_yaml_is_identity() -> None:
     defaults = {"state": None, "districts": 8}
     merged = merge_config({}, args, defaults)
     assert vars(merged) == vars(args)
-
-
-def test_merge_score_variant_flows_through() -> None:
-    # YAML key matches the argparse dest exactly (not the dashed flag).
-    args = Namespace(score_variant="weighted")
-    defaults = {"score_variant": "weighted"}
-    merged = merge_config({"score_variant": "classic"}, args, defaults)
-    assert merged.score_variant == "classic"

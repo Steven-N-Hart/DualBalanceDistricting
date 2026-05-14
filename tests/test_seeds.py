@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import math
+
 import geopandas as gpd
 import pytest
+from shapely.geometry import Polygon
 
 from dualbalance.seeds import place_seeds
-from dualbalance.types import Seed
 
 
 def test_place_seeds_returns_n_seeds(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
@@ -14,107 +16,95 @@ def test_place_seeds_returns_n_seeds(synthetic_grid_4x4: gpd.GeoDataFrame) -> No
 
 
 def test_place_seeds_is_deterministic(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
-    s1 = place_seeds(synthetic_grid_4x4, n=4)
-    s2 = place_seeds(synthetic_grid_4x4, n=4)
-    assert s1 == s2
+    a = place_seeds(synthetic_grid_4x4, n=4)
+    b = place_seeds(synthetic_grid_4x4, n=4)
+    assert a == b
 
 
-def test_place_seeds_invariant_to_input_row_order(
+def test_place_seeds_invariant_to_row_order(
     synthetic_grid_4x4: gpd.GeoDataFrame,
 ) -> None:
-    shuffled = synthetic_grid_4x4.sample(frac=1.0, random_state=42).reset_index(drop=True)
-    assert place_seeds(synthetic_grid_4x4, n=4) == place_seeds(shuffled, n=4)
+    shuffled = synthetic_grid_4x4.sample(frac=1.0, random_state=7).reset_index(drop=True)
+    a = place_seeds(synthetic_grid_4x4, n=4)
+    b = place_seeds(shuffled, n=4)
+    assert a == b
 
 
-def test_place_seeds_n_too_large_raises(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
-    with pytest.raises(ValueError, match="exceeds"):
-        place_seeds(synthetic_grid_4x4, n=100)
+def test_place_seeds_centers_on_population_weighted_centroid(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    seeds = place_seeds(synthetic_grid_4x4, n=8)
+    mean_x = sum(s.x for s in seeds) / len(seeds)
+    mean_y = sum(s.y for s in seeds) / len(seeds)
+    assert math.isclose(mean_x, 2.0, abs_tol=1e-6)
+    assert math.isclose(mean_y, 2.0, abs_tol=1e-6)
 
 
-def test_place_seeds_n_zero_raises(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
+def test_place_seeds_equally_spaced_by_angle(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    n = 8
+    seeds = place_seeds(synthetic_grid_4x4, n=n)
+    cx = sum(s.x for s in seeds) / n
+    cy = sum(s.y for s in seeds) / n
+    angles = [math.atan2(s.y - cy, s.x - cx) % (2 * math.pi) for s in seeds]
+    expected = [(2 * math.pi * k / n) % (2 * math.pi) for k in range(n)]
+    for got, want in zip(angles, expected, strict=True):
+        assert math.isclose(got, want, abs_tol=1e-6)
+
+
+def test_place_seeds_radius_is_small_relative_to_extent(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    seeds = place_seeds(synthetic_grid_4x4, n=4)
+    cx = sum(s.x for s in seeds) / len(seeds)
+    cy = sum(s.y for s in seeds) / len(seeds)
+    bbox_diag = math.hypot(4.0, 4.0)
+    for s in seeds:
+        r = math.hypot(s.x - cx, s.y - cy)
+        assert math.isclose(r, bbox_diag * 0.001, rel_tol=1e-6)
+
+
+def test_place_seeds_rejects_nonpositive_n(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
     with pytest.raises(ValueError, match="positive"):
         place_seeds(synthetic_grid_4x4, n=0)
 
 
-def test_place_seeds_picks_corners_first_on_uniform_grid(
+def test_place_seeds_rejects_n_exceeding_units(
     synthetic_grid_4x4: gpd.GeoDataFrame,
 ) -> None:
-    # Uniform population -> first seed wins on ascending unit_id (R0C0,
-    # centroid 0.5, 0.5). Farthest from that corner is R3C3 at (3.5, 3.5).
-    seeds = place_seeds(synthetic_grid_4x4, n=2)
-    assert seeds[0] == Seed(district_id=0, x=0.5, y=0.5)
-    assert seeds[1] == Seed(district_id=1, x=3.5, y=3.5)
+    with pytest.raises(ValueError, match="exceeds"):
+        place_seeds(synthetic_grid_4x4, n=100)
 
 
-def test_place_seeds_four_corners_on_uniform_grid(
-    synthetic_grid_4x4: gpd.GeoDataFrame,
-) -> None:
-    # After R0C0 + R3C3, the next two seeds tie at distance 3 from each
-    # existing seed. Tie-break on ascending unit_id -> R0C3 (3.5, 0.5) before
-    # R3C0 (0.5, 3.5).
-    seeds = place_seeds(synthetic_grid_4x4, n=4)
-    assert seeds[2] == Seed(district_id=2, x=3.5, y=0.5)
-    assert seeds[3] == Seed(district_id=3, x=0.5, y=3.5)
-
-
-def test_place_seeds_highest_pop_wins_first(
-    synthetic_grid_4x4: gpd.GeoDataFrame,
-) -> None:
-    # Bump R2C2's population so it becomes the first seed instead of R0C0.
-    units = synthetic_grid_4x4.copy()
-    units.loc[units["unit_id"] == "R2C2", "population"] = 1000
-    seeds = place_seeds(units, n=1)
-    assert seeds[0] == Seed(district_id=0, x=2.5, y=2.5)
-
-
-def test_place_seeds_dispatcher_rejects_unknown() -> None:
-    import geopandas as _gpd
-    import pytest as _pt
-    from shapely.geometry import Polygon
-
-    g = _gpd.GeoDataFrame(
+def test_place_seeds_falls_back_to_geometric_centroid_when_zero_population() -> None:
+    rows = [
         {
-            "unit_id": ["A"],
-            "population": [1],
-            "area": [1.0],
-            "geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])],
-        },
-        crs="EPSG:5070",
-    )
-    with _pt.raises(ValueError, match="unknown seed method"):
-        place_seeds(g, n=1, method="not-a-method")
+            "unit_id": f"U{i}",
+            "population": 0,
+            "geometry": Polygon([(i, 0), (i + 1, 0), (i + 1, 1), (i, 1)]),
+        }
+        for i in range(4)
+    ]
+    gdf = gpd.GeoDataFrame(rows, crs="EPSG:5070")
+    gdf["area"] = gdf.geometry.area
+    seeds = place_seeds(gdf, n=2)
+    mean_x = (seeds[0].x + seeds[1].x) / 2
+    assert math.isclose(mean_x, 2.0, abs_tol=1e-6)
 
 
-def test_population_slice_returns_n_seeds(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
-    seeds = place_seeds(synthetic_grid_4x4, n=4, method="population-slice")
-    assert len(seeds) == 4
-    assert [s.district_id for s in seeds] == [0, 1, 2, 3]
-
-
-def test_population_slice_is_deterministic(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
-    a = place_seeds(synthetic_grid_4x4, n=4, method="population-slice")
-    b = place_seeds(synthetic_grid_4x4, n=4, method="population-slice")
-    assert a == b
-
-
-def test_population_slice_invariant_to_row_order(
+def test_seeds_are_numerically_distinct(
     synthetic_grid_4x4: gpd.GeoDataFrame,
 ) -> None:
-    shuffled = synthetic_grid_4x4.sample(frac=1.0, random_state=7).reset_index(drop=True)
-    assert place_seeds(synthetic_grid_4x4, 4, method="population-slice") == place_seeds(
-        shuffled, 4, method="population-slice"
-    )
+    seeds = place_seeds(synthetic_grid_4x4, n=8)
+    coords = {(round(s.x, 9), round(s.y, 9)) for s in seeds}
+    assert len(coords) == 8
 
 
-def test_population_slice_concentrates_seeds_in_dense_region(
-    synthetic_grid_4x4: gpd.GeoDataFrame,
-) -> None:
-    # Make the bottom row carry 10x the population. Expect at least one seed
-    # to sit in the bottom row's spatial band (y > 3.0) instead of the
-    # evenly-spaced layout that farthest-point would produce.
-    units = synthetic_grid_4x4.copy()
-    units.loc[units["unit_id"].str.startswith("R3"), "population"] = 10_000
-    slice_seeds = place_seeds(units, n=4, method="population-slice")
-    # At least one seed should land inside the bottom row (y between 3 and 4).
-    bottom_seeds = [s for s in slice_seeds if 3.0 < s.y < 4.0]
-    assert len(bottom_seeds) >= 1, slice_seeds
+def test_seeds_xy_are_floats(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
+    seeds = place_seeds(synthetic_grid_4x4, n=4)
+    for s in seeds:
+        assert isinstance(s.x, float)
+        assert isinstance(s.y, float)

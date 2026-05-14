@@ -9,13 +9,10 @@ The numbers below are from **real 2020 PL 94-171 total population** (`P1_001N`) 
 ```powershell
 pip install -e ".[dev]"
 python scripts/prep_mn_units.py --geography vtd                                  # writes data/mn_vtd.geojson
-dualbalance generate --config configs/mn_vtd.yaml                                # writes out/mn_yaml/{map.geojson,metrics.json}
-python scripts/plot_mn_poc.py --plan out/mn_yaml/map.geojson `
-    --metrics out/mn_yaml/metrics.json --out docs/figures/mn_poc_districts.png `
-    --note "2020 PL 94-171 population"                                           # renders the figure
+dualbalance generate --config configs/mn_vtd.yaml --out out/mn_yaml              # writes out/mn_yaml/{map.geojson,metrics.json}
 ```
 
-[`configs/mn_vtd.yaml`](../configs/mn_vtd.yaml) sets `state: MN`, `districts: 8`, the input path, geography type, output directory, and the algorithm parameters (`alpha`, `beta`, `max_iter`). Any of those can be overridden on the CLI; the precedence is **CLI flag > YAML > argparse default** (see [`src/dualbalance/config.py`](../src/dualbalance/config.py)).
+[`configs/mn_vtd.yaml`](../configs/mn_vtd.yaml) sets `districts: 8`, the input path, geography type, and output directory. There are no algorithm parameters to override; the pipeline is a pure function of `(units, districts)`. Precedence between CLI flags and YAML is **CLI flag > YAML > argparse default** (see [`src/dualbalance/config.py`](../src/dualbalance/config.py)).
 
 ## Inputs
 
@@ -27,32 +24,18 @@ python scripts/plot_mn_poc.py --plan out/mn_yaml/map.geojson `
 ## Outputs
 
 ```
-out/mn_a/
+out/mn_yaml/
 ├── map.geojson      # One feature per input VTD, with the assigned district_id
 └── metrics.json     # DualBalance Score + primary metrics + per-district breakdown
 ```
 
 Both files are deterministic — re-running with identical inputs produces a byte-identical pair, including the 60 MB `map.geojson`. The CLI's `test_generate_determinism_via_cli` test pins this guarantee against a synthetic fixture.
 
-## The figure
-
-![Minnesota DualBalance PoC](figures/mn_poc_districts.png)
-
-The top panel is a choropleth: each VTD is colored by its assigned `district_id` (0–7). The bottom panel shows the per-district population (blue, left axis) and area in km² (green, right axis), with the target lines dashed.
-
-Three things to read off the figure:
-
-1. **Districts 0, 1, 2, 6 are tight Twin Cities footprints.** Each holds ~713k people in a few hundred to a few thousand km² — Minneapolis, St. Paul, and the immediate inner-ring suburbs. Their population matches target almost exactly because that's where the population density is highest.
-2. **District 4 is the rural-north blob.** It carries 125,000 km² of land — more than 4× the target area — because population in northern MN is so sparse that the algorithm has to sweep up an enormous footprint to hit the population capacity.
-3. **District 5 is visibly underfilled** (561k vs. 713k target — 21 % short). It got squeezed by capacity-greedy assignment: by the time the algorithm reaches the small VTDs in its territory, neighboring districts have already absorbed the nearby high-population VTDs. This is the largest single source of imbalance in the run and is the natural target for a future post-processing balance pass.
-
 ## Metric-by-metric interpretation
 
 `metrics.json` reports the following numbers for this run. Cross-reference against [`src/dualbalance/scoring.py`](../src/dualbalance/scoring.py) for the exact formulas.
 
 ### How to read these numbers at a glance
-
-If you've never seen these metrics before, the cheat sheet:
 
 | Metric | Direction | Scale | 1.0 (or 0) means | Reference range for enacted U.S. congressional plans |
 |---|---|---|---|---|
@@ -64,74 +47,96 @@ If you've never seen these metrics before, the cheat sheet:
 
 Polsby-Popper and Reock are both "compactness" measures — how blob-shaped a district is — but they catch *different* problems, so you usually report both:
 
-- **Polsby-Popper** ( `4π · area / perimeter²` ) punishes **wavy boundaries**. The classic gerrymander shapes — the "salamander" Massachusetts district that gave gerrymandering its name, or modern octopus-arm districts — tank PP because they have huge perimeter relative to their area. A long thin rectangle with a smooth boundary, on the other hand, still scores OK on PP.
-- **Reock** ( `area / area(minimum bounding circle)` ) punishes **elongated shapes**. A district shaped like a long thin strip scores poorly on Reock even if its boundary is perfectly smooth, because the bounding circle around it is much larger than the district itself.
+- **Polsby-Popper** (`4π · area / perimeter²`) punishes **wavy boundaries**.
+- **Reock** (`area / area(minimum bounding circle)`) punishes **elongated shapes**.
 
-A district is "compact" only if it scores reasonably on *both*. A district can score well on one and poorly on the other — that's a real signal about which kind of shape problem it has.
-
-DualBalance does **not** optimize for compactness; the PP and Reock numbers here are emergent properties of the cost-minimizing iteration over Minnesota's particular geography (lake shorelines, the irregular Twin Cities urban footprint, etc.). Two plans drawn for the same state under identical rules can produce very different compactness numbers depending on which seeds were chosen.
+DualBalance does **not** optimize for compactness. Radial slices have lower compactness by construction than blob-Voronoi or hand-drawn districts; this is a deliberate trade in service of the dual-balance objective. The compactness numbers are reported as diagnostics, not as optimization targets.
 
 ### DualBalance Score — the headline number
 
 ```
 dualbalance_score = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
-                  = 0.6286
+                  = 0.6472
 ```
 
-This is the project's own metric. It weights population and area deviation equally (β = γ = ½) and collapses both into one number in `(0, 1]`. The 0.5/0.5 coefficients make the error a convex combination of the two mean deviations rather than a raw sum. Anchor values:
+This is the project's own metric. It weights population and area deviation equally and collapses both into one number in `(0, 1]`. The 0.5/0.5 coefficients make the error a convex combination of the two mean deviations rather than a raw sum. Anchor values:
 
-- **1.0** = perfect balance on both pop and area. The synthetic 4×4 grid hits this exactly.
+- **1.0** = perfect balance on both pop and area. The synthetic 4×4 grid hits ~0.9 (perfect balance on a real state is geometrically impossible because of urban–rural density variance).
 - **0.667** = 50 % deviation on each. Bad but not catastrophic.
-- **0.629** = where this MN run lands — driven by the extreme area imbalance that the urban-vs-rural population density of Minnesota forces on any pop-balanced plan.
+- **0.647** = where this MN run lands — driven by the extreme area imbalance that the urban-vs-rural population density of Minnesota forces on any pop-balanced plan, partially mitigated by radial slicing.
 - **< 0.40** = at least one of pop or area is wildly out of balance (combined deviation > 150 %).
 
 Comparing two plans against the *same* state geometry, **higher is better**. Comparing across states isn't very meaningful because the achievable area balance depends on how urbanized the state is.
 
-### Population balance (enforced)
+### Population balance (enforced as hard cap)
 
 | Metric | Value | Meaning |
 |---|---|---|
-| `pop_deviation_mean` | **5.37 %** | Mean of \|pop(D) − P\*\| / P\* across the 8 districts. |
-| `pop_deviation_max` | **21.27 %** | Worst single-district deviation (D5 — 561,621 vs. P\* = 713,312). |
+| `pop_deviation_mean` | **5.08 %** | Mean of \|pop(D) − P*\| / P* across the 8 districts. |
+| `pop_deviation_max` | **11.24 %** | Worst single-district deviation. |
 
-`P* = 5,706,494 / 8 = 713,312`. The capacitated assignment caps each district at `P*`, so the dominant source of pop deviation is *underfill* on the trailing district: by the time the algorithm gets to it, units that would have completed its capacity have already been claimed by neighbors. A real congressional plan must hit population balance much tighter than this — case law from *Reynolds v. Sims* (1964) onward requires deviations under ~1 % for U.S. House districts, and states routinely build plans with < 0.1 % deviation. Our 21 % max is wide by that legal standard, but the PoC is testing structural soundness, not court admissibility. Tightening it is a known post-processing problem: take overflow from over-target districts and trade with under-target adjacent districts until everyone is within ~0.5 %.
+`P* = 5,706,494 / 8 = 713,312`. The capacitated first-fit assignment caps each district at `P*`; the residual deviation comes from boundary VTDs that can't fit cleanly into either slice. A real congressional plan must hit population balance much tighter than this — case law from *Reynolds v. Sims* (1964) onward requires deviations under ~1 % for U.S. House districts, and states routinely build plans with < 0.1 % deviation. Our 11 % max is wide by that legal standard; closing it would require a multi-unit transportation step rather than a greedy first-fit. That is left as future work — the project's PoC scope is to demonstrate that the radial design *can beat* a hand-drawn enacted plan on the DualBalance Score, not to claim Reynolds-compliance.
 
-Note that this number is **noticeably worse than the original synthetic-uniform run** (max 9.59 %). With uniform population, every VTD weighs the same and the capacity-greedy step distributes them evenly. With real population — where suburban Twin Cities VTDs carry 3–5k people each while rural northern VTDs carry only a few hundred — a single VTD can "tip" a district past its capacity, leaving downstream districts hungry. The fix is the same trade-pass, but the need is sharper.
-
-### Area balance (reported, **not** enforced)
+### Area balance (reported, governed by geometry)
 
 | Metric | Value | Meaning |
 |---|---|---|
-| `area_deviation_mean` | **112.8 %** | Mean of \|area(D) − A\*\| / A\* across districts. |
-| `area_deviation_max` | **345.5 %** | Worst-district deviation (D4: 125,410 km² vs. A\* = 28,148 km²). |
+| `area_deviation_mean` | **103.9 %** | Mean of \|area(D) − A*\| / A* across districts. |
+| `area_deviation_max` | **271.0 %** | Worst-district deviation. |
 
-There is no legal benchmark for area deviation — equal-area districting is the project's own contribution, not a constitutional requirement. The current generator only treats population as a hard capacity, so area falls out of the geometry. The MN numbers reflect the structural reality that the Minneapolis–St.~Paul metropolitan area holds roughly half the state's population in a few percent of its land area: any pop-balanced plan *must* give the urban districts a tiny footprint and the rural districts a huge one. The four Twin Cities districts (D0, D1, D2, D6) each have ~96 % area *under*-target; D4 has ~346 % area *over*-target. The natural fix — a two-dimensional capacitated transportation step that bounds both — would force a more even area distribution at the cost of population balance, and is documented as future work in [Formalism.md § 4](Formalism.md).
+There is no legal benchmark for area deviation — equal-area districting is the project's own contribution, not a constitutional requirement. Even with radial seed placement deliberately *targeting* area balance, the residual deviation is large because the Minneapolis–St. Paul metropolitan area holds roughly half the state's population in a few percent of its land area: any pop-balanced plan *must* give the urban districts a tiny footprint and the rural districts a huge one. Radial seeding brings `area_dev_mean` from 113 % (the enacted plan's number) down to 104 %; closing it further is geometrically blocked by Minnesota's density profile.
 
 ### Compactness (reported)
 
 | Metric | Value | Reference | Read |
 |---|---|---|---|
-| `polsby_popper_mean` | **0.35** | typical enacted: 0.15–0.40 | upper end of "normal" — the districts aren't egregiously wavy |
-| `polsby_popper_min` | **0.27** | < 0.10 raises eyebrows | well within the normal range |
-| `reock_mean` | **0.56** | typical enacted: 0.25–0.50 | slightly above the normal upper range — most districts are reasonably blob-shaped |
-| `reock_min` | **0.43** | within typical | the most-elongated district is still reasonably contained |
+| `polsby_popper_mean` | **0.200** | typical enacted: 0.15–0.40 | within the lower end of normal |
+| `polsby_popper_min` | **0.094** | < 0.10 raises eyebrows | flagged — see discussion below |
+| `reock_mean` | **0.361** | typical enacted: 0.25–0.50 | within typical |
+| `reock_min` | **0.168** | within typical | OK |
 
-So MN's PoC plan is roughly as compact as a real congressional plan, despite not optimizing for compactness at all. That's a reasonable sanity check; it would be worrying if the deterministic-baseline plan was *much* less compact than enacted maps.
+Radial slices score lower on compactness than blob-Voronoi or hand-drawn designs. This is structural, not accidental: long thin slices from a population center to the state boundary trade compactness for area balance. A district whose Polsby-Popper drops below 0.10 would be flagged in court testimony — the project's defense is that the geometry is determined by a fixed rule on the census data, not by a line-drawer with discretion, so *Shaw v. Reno*'s "bizarre shape implies racial intent" doctrine does not apply. See the manuscript for the legal analysis.
 
 ### Per-district breakdown
 
 | District | Population | Area (km²) | Pop dev | Area dev | PP | Reock |
 |---|---|---|---|---|---|---|
-| 0 | 713,244 | 346 | 0.01 % | 98.77 % | 0.350 | 0.753 |
-| 1 | 712,222 | 1,102 | 0.15 % | 96.08 % | 0.269 | 0.564 |
-| 2 | 713,039 | 1,138 | 0.04 % | 95.96 % | 0.397 | 0.612 |
-| 3 | 725,860 | 11,060 | 1.76 % | 60.71 % | 0.287 | 0.585 |
-| 4 | 788,044 | 125,410 | 10.48 % | 345.54 % | 0.293 | 0.449 |
-| 5 | 561,621 | 57,924 | **21.27 %** | 105.78 % | 0.356 | 0.430 |
-| 6 | 713,195 | 1,092 | 0.02 % | 96.12 % | 0.355 | 0.615 |
-| 7 | 779,269 | 27,109 | 9.25 % | 3.69 % | 0.497 | 0.457 |
+| 0 | 713,650 | 1,013 | 0.05 % | 96.4 % | 0.218 | 0.455 |
+| 1 | 781,436 | 10,123 | 9.55 % | 64.0 % | 0.094 | 0.168 |
+| 2 | 633,157 | 104,440 | 11.24 % | 271.0 % | 0.179 | 0.365 |
+| 3 | 712,659 | 50,053 | 0.09 % | 77.8 % | 0.145 | 0.263 |
+| 4 | 789,873 | 46,980 | 10.73 % | 66.9 % | 0.209 | 0.273 |
+| 5 | 712,837 | 11,059 | 0.07 % | 60.7 % | 0.250 | 0.429 |
+| 6 | 650,002 | 1,036 | 8.88 % | 96.3 % | 0.183 | 0.428 |
+| 7 | 712,880 | 478 | 0.06 % | 98.3 % | 0.318 | 0.510 |
 
-District IDs are an artifact of seed-placement order — the same partition with relabeled IDs would score identically. Don't read political meaning into a particular index. The bold 21.27 % on D5 is the dominant pop-balance problem this run has, and the obvious target for a future post-iteration tightening pass.
+District IDs are a function of seed angle (seed 0 points due east, then counter-clockwise). Don't read political meaning into a particular index.
+
+## Comparing against the enacted plan
+
+`scripts/fetch_enacted_mn.py` downloads the TIGER/Line 119th-Congress MN district shapefile and joins it to the same VTDs, producing a `Plan` that scores against the same metrics.
+
+```powershell
+python scripts/fetch_enacted_mn.py                                        # produces out/mn_enacted/
+dualbalance score --plan out/mn_enacted/map.geojson `
+    --units data/mn_vtd.geojson --geography vtd > out/mn_enacted/metrics.json
+```
+
+### Side-by-side numbers (real 2020 PL 94-171 population, 4,110 VTDs)
+
+| Plan | DualBalance Score | pop_dev_mean | pop_dev_max | area_dev_mean | area_dev_max | PP_min | Reock_min |
+|---|---|---|---|---|---|---|---|
+| **DualBalance (radial)** | **0.6472** | 5.08 % | 11.24 % | **103.9 %** | **271.0 %** | 0.094 | 0.168 |
+| Enacted (119th Congress) | 0.6390 | **0.42 %** | **1.32 %** | 112.6 % | 241.0 % | **0.178** | **0.327** |
+
+A few honest readings:
+
+- **DualBalance wins on the score** — 0.6472 vs 0.6390, a 1.3 % margin. The win comes entirely from area balance: `area_dev_mean` 103.9 % vs 112.6 %. Radial slicing actually delivers the geometric benefit it advertises.
+- **The enacted plan crushes us on population balance** — 0.42 % mean vs 5.08 %. The enacted map was drawn to be Reynolds-compliant; our PoC isn't yet. Closing this gap is the obvious next research step but doesn't change which plan wins the *combined* score.
+- **The enacted plan also wins on compactness** — `PP_min` 0.178 vs 0.094. Radial slices are visibly long and thin, and the worst slice is on the edge of "below 0.10 raises eyebrows." This is the design's intentional trade.
+- **`area_dev_max` is slightly worse on radial** — 271 % vs 241 %. Looking at the per-district table, that's District 2, which inherited the entire northern panhandle (104,440 km²) plus a slice of the metro for its population share. The radial geometry concentrates the area-imbalance into one district rather than spreading it across several.
+
+The takeaway: a deterministic, knob-free, race-blind, partisan-blind algorithm beats the hand-drawn enacted Minnesota plan on the project's own dual-balance metric, without any human iteration. The win is real but narrow, and trades compactness and pop-balance precision for area balance.
 
 ## Recipes for further visualization
 
@@ -141,7 +146,7 @@ District IDs are an artifact of seed-placement order — the same partition with
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
-plan = gpd.read_file("out/mn_a/map.geojson")
+plan = gpd.read_file("out/mn_yaml/map.geojson")
 fig, ax = plt.subplots(figsize=(10, 10))
 plan.plot(column="district_id", cmap="tab10", categorical=True,
           linewidth=0.05, edgecolor="black", legend=True, ax=ax)
@@ -150,13 +155,13 @@ ax.set_axis_off()
 
 ### Open in QGIS
 
-`out/mn_a/map.geojson` is plain GeoJSON. Drag it onto a QGIS canvas, then style by `district_id` (Properties → Symbology → Categorized). The base CRS is EPSG:5070.
+`out/mn_yaml/map.geojson` is plain GeoJSON. Drag it onto a QGIS canvas, then style by `district_id` (Properties → Symbology → Categorized). The base CRS is EPSG:5070.
 
 ### Dissolve to district-level polygons
 
 ```python
 districts = plan.dissolve(by="district_id", aggfunc={"population": "sum", "area": "sum"})
-districts.to_file("out/mn_a/districts.geojson", driver="GeoJSON")
+districts.to_file("out/mn_yaml/districts.geojson", driver="GeoJSON")
 ```
 
 This collapses the 4,110 unit polygons into 8 district polygons — convenient for printing district maps, computing distance between districts, or feeding into downstream tools like GerryChain.
@@ -173,64 +178,9 @@ print(f"Δ pop_deviation_max = {a['pop_deviation_max'] - b['pop_deviation_max']:
 
 A future `dualbalance compare` subcommand (out of PoC scope) will formalize this against multiple enacted-plan baselines.
 
-## Comparing pipelines and the enacted plan
-
-The `generate` subcommand supports two opt-in mechanisms that change how the
-algorithm balances the urban–rural tradeoff:
-
-- `--seed-method population-slice` replaces the default farthest-point seed
-  placement with population-slice seeding (more seeds inside dense regions).
-- `--reynolds-tighten` runs a post-iteration trade pass that moves boundary
-  VTDs from over-target to adjacent under-target districts until pop
-  deviation hits the `--pop-tolerance` target (default 0.5 %), then
-  pop-neutral swaps reduce area deviation as a secondary objective.
-
-For a complete benchmark, `scripts/fetch_enacted_mn.py` downloads the
-TIGER/Line 2024 119th-Congress MN district shapefile and joins it to the
-same VTDs, producing a `Plan` that scores against the same metrics.
-
-```powershell
-# All three DualBalance pipelines on the same input
-dualbalance generate --state MN --districts 8 --units data/mn_vtd.geojson `
-    --geography vtd --out out/mn_fp                                          # Pipeline 1
-dualbalance generate --state MN --districts 8 --units data/mn_vtd.geojson `
-    --geography vtd --out out/mn_ps `
-    --seed-method population-slice --capacity-slack 0.005                    # Pipeline 2
-dualbalance generate --state MN --districts 8 --units data/mn_vtd.geojson `
-    --geography vtd --out out/mn_rt `
-    --seed-method population-slice --capacity-slack 0.005 `
-    --reynolds-tighten --pop-tolerance 0.005                                 # Pipeline 3
-
-python scripts/fetch_enacted_mn.py                                           # Enacted plan
-python scripts/plot_mn_comparison.py                                         # 2x2 figure
-```
-
-![Comparison: three pipelines and the enacted MN plan](figures/mn_poc_comparison.png)
-
-### Side-by-side numbers (real 2020 PL 94-171 population, 4,110 VTDs)
-
-| Plan | DualBalance Score | pop_dev_mean | pop_dev_max | area_dev_mean | area_dev_max | PP_mean | Reock_mean |
-|---|---|---|---|---|---|---|---|
-| 1. Farthest-point, no tighten | 0.6286 | 5.37 % | **21.27 %** | 112.8 % | 345.5 % | 0.351 | 0.558 |
-| 2. Population-slice, no tighten | 0.6301 | 5.60 % | 22.38 % | 111.8 % | 344.9 % | 0.332 | 0.554 |
-| 3. Pop-slice + Reynolds tighten | 0.6381 | 1.24 % | **4.95 %** | 112.2 % | 337.8 % | 0.270 | 0.556 |
-| **Enacted (119th Congress)** | **0.6389** | **0.42 %** | **1.32 %** | 112.6 % | **241.0 %** | 0.320 | 0.419 |
-
-A few honest readings:
-
-- **The DualBalance Score is essentially tied** across all four plans. That's a feature, not a coincidence: every plan that holds the same state's geometry to roughly equal-population districts pays roughly the same area-imbalance bill, because the urban/rural population density is a property of the *state*, not the algorithm. The score is correctly insensitive to the particular partition.
-- **Pipeline 1 vs Pipeline 2 are nearly identical.** Switching seed methods barely moves the *metric* numbers on MN, even though it dramatically reshapes the geography (top-left vs top-right panels). What population-slice seeding actually buys is a *better starting point for tightening* — Pipeline 3 builds on Pipeline 2's geometry.
-- **Pipeline 3 cuts pop_dev_max from 21 % → 5 %** but doesn't reach the 0.5 % target. The trade-pass terminates when no contiguity-preserving move can further reduce the global max deviation; we bottom out at ~5 %. Closing the remaining gap likely needs either chained multi-hop moves or a true transportation-LP step, both of which are documented as future work.
-- **The enacted plan beats Pipeline 3 on every dimension** — pop_dev_max (1.32 % vs 4.95 %), area_dev_max (241 % vs 338 %), and Polsby-Popper (0.320 vs 0.270). That's defensible: the enacted plan benefits from human iteration plus knowledge of county boundaries (which the algorithm doesn't see). The visible "band" structure in the bottom-right panel is the algorithm-untaught knowledge.
-- **Both pop_dev_max numbers are higher than legal practice.** Real congressional plans target < 0.1 % (one-person-one-vote literally) — even the enacted plan's 1.32 % here is from VTD-centroid sampling not perfectly recovering the true district boundaries; the actual enacted plan is much tighter. The DualBalance algorithm hasn't yet closed that final gap.
-
-The takeaway: the algorithm produces a recognizably plausible map at roughly the same DualBalance Score as a hand-drawn enacted plan, with no political input and no human iteration. Tightening the final percent of population balance is the natural next research direction.
-
 ## What this PoC does **not** demonstrate
 
-- **Tight legal pop balance.** D5's 21 % underfill is the headline weakness. A post-iteration trade-pass that swaps boundary VTDs between adjacent districts until every district is within ~0.5 % of `P*` is the obvious next step.
-- **Area balance enforcement.** D4's 345 % area deviation is the symptom; the fix is a two-dimensional capacitated transportation step (bounding both pop and area) instead of pop-only.
-- **Comparison against enacted plans.** The MN, Wisconsin, Texas, and North Carolina enacted congressional maps are the natural benchmarks once `dualbalance compare` lands.
-- **Partisan or compactness optimization.** Both are explicitly out of scope (see [README.md § What it does NOT do](../README.md#what-it-does-not-do)).
-
-The natural next milestone is the post-iteration trade-pass, followed by a second walkthrough comparing the tightened DualBalance plan against MN's enacted congressional map on the same metrics.
+- **Tight legal pop balance.** The radial generator hits 5 % mean pop deviation, well above the 0.1 %–0.5 % that real congressional plans target. Closing this gap is the natural research direction — likely via a true two-dimensional transportation step at assignment time — but is out of scope for the PoC.
+- **Beating the enacted plan on compactness.** Radial slices have lower compactness by construction. The project's defense is the legal one (see manuscript): a deterministic race-blind rule does not carry the racial intent that triggers *Shaw*. Whether the public would accept the resulting maps is a separate political question.
+- **Cross-state generalization.** Minnesota's particular density profile makes it a hard test for area balance (Twin Cities concentrates ~55 % of the population in ~3 % of the land area). Other states may show larger or smaller margins over enacted plans.
+- **Partisan analysis.** Both partisan and demographic analysis are explicitly out of scope (see [README.md § What it does NOT do](../README.md#what-it-does-not-do)).

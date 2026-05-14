@@ -197,13 +197,12 @@ A 2019 survey, [Becker & Solomon, "Redistricting Algorithms" in *Political Geome
 DualBalance, distilled:
 
 1. Apportion seats by Method of Equal Proportions (1941 standard).
-2. Within each state, pick N seeds deterministically (population-weighted cluster centroids or farthest-point sampling).
-3. Assign each census block by minimizing α·distance + β·|running pop − P*|/P* + γ·|running area − A*|/A*, with **β = γ**.
-4. Iterate Lloyd-style with population-weighted centroid updates.
-5. Repair contiguity.
-6. Deterministic tie-break cascade.
+2. Within each state, place N seeds on a small circle around the population-weighted centroid, at equally-spaced angles 2π·d/N. The seeds are deliberately close together so the resulting Voronoi cells degenerate to near-perfect radial slices through the population center.
+3. Capacitated first-fit assignment: walk all (unit, district) pairs in ascending normalized Euclidean distance, give each unit to its first district with remaining population capacity P* = total_pop / N.
+4. Repair contiguity by dissolving discontiguous components into adjacent districts in lowest-cost order.
+5. Deterministic tie-break cascade.
 
-The DualBalance Score = 1 / (1 + 0.5·pop_err + 0.5·area_err) is symmetric in population and area errors (β = γ = ½).
+No Lloyd iteration, no tuning weights, no tightening pass. Same input → byte-identical output. The DualBalance Score = 1 / (1 + 0.5·pop_err + 0.5·area_err) is symmetric in population and area errors.
 
 ### 4.1 What is *not* novel
 

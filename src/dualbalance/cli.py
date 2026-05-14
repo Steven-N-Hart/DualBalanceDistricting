@@ -1,9 +1,15 @@
 """Command-line interface for DualBalance.
 
-Subcommands map to the four top-level operations described in README.md:
-``generate``, ``apportion``, ``score``, ``compare``. Every subcommand accepts
-``--config <path.yaml>`` for YAML-based defaults; explicit CLI flags override
-matching YAML keys (see :mod:`dualbalance.config`).
+Subcommands:
+
+- ``generate`` — produce a DualBalance plan for a state.
+- ``apportion`` — apportion seats across states via Method of Equal Proportions.
+- ``score`` — score an existing plan (DualBalance or other) against the same metrics.
+- ``compare`` — placeholder, not in PoC scope.
+
+Every subcommand accepts ``--config <path.yaml>`` for YAML-based defaults;
+explicit CLI flags override matching YAML keys (see
+:mod:`dualbalance.config`).
 """
 
 from __future__ import annotations
@@ -27,8 +33,6 @@ from dualbalance.io import (
     write_plan,
 )
 from dualbalance.scoring import score_plan
-from dualbalance.seeds import SEED_METHODS
-from dualbalance.trades import tighten_to_reynolds
 
 
 def _apply_config(args: argparse.Namespace, defaults: dict[str, Any]) -> argparse.Namespace:
@@ -54,27 +58,7 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
     pop_column = args.pop_column or "population"
 
     units = load_units(args.units, id_column=id_column, pop_column=pop_column)
-    plan = generate_plan(
-        units,
-        args.districts,
-        alpha=args.alpha,
-        beta=args.beta,
-        max_iter=args.max_iter,
-        geography=geography.cli_name,
-        repair=not args.no_repair,
-        seed_method=args.seed_method,
-        capacity_slack=args.capacity_slack,
-        enforce_area=args.enforce_area,
-        area_tolerance=args.area_tolerance,
-    )
-    if args.reynolds_tighten:
-        plan = tighten_to_reynolds(
-            plan,
-            units,
-            pop_tolerance=args.pop_tolerance,
-            reduce_area=not args.no_area_reduction,
-            score_variant=args.score_variant,
-        )
+    plan = generate_plan(units, args.districts, geography=geography.cli_name)
     metrics = score_plan(plan, units)
 
     out_dir = Path(args.out)
@@ -82,9 +66,10 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
     write_plan(plan, units, out_dir / "map.geojson")
     write_metrics(metrics, out_dir / "metrics.json")
     print(
-        f"generated {plan.n_districts} districts over {len(units)} {geography.cli_name} "
-        f"unit(s); DualBalance Score = {metrics['dualbalance_score']:.4f}; "
-        f"wrote map.geojson + metrics.json to {out_dir}"
+        f"generated {plan.n_districts} districts over {len(units)} "
+        f"{geography.cli_name} unit(s); DualBalance Score = "
+        f"{metrics['dualbalance_score']:.4f}; wrote map.geojson + "
+        f"metrics.json to {out_dir}"
     )
     return 0
 
@@ -141,7 +126,9 @@ _DISPATCH: dict[str, Callable[[argparse.Namespace, dict[str, Any]], int]] = {
 
 def _add_config_flag(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--config", type=Path, help="Path to a YAML config file with subcommand defaults."
+        "--config",
+        type=Path,
+        help="Path to a YAML config file with subcommand defaults.",
     )
 
 
@@ -164,9 +151,8 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
     subparsers = parser.add_subparsers(dest="command", required=True)
     geography_choices = [g.cli_name for g in Geography]
 
-    generate = subparsers.add_parser("generate", help="Generate a district plan for a state.")
+    generate = subparsers.add_parser("generate", help="Generate a DualBalance plan for a state.")
     _add_config_flag(generate)
-    generate.add_argument("--state", help="State identifier (metadata only, e.g. MN).")
     generate.add_argument("--districts", type=int, help="Number of districts N.")
     generate.add_argument(
         "--units",
@@ -190,91 +176,6 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         help="Column with population (default: population).",
     )
     generate.add_argument("--out", type=Path, help="Output directory.")
-    generate.add_argument(
-        "--alpha",
-        type=float,
-        default=1.0,
-        help="Distance weight (default: 1.0).",
-    )
-    generate.add_argument(
-        "--beta",
-        type=float,
-        default=1.0,
-        help="Population/area penalty weight (default: 1.0).",
-    )
-    generate.add_argument(
-        "--max-iter",
-        dest="max_iter",
-        type=int,
-        default=100,
-        help="Max Lloyd iterations (default: 100).",
-    )
-    generate.add_argument(
-        "--no-repair",
-        dest="no_repair",
-        action="store_true",
-        help="Skip the contiguity repair pass.",
-    )
-    generate.add_argument(
-        "--seed-method",
-        dest="seed_method",
-        default="farthest-point",
-        choices=list(SEED_METHODS),
-        help="Seed placement strategy (default: farthest-point). "
-        "population-slice puts more seeds in dense regions.",
-    )
-    generate.add_argument(
-        "--capacity-slack",
-        dest="capacity_slack",
-        type=float,
-        default=0.0,
-        help="Extra capacity per district as fraction of P* "
-        "(default 0.0; 0.005 absorbs integer-rounding edge cases).",
-    )
-    generate.add_argument(
-        "--enforce-area",
-        dest="enforce_area",
-        action="store_true",
-        help="Enforce area balance as a second hard capacity at assignment "
-        "time (v1 dual-capacitated mode; default v0 is pop-cap only).",
-    )
-    generate.add_argument(
-        "--area-tolerance",
-        dest="area_tolerance",
-        type=float,
-        default=0.10,
-        help="With --enforce-area, per-district area cap is "
-        "A* * (1 + area_tolerance) (default 0.10 = 10%%).",
-    )
-    generate.add_argument(
-        "--reynolds-tighten",
-        dest="reynolds_tighten",
-        action="store_true",
-        help="Run the post-iteration trade pass (Reynolds-compliant pop "
-        "tightening + pop-neutral area reduction).",
-    )
-    generate.add_argument(
-        "--pop-tolerance",
-        dest="pop_tolerance",
-        type=float,
-        default=0.005,
-        help="Target |pop - P*| / P* tolerance for --reynolds-tighten (default 0.005 = 0.5%%).",
-    )
-    generate.add_argument(
-        "--no-area-reduction",
-        dest="no_area_reduction",
-        action="store_true",
-        help="With --reynolds-tighten, skip Phase B (pop-neutral area swaps).",
-    )
-    generate.add_argument(
-        "--score-variant",
-        dest="score_variant",
-        choices=["weighted", "classic"],
-        default="weighted",
-        help="Reynolds-tighten Phase A objective (default: weighted). "
-        "'classic' optimizes pop_dev_mean + area_dev_mean "
-        "(1/(1+sum) score form); may not always meet --pop-tolerance.",
-    )
 
     apportion = subparsers.add_parser(
         "apportion",
@@ -286,11 +187,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         type=Path,
         help="Path to a state-populations file (CSV or JSON).",
     )
-    apportion.add_argument(
-        "--seats",
-        type=int,
-        help="Total seats to allocate.",
-    )
+    apportion.add_argument("--seats", type=int, help="Total seats to allocate.")
     apportion.add_argument(
         "--out",
         type=Path,

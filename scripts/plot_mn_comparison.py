@@ -1,4 +1,4 @@
-"""Render a 2x2 comparison of the three DualBalance pipelines vs the enacted
+"""Render a side-by-side comparison of the DualBalance plan and the enacted
 Minnesota congressional plan.
 
 Expects each plan to live in its own directory with ``map.geojson`` +
@@ -15,9 +15,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 PANELS_DEFAULT = [
-    ("out/mn_fp", "Farthest-point seeds, no tightening"),
-    ("out/mn_ps", "Population-slice seeds, no tightening"),
-    ("out/mn_rt", "Population-slice + Reynolds tightening"),
+    ("out/mn_yaml", "DualBalance (radial)"),
     ("out/mn_enacted", "Enacted MN plan (119th Congress)"),
 ]
 
@@ -31,9 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    fig, axes = plt.subplots(2, 2, figsize=(12, 13))
+    fig, axes = plt.subplots(1, 2, figsize=(13, 7))
     fig.suptitle(
-        "Minnesota — DualBalance pipelines vs enacted (2020 PL 94-171 pop, 4,110 VTDs)",
+        "Minnesota — DualBalance (radial) vs enacted (2020 PL 94-171 pop, 4,110 VTDs)",
         fontsize=13,
         y=0.995,
     )

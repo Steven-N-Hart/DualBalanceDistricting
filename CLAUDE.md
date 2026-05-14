@@ -9,12 +9,12 @@ src/dualbalance/   Python package — implementation of the algorithm + CLI
   apportionment.py Method of Equal Proportions (2020 regression-tested)
   geography.py     Geography enum (VTD / BLOCK / BLOCK_GROUP) + TIGER URLs
   io.py            load_units, write_plan, load_plan, write_metrics, etc.
-  seeds.py         deterministic farthest-point seed placement
-  districting.py   capacitated-greedy assignment + Lloyd recentering + contiguity repair
+  seeds.py         deterministic radial seed placement
+  districting.py   single-pass capacitated assignment + contiguity repair
   scoring.py       pop/area deviation, DualBalance Score, Polsby-Popper, Reock
   config.py        YAML --config support (CLI > YAML > argparse-default)
   cli.py           argparse CLI: generate / apportion / score / compare
-tests/             pytest suite (76+ tests, lint-clean)
+tests/             pytest suite (75 tests, lint-clean)
 configs/           example YAML configs (mn_vtd.yaml, apportion_2020.yaml)
 data/              prepared input geojson + data/README.md (data files gitignored)
 scripts/           prep_mn_units.py — fetches TIGER + (optional) Census API
@@ -32,7 +32,6 @@ Target language is Python (>=3.11), CLI uses stdlib `argparse`, build backend is
 ```powershell
 pip install -e ".[dev]"       # editable install with dev tooling (pytest, ruff)
 pytest                         # run the test suite
-pytest tests/test_cli.py::test_subcommand_help_parses[generate]   # single test
 ruff check .                   # lint
 ruff format .                  # format
 dualbalance --help             # see subcommands
@@ -47,36 +46,52 @@ dualbalance score --plan out/mn_yaml/map.geojson --units data/mn_vtd.geojson --g
 
 ## What the project is
 
-DualBalance Districting is a deterministic redistricting algorithm. Given a state boundary, census block data, and a fixed district count `N`, it produces a district map that weights population balance and geographic-area balance equally. There is no randomness and no manual adjustment — same input always yields the same output.
+DualBalance Districting is a deterministic redistricting algorithm. Given a state boundary, census-unit data, and a fixed district count `N`, it produces a district map that weights population balance and geographic-area balance equally. There is no randomness, no manual adjustment, and no tuning knobs — same input always yields the same output.
 
-Two-level structure to keep in mind when designing modules:
+The motivating context (2026): partisan gerrymandering is entrenched, the Supreme Court's *Rucho* / *Alexander* / *Callais* line has significantly limited Section 2 of the Voting Rights Act in practice, and states are now redrawing maps for partisan advantage on every cycle rather than once per decade. The project proposes a deterministic alternative: a districting rule that updates only with each 10-year census, cannot be tuned to advantage a party, and reframes congressional districts as carrying *both* the House (population) and Senate (geography) representation principles within a single chamber.
+
+Two-level structure:
 
 - **National apportionment** assigns each state its district count `N_s` using the Method of Equal Proportions, where `priority(s, n) = population(s) / sqrt(n(n+1))`.
 - **State-level districting** runs the DualBalance algorithm independently inside each state to produce `N_s` districts.
 
-The scoring harness is intentionally decoupled from the generator: it must be able to score any plan (enacted, court-drawn, third-party) using the same metrics applied to DualBalance's own output.
+The scoring harness is intentionally decoupled from the generator: it can score any plan (enacted, court-drawn, third-party) using the same metrics applied to DualBalance's own output.
+
+## The algorithm
+
+A deterministic, single-pass pipeline. No iteration, no tuning weights, no post-hoc tightening.
+
+1. **Radial seed placement.** Compute the population-weighted centroid of the state's atomic units. Place `N` seeds on a small circle around that centroid (radius = 0.1 % of the bounding-box diagonal) at equally-spaced angles `2π · d / N` for `d = 0, …, N-1`. Seed 0 points due east; seeds advance counter-clockwise.
+2. **Capacitated first-fit assignment.** Sort all `(unit, district)` pairs by normalized Euclidean distance ascending; assign each unit to its first district with remaining population capacity `P* = total_population / N`. Ties on distance break by `(unit_id asc, district_id asc)`. Leftover units from integer-rounding edge cases go to the district with the most remaining capacity (`np.argmax` tie-breaks to the lowest district id).
+3. **Contiguity repair.** For each district with more than one connected component, dissolve the smaller components into adjacent districts by lowest-cost transfer, where cost is `dist + pop_pen + area_pen` (normalized distance plus normalized pop and area deviations). Cascade tie-breaks: cost → pop_pen → area_pen → distance → district id.
+
+With seeds arranged on a small circle, the Voronoi cells degenerate to near-perfect radial slices through the population center. Each slice naturally spans both dense (near-center) and sparse (toward-the-boundary) territory, so each district holds roughly 1/N of the population *and* a coherent slice of the state's geography.
 
 ## Core algorithm invariants
 
-These are non-negotiable properties the implementation must preserve. Check every design decision against them:
+Non-negotiable. Check every design decision against them:
 
-- **Deterministic.** No RNG, no wall-clock dependence. Capacitated assignment processes `(unit, district)` pairs in ascending normalized distance; ties on min cost break by `(unit_id, district_id)` ascending. Contiguity-repair tie cascade matches [docs/Formalism.md](docs/Formalism.md): lower population error → lower area error → shorter seed distance → smaller district ID → smaller block ID.
-- **Block-level atomicity.** Districts are unions of whole atomic units; boundaries follow unit boundaries.
-- **Population balance is a hard constraint.** Each district has a capacity `P* = P/N` enforced at the assignment step — a capacitated transportation step in the lineage of Hess-style location-allocation models. Soft penalty forms (absolute or one-sided) destabilize on real census geometry — do not re-introduce them as the primary assignment rule.
-- **Area balance: reported in v0, optionally enforced in v1.** Default mode (v0, "Population-Capacitated Voronoi Baseline") caps only population; area deviation is reported diagnostically. Pass `--enforce-area` (with optional `--area-tolerance T`, default 10 %) to switch to v1 ("Dual-Capacitated Voronoi Assignment"): the assignment step then requires both pop and area capacity remaining for a `(unit, district)` pair to be accepted, where `area_cap = A* * (1 + T)`. Pop remains the higher-priority cap — if no district has both caps available, the fallback assigns to the district minimizing combined normalized overrun (pop overrun normalized by `P*` plus area overrun normalized by `A*`). The fallback may violate the area cap on hostile geometries where pop and area conflict; the v1 mode is "best-effort area, hard pop." Tests that assume v0 behavior should pin `enforce_area=False` (the default) so they remain insensitive to v1 evolution.
-- **Contiguity, non-empty, full coverage.** Every unit belongs to exactly one district; the post-iteration repair pass guarantees every district is contiguous. Empty districts can appear only with extreme inputs (more districts than the geometry can spatially separate).
-- **Out of scope inputs.** Politics, race/demographics, communities of interest, competitiveness — the generator must not read these. Partisan metrics may be *reported* by the scoring harness but never fed back into the generator.
+- **Deterministic.** No RNG, no wall-clock dependence. Same input always yields byte-identical output. The seed positions, assignment order, tie-breaking, and repair pass are all pure functions of `(units, n_districts)`.
+- **Atomic-unit boundaries.** Districts are unions of whole atomic units (VTDs, block groups, or blocks); boundaries follow unit boundaries.
+- **Population balance is a hard cap.** Each district receives at most `P* = total_population / N` (a capacitated transportation step in the lineage of Hess-style models). Soft penalty forms destabilize on real census geometry; do not re-introduce them.
+- **Area balance is reported, not enforced.** The algorithm draws geometry that naturally trades pop-balance and area-balance equally via radial slicing; the score reports area deviation as a diagnostic.
+- **Contiguity, non-empty, full coverage.** Every unit belongs to exactly one district; the repair pass guarantees every district is contiguous.
+- **No tuning knobs.** The CLI exposes only data-plumbing flags (`--districts`, `--units`, `--geography`, `--id-column`, `--pop-column`, `--out`, `--config`). There is no `--seed-method`, `--alpha`, `--max-iter`, `--reynolds-tighten`, `--enforce-area`, etc.: the algorithm has no behavior to tune.
+- **Out-of-scope inputs.** Politics, race/demographics, communities of interest, competitiveness — the generator must not read these. Partisan metrics may be *reported* by the scoring harness but never fed back into the generator.
 
 ## Objective function
 
-Two scores are reported side-by-side; the v0 generator does **not** directly minimize either (it minimizes population-capacitated geographic-assignment cost and reports the scores diagnostically):
+The scoring harness reports a single primary metric:
 
 ```
-DualBalance Score          = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
-DualBalance Score, classic = 1 / (1 +       pop_deviation_mean +       area_deviation_mean)
+DualBalance Score = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
 ```
 
-where `pop_deviation_d = |Pop(d) - P*| / P*` and similarly for area, averaged over districts. The default (weighted) form's 0.5/0.5 weighting makes the error a convex combination of the two mean deviations (β = γ = ½), enforcing the "each district holds ~1/N of people *and* ~1/N of geography" reading. The classic (sum-of-means) form is strictly more punishing whenever either deviation is nonzero; both reach 1.0 for a perfectly balanced plan. The `--score-variant {weighted,classic}` flag on `dualbalance generate` selects which form Reynolds-tighten Phase A optimizes against (default: `weighted`); both scores still appear in `metrics.json` regardless. Per-district `pop_deviation` and `area_deviation` are exposed so consumers can recompute either form from the breakdown. Secondary metrics: Polsby-Popper compactness (via gerrychain.metrics), Reock (via shapely's minimum bounding radius), per-district population/area breakdown.
+where `pop_deviation_d = |Pop(d) - P*| / P*` and `area_deviation_d = |Area(d) - A*| / A*`, averaged over districts. The 0.5/0.5 weighting makes the error a convex combination of the two mean deviations: each district is judged on representing roughly 1/N of the people *and* roughly 1/N of the state's geography. Both reach 1.0 for a perfectly balanced plan; the score approaches 0 as deviations grow without bound.
+
+The generator does **not** directly minimize this score; it minimizes population-capacitated geographic-assignment cost with radial seeding, which empirically produces a higher score than blob-Voronoi designs and beats enacted plans on the MN PoC (0.6472 vs 0.6390).
+
+Secondary metrics: Polsby-Popper compactness (via gerrychain.metrics), Reock (via shapely's minimum bounding radius), per-district population/area breakdown. Compactness scores will be lower than for blob-Voronoi or hand-drawn plans — radial slices are deliberately not blob-shaped.
 
 ## Outputs
 

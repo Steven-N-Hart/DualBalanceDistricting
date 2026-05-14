@@ -4,48 +4,58 @@ A deterministic alternative to gerrymandering.
 
 ## Why this exists
 
-Modern redistricting is fundamentally unstable.
-
-Maps are routinely drawn to favor one group over another — whether political, geographic, or demographic. Even when done "fairly," the process depends on human judgment, negotiated criteria, and iterative adjustment. The result is predictable: bias enters the system.
+Partisan gerrymandering is entrenched. The Supreme Court's
+*Rucho v. Common Cause* (2019) foreclosed federal review of partisan
+maps; *Allen v. Milligan* (2023) reaffirmed Section 2 of the Voting
+Rights Act, but *Alexander v. NAACP* (2024) and *Louisiana v. Callais*
+(April 2026) have significantly narrowed Section 2's reach in practice.
+The combined effect is that, in most states, partisan map-drawing is
+both federally unreviewable and racially constrained — and several
+states have already begun redrawing maps mid-decade in response to
+electoral results rather than census revision. Redistricting is moving
+from a once-per-decade event into a continuous partisan exercise.
 
 DualBalance Districting starts from a different premise:
 
 > If humans draw the lines, bias is inevitable.
 
-So this project removes that step entirely.
+So this project removes that step entirely. The algorithm is a pure
+function of two inputs: the state's geometry (from the decennial
+census) and the state's apportioned district count. It has no tuning
+knobs, no random seed, and no iteration count. Same input → same
+output, byte-identical, every time. The map updates only when the
+underlying census changes — once every ten years.
 
 ## Core idea
 
-DualBalance is a deterministic algorithm that generates district maps from first principles:
+DualBalance reframes congressional districts so that each district
+carries both representation principles the U.S. Constitution embeds at
+the federal level:
 
-- Equal population representation
-- Equal geographic representation
-- No randomness
-- No manual adjustment
-- No subjective criteria
+- The House → population-based representation (Art. I §2)
+- The Senate → geography-based representation (Art. I §3)
 
-It is inspired by the structural balance already present in U.S. governance:
-
-- The House → population-based representation
-- The Senate → geography-based representation
-
-DualBalance applies that same philosophy *within a single districting system*.
+Within a single districting system, every district holds roughly 1/N
+of the state's people *and* a coherent slice of the state's
+geography. Seats are placed radially around the population-weighted
+centroid of the state, producing pie-slice districts that each span
+both dense and sparse territory. Population balance is enforced as a
+hard cap; area balance emerges from the radial geometry.
 
 ## What it does
 
 Given:
 
 - A state boundary
-- Census-level population data
-- A fixed number of districts
+- Census-unit population data
+- A fixed number of districts (apportioned via Method of Equal Proportions)
 
 DualBalance produces:
 
-- A complete district map
-- With equal weighting of population and land area
-- Using a fully deterministic process
+- A complete district map (`map.geojson`)
+- The DualBalance Score and supporting metrics (`metrics.json`)
 
-Same input → same output. Every time.
+Using a fully deterministic, single-pass pipeline.
 
 ## What it does NOT do
 
@@ -53,201 +63,118 @@ Same input → same output. Every time.
 - Does not consider race or demographics
 - Does not preserve "communities of interest"
 - Does not optimize for competitiveness
+- Does not iterate, tune, or anneal
 
-Those are all sources of human interpretation — and therefore bias.
+These are all sources of human interpretation — and therefore bias.
 
-## Algorithm (high level)
+## Algorithm
 
-A capacity-constrained Lloyd-style iteration on atomic census units (VTDs by default, also blocks / block groups). The assignment step resembles the soft-penalty location-allocation formulations used in early operations-research approaches to political districting, including Hess-style models. See [docs/Formalism.md](docs/Formalism.md) for the precise mathematical statement.
+A deterministic three-step pipeline. See [docs/Formalism.md](docs/Formalism.md)
+for the precise mathematical statement.
 
-1. **Place seeds.** Deterministic farthest-point sampling from units ranked by population; ties on min-distance break by ascending unit ID.
-2. **Capacitated assignment.** For each iteration, consider every `(unit, district)` pair in ascending normalized geographic distance and assign each unit to its closest district that still has remaining population capacity `P* = total_pop / N`. Population balance is enforced as a hard capacity, not a soft penalty.
-3. **Recenter.** Move each seed to the population-weighted centroid of its assigned units.
-4. **Iterate** steps 2–3 until the assignment stops changing (or a configurable iteration cap is reached).
-5. **Repair contiguity.** Build the rook-adjacency dual graph; for any district whose induced subgraph has more than one connected component, dissolve the smaller components into adjacent districts in deterministic order.
+1. **Radial seed placement.** Compute the population-weighted
+   centroid of the units. Place `N` seeds on a small circle around
+   that centroid (radius = 0.1% of the bounding-box diagonal) at
+   equally-spaced angles `2π·d/N` for `d = 0, …, N-1`. Seed 0 points
+   due east; seeds advance counter-clockwise.
+2. **Capacitated first-fit assignment.** Sort all `(unit, district)`
+   pairs by normalized Euclidean distance ascending; assign each
+   unit to its first district with remaining population capacity
+   `P* = total_population / N`. Ties on distance break by
+   `(unit_id asc, district_id asc)`. Population balance is enforced
+   as a hard cap, not a soft penalty.
+3. **Contiguity repair.** Build the rook-adjacency dual graph; for
+   any district whose induced subgraph has more than one connected
+   component, dissolve the smaller components into adjacent districts
+   by lowest-cost transfer.
 
-The current implementation minimizes geographic assignment cost subject to a *population* capacity. It then reports the DualBalance objective, which measures joint deviation from equal population share and equal land-area share. **Area balancing is currently diagnostic, not enforced** — see "v0 vs v1" below.
+There is no Lloyd iteration, no recentering loop, no Reynolds
+tightening pass. The radial seed positions do not drift, so a single
+assignment pass suffices. The CLI exposes no algorithmic tuning
+flags — only data-plumbing arguments (`--units`, `--districts`,
+`--geography`, `--out`, `--config`).
 
-### v0 vs v1
+The MN PoC scores **0.6472** under DualBalance, beating the enacted
+119th-Congress plan's **0.6390** by 1.3%. See
+[docs/mn-poc-walkthrough.md](docs/mn-poc-walkthrough.md) for the
+worked example with reproduction commands.
 
-The codebase distinguishes between what is implemented today and the intended next version:
+## Apportionment
 
-- **v0 — Population-Capacitated Voronoi Baseline (current).** Each district has a hard population capacity `P* = P/N` enforced at assignment time. Area balance is reported by the scoring harness but is not a constraint on the generator. The objective is *reported*, not minimized — what is minimized is total normalized geographic distance subject to population capacity.
-- **v1 — Dual-Capacitated Voronoi Assignment (planned).** Each district is bounded by both a population capacity `Pop(D_i) ≈ P*` *and* an area capacity `Area(D_i) ≈ A*`, via a two-dimensional capacitated transportation step. This is what would make the algorithm a *true* DualBalance generator rather than a population-capacitated Voronoi.
-
-Until v1 lands, read the spec and the implementation together: the *metric* weighs population and area equally; the *generator* enforces only population.
-
-For a worked example with reproduction commands, the actual MN PoC metrics, and visualization recipes, see [docs/mn-poc-walkthrough.md](docs/mn-poc-walkthrough.md).
-
-## Representation allocation (apportionment)
-
-DualBalance extends beyond district drawing. It can also incorporate a deterministic method for assigning the total number of districts per state based on census population.
-
-This mirrors how representation in the U.S. House is apportioned every 10 years.
-
-### Method
-
-Given:
-
-- Total U.S. population (from census)
-- Fixed number of seats (e.g., 435)
-- State populations
-
-Seats are assigned using a deterministic apportionment algorithm.
-
-By default, DualBalance uses the **Method of Equal Proportions** (the current U.S. standard):
-
-1. Each state receives one seat.
-2. Remaining seats are assigned iteratively.
-3. At each step, assign the next seat to the state with the highest priority value:
+DualBalance includes a deterministic apportionment step that assigns
+each state its district count using the **Method of Equal Proportions**
+(the current U.S. standard since 1941):
 
 ```
 priority(s, n) = population(s) / sqrt(n(n+1))
 ```
 
-where `s` is a state and `n` is the current number of seats assigned to that state.
+Given total seats (e.g. 435), each state receives one seat to start,
+and remaining seats are assigned iteratively to the state with the
+highest priority value. The result is fully deterministic.
 
-This produces a fully deterministic distribution of representatives across states.
-
-### Integration with districting
-
-Once seats are assigned:
-
-1. Each state receives `N_s` districts.
-2. DualBalance is applied independently within each state.
-3. Each state's districts are generated using equal population (within state) and equal geographic area (within state).
-
-This creates a two-level system:
+The two-level system:
 
 - National level → population-based apportionment across states
-- State level → balanced population + geography districting
-
-### Resulting structure
-
-The system mirrors existing U.S. representation but removes discretionary boundary drawing:
-
-- Apportionment remains population-driven
-- Districting becomes deterministic and bias-minimized
-
-### Optional extensions
-
-DualBalance can also explore alternative apportionment rules:
-
-- Pure population proportionality (fractional or continuous models)
-- Geography-weighted apportionment (experimental)
-- Hybrid models combining population and land area at the national level
-
-These are not enabled by default but provide a research framework for exploring different representation systems.
+- State level → DualBalance districting within each state
 
 ## Output and evaluation
 
-DualBalance produces both district maps and a full evaluation report.
+For each `dualbalance generate` run:
 
-The goal is not only to generate a map, but to measure how that map performs relative to existing plans and alternative algorithms.
+- `map.geojson` — one feature per atomic unit with `district_id` property
+- `metrics.json` — DualBalance Score, per-district populations and areas,
+  compactness metrics, deterministic and byte-identical for repeated runs
 
-### Outputs
-
-For each run, DualBalance generates:
-
-- `map.geojson` — district boundaries
-- `metrics.json` — raw scoring data
-- `report.html` — visual summary
-- `comparison.json` — benchmark comparison across plans
-- `national_map.geojson` — optional combined multi-state output
-
-### Scoring harness
-
-DualBalance includes a built-in scoring system to evaluate any districting plan, including:
-
-- Enacted maps
-- Court-drawn maps
-- Public submissions
-- Maps generated by other algorithms
-
-### Primary metrics
-
-Population balance:
-
-- Mean population deviation
-- Maximum population deviation
-
-Geographic balance:
-
-- Mean area deviation
-- Maximum area deviation
-
-**DualBalance Score:**
+The scoring harness is intentionally decoupled from the generator: any
+plan (enacted, court-drawn, third-party) can be scored against the
+same metrics applied to DualBalance's own output:
 
 ```
-DualBalance Error = mean_i [ 0.5 · |Pop(D_i)/P  − 1/N| / (1/N)
-                           + 0.5 · |Area(D_i)/A − 1/N| / (1/N) ]
-
-DualBalance Score = 1 / (1 + DualBalance Error)
+dualbalance score --plan some_plan.geojson --units state_units.geojson --geography vtd
 ```
 
-The 0.5/0.5 coefficients are the explicit "each district should hold roughly 1/N of the people *and* roughly 1/N of the state's geography" statement — population and land area are weighted equally, and the error is the convex combination of their per-district deviations averaged across districts.
+### DualBalance Score
+
+```
+DualBalance Score = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
+```
+
+where `pop_deviation_d = |Pop(d) - P*| / P*` and similarly for area,
+averaged over districts. The 0.5/0.5 weighting makes the error a
+convex combination of the two mean deviations: each district is
+judged on representing roughly 1/N of the people *and* roughly 1/N
+of the state's geography. The score reaches 1.0 for a perfectly
+balanced plan and approaches 0 as deviations grow.
 
 ### Secondary metrics
 
-Reported but not optimized directly:
+Reported but not optimized:
 
-- Compactness (Polsby-Popper, Reock)
-- Contiguity validation
-- County and municipal splits
-- Boundary length / fragmentation
+- Polsby-Popper compactness
+- Reock compactness
 
-Optional:
+Radial slices have lower compactness than blob-Voronoi or hand-drawn
+districts by construction; this is a deliberate trade for the
+dual-balance objective, not a bug.
 
-- Partisan metrics (efficiency gap, bias, seats-votes curve)
+## Limitations
 
-### Benchmarking
-
-DualBalance can compare its output against multiple plans:
-
-```
-dualbalance compare --state MN --plans ./plans/
-```
-
-This produces:
-
-- Rank ordering across metrics
-- Pairwise comparisons
-- Distance from DualBalance baseline
-- Sensitivity to population vs. geography trade-offs
-
-### Interpretation
-
-The scoring harness is intentionally separate from the generator.
-
-DualBalance does not claim to define fairness universally. Instead, it provides:
-
-> A measurable, reproducible baseline for evaluating district maps.
-
-This allows users to answer:
-
-- How does an enacted map compare to a deterministic baseline?
-- Where does it deviate (population, geography, compactness)?
-- What trade-offs were made, and how large are they?
-
-### Evaluation criteria
-
-Any districting system should be judged by:
-
-- What it optimizes
-- What it ignores
-- How reproducible its results are
-
-DualBalance makes all three explicit.
-
-## Fairness philosophy
-
-DualBalance does not attempt to define fairness in political terms.
-
-Instead, it enforces a structural constraint:
-
-> Representation should reflect both people and place.
-
-Pure population-based systems concentrate influence in dense regions. Pure geography-based systems over-weight sparsely populated land. DualBalance sits between these extremes.
+- Population and area cannot both reach exact balance on real US
+  geography. State population densities vary by ~300× between urban
+  cores and rural counties, so any contiguous-unit partition has a
+  hard floor on `area_dev_mean`.
+- Compactness scores will be lower than the hand-drawn norm. Courts
+  have used compactness as evidence in race-based gerrymandering
+  cases (*Shaw v. Reno* and progeny), but those cases turn on intent,
+  not geometry per se. A deterministic, race-blind, content-neutral
+  generator does not carry the racial intent that triggers *Shaw*.
+- Section 2 of the Voting Rights Act has been substantially narrowed
+  by *Alexander* (2024) and *Callais* (2026), but is not formally
+  struck down. A race-blind generator may not automatically satisfy
+  Section 2 in jurisdictions where the *Gingles* preconditions are
+  met; the scoring harness flags this risk without compromising the
+  generator's content-neutrality.
 
 ## Design principles
 
@@ -255,9 +182,4 @@ Pure population-based systems concentrate influence in dense regions. Pure geogr
 - Transparent over heuristic
 - Reproducible over negotiable
 - Structural balance over subjective fairness
-
-## Limitations
-
-- Equal population and equal land area are inherently in tension
-- Results may not align with legal requirements in all jurisdictions
-- Does not encode social or political considerations
+- No tuning knobs over many configurable parameters

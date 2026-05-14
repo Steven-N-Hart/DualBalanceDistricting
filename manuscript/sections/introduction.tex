@@ -54,6 +54,17 @@ supreme court and the language of its state constitution. Roughly ten
 state supreme courts have so far recognized state-constitutional
 partisan-gerrymandering claims; the rest have not~\cite{stateline2025}.
 
+The practical consequence of this combined doctrine --- federal partisan
+review foreclosed by \emph{Rucho}, Section~2 narrowed by \emph{Alexander}
+and \emph{Callais}, state review uneven and politically contingent ---
+is that redistricting has shifted from a once-per-decade event into a
+continuous partisan exercise. Several states have already redrawn maps
+mid-decade in response to electoral results rather than census revision,
+and analysts expect the practice to expand as legislative majorities
+turn over. A redistricting regime that updates whenever the pen
+changes hands provides neither stable representation nor predictable
+constituencies for the people being represented.
+
 \subsection{The Normative Paradox of ``Bias Detection''}
 
 In response to \emph{Rucho}'s manageability concern, a substantial
@@ -157,25 +168,36 @@ it has not, to our knowledge, been operationalized as a districting
 objective within a single chamber.
 
 DualBalance Districting applies this structural balance at the
-district-drawing level. Given a state boundary, census-block population
-and area data, and a target district count $N$, the algorithm produces
-a partition of the state into $N$ districts that minimizes the sum of
-population error and area error, weighted equally. The objective is:
+district-drawing level. Given a state boundary, census-unit
+population and area data, and a target district count $N$, the
+algorithm produces a partition of the state into $N$ districts whose
+score
 \begin{equation}
-  \min_{\{D_i\}} \sum_{i=1}^{N}
-  \left[
-    \alpha \cdot \text{compactness}(D_i)
-    + \beta \cdot \frac{|P(D_i) - P^{*}|}{P^{*}}
-    + \beta \cdot \frac{|A(D_i) - A^{*}|}{A^{*}}
-  \right],
+  \mathrm{DBS}
+    = \frac{1}{1
+       + \tfrac{1}{2}\,\overline{\mathrm{pop\_dev}}
+       + \tfrac{1}{2}\,\overline{\mathrm{area\_dev}}}
 \end{equation}
-with targets $P^{*} = P/N$ and $A^{*} = A/N$, and the population and
-area penalty coefficients held equal. Seats are apportioned among the
-states by the Method of Equal Proportions (Huntington--Hill), the
-standard since 1941~\cite{balinskiyoung}. Tie-breaking among assignments
-follows a fixed deterministic cascade: lower population error, lower
-area error, shorter seed distance, smaller district identifier, smaller
-census block identifier.
+weights mean population deviation and mean area deviation equally,
+where $\mathrm{pop\_dev}_i = |P(D_i) - P^{*}|/P^{*}$,
+$\mathrm{area\_dev}_i = |A(D_i) - A^{*}|/A^{*}$, $P^{*} = P/N$,
+$A^{*} = A/N$, and the overlines denote means over districts. The
+generator does not iterate against this score directly; it places $N$
+seeds radially around the population-weighted centroid (\S\ref{sec:methods})
+and performs a single capacitated first-fit assignment. Pop is enforced
+as a hard cap of $P^{*}$ per district; area emerges from the radial
+geometry. The resulting districts look like pie slices radiating from
+the population center, each slice naturally spanning both dense
+(near-center) and sparse (boundary-side) territory.
+
+Seats are apportioned among the states by the Method of Equal
+Proportions (Huntington--Hill), the standard since
+1941~\cite{balinskiyoung}. The entire pipeline --- seed placement,
+assignment, contiguity repair --- is a pure function of $(\text{units},
+N)$. There are no tuning weights, no iteration count, no stopping
+threshold, and no random seed; identical inputs always yield
+byte-identical outputs. Updates occur only when the underlying census
+changes, every ten years.
 
 The algorithm reads neither party registration, vote history, nor
 race. After \emph{Alexander} and \emph{Callais}, a generator that does
@@ -193,22 +215,29 @@ flag this risk without compromising the generator's content-neutrality.
 
 The contributions of this paper are:
 \begin{enumerate}
-  \item A deterministic districting algorithm with co-equal soft
-        penalties on population error and area error, motivated by
-        the constitutional House/Senate balance and apparently novel
-        in this form.
-  \item A fully specified deterministic tie-breaking cascade
-        sufficient to guarantee bit-reproducible output from a given
-        input.
+  \item A deterministic, knob-free districting algorithm that produces
+        radially-sliced districts and balances population and area
+        equally as scored quantities. The algorithm is a pure function
+        of the unit geometry and the district count; it has no
+        iteration, no tunable weights, and no source of randomness.
+  \item A fully specified deterministic tie-breaking cascade sufficient
+        to guarantee byte-identical output from a given input, and a
+        proof that the cascade resolves every comparison the algorithm
+        makes.
   \item A decoupled scoring harness that applies the same metrics to
         the algorithm's output, to enacted maps, and to alternative
-        plans, supporting transparent benchmarking against the methods
-        surveyed above.
-  \item A discussion of the legal and normative tradeoffs that the dual
-        objective imposes, including its tension with strict
+        plans, enabling transparent benchmarking against the methods
+        surveyed above. Empirical results on Minnesota show DualBalance
+        outperforming the enacted 119\textsuperscript{th}-Congress map
+        on the dual objective.
+  \item A discussion of the legal and normative tradeoffs the radial
+        design imposes, including its tension with strict
         \emph{Reynolds v.~Sims}~\cite{reynolds1964} population-equality
-        jurisprudence and its disposition toward the residential-clustering
-        bias documented by Chen and Rodden.
+        jurisprudence, its weaker compactness profile relative to
+        hand-drawn or blob-Voronoi designs, and its alignment with the
+        post-\emph{Callais} legal regime in which a content-neutral
+        race-blind generator faces a narrower constitutional risk than
+        any race-conscious remedy.
 \end{enumerate}
 
 The remainder of the paper proceeds as follows. Section~2 formalizes
