@@ -25,22 +25,30 @@ PANELS_DEFAULT = [
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--out", type=Path, default=Path("docs/figures/mn_poc_comparison.png"),
+        "--out",
+        type=Path,
+        default=Path("docs/figures/mn_poc_comparison.png"),
     )
     args = parser.parse_args(argv)
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 13))
     fig.suptitle(
         "Minnesota — DualBalance pipelines vs enacted (2020 PL 94-171 pop, 4,110 VTDs)",
-        fontsize=13, y=0.995,
+        fontsize=13,
+        y=0.995,
     )
     for ax, (folder, label) in zip(axes.flat, PANELS_DEFAULT, strict=True):
         path = Path(folder)
         gdf = gpd.read_file(path / "map.geojson")
         metrics = json.loads((path / "metrics.json").read_text())
         gdf.plot(
-            column="district_id", cmap="tab10", categorical=True,
-            linewidth=0.05, edgecolor="black", legend=False, ax=ax,
+            column="district_id",
+            cmap="tab10",
+            categorical=True,
+            linewidth=0.05,
+            edgecolor="black",
+            legend=False,
+            ax=ax,
         )
         ax.set_axis_off()
         ax.set_title(

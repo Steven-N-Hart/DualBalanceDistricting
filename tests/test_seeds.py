@@ -71,9 +71,14 @@ def test_place_seeds_dispatcher_rejects_unknown() -> None:
     import geopandas as _gpd
     import pytest as _pt
     from shapely.geometry import Polygon
+
     g = _gpd.GeoDataFrame(
-        {"unit_id": ["A"], "population": [1], "area": [1.0],
-         "geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])]},
+        {
+            "unit_id": ["A"],
+            "population": [1],
+            "area": [1.0],
+            "geometry": [Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])],
+        },
         crs="EPSG:5070",
     )
     with _pt.raises(ValueError, match="unknown seed method"):
@@ -96,9 +101,8 @@ def test_population_slice_invariant_to_row_order(
     synthetic_grid_4x4: gpd.GeoDataFrame,
 ) -> None:
     shuffled = synthetic_grid_4x4.sample(frac=1.0, random_state=7).reset_index(drop=True)
-    assert (
-        place_seeds(synthetic_grid_4x4, 4, method="population-slice")
-        == place_seeds(shuffled, 4, method="population-slice")
+    assert place_seeds(synthetic_grid_4x4, 4, method="population-slice") == place_seeds(
+        shuffled, 4, method="population-slice"
     )
 
 

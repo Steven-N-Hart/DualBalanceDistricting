@@ -44,9 +44,7 @@ def place_seeds(
         return place_seeds_farthest_point(units, n)
     if method == "population-slice":
         return place_seeds_population_slice(units, n)
-    raise ValueError(
-        f"unknown seed method {method!r}; valid: {list(SEED_METHODS)}"
-    )
+    raise ValueError(f"unknown seed method {method!r}; valid: {list(SEED_METHODS)}")
 
 
 def place_seeds_farthest_point(units: gpd.GeoDataFrame, n: int) -> list[Seed]:
@@ -128,9 +126,7 @@ def place_seeds_population_slice(units: gpd.GeoDataFrame, n: int) -> list[Seed]:
     weights = pops / pops.sum() if pops.sum() > 0 else np.full_like(pops, 1 / len(pops))
     mean_x = float((xs * weights).sum())
     mean_y = float((ys * weights).sum())
-    centered = np.column_stack([(xs - mean_x), (ys - mean_y)]) * np.sqrt(
-        weights[:, None]
-    )
+    centered = np.column_stack([(xs - mean_x), (ys - mean_y)]) * np.sqrt(weights[:, None])
     _, _, vh = np.linalg.svd(centered, full_matrices=False)
     axis = vh[0]  # first principal direction
     # Sign convention: positive x-component first (deterministic across runs).
@@ -164,16 +160,12 @@ def place_seeds_population_slice(units: gpd.GeoDataFrame, n: int) -> list[Seed]:
         # Close if we've hit the cumulative population threshold, OR if the
         # remaining slices need every remaining unit just to be non-empty.
         if cum >= threshold or units_left <= slices_left:
-            seeds.append(
-                _weighted_centroid_seed(current_slice, slice_indices, xs, ys, pops)
-            )
+            seeds.append(_weighted_centroid_seed(current_slice, slice_indices, xs, ys, pops))
             slice_indices = []
             current_slice += 1
 
     if slice_indices:
-        seeds.append(
-            _weighted_centroid_seed(current_slice, slice_indices, xs, ys, pops)
-        )
+        seeds.append(_weighted_centroid_seed(current_slice, slice_indices, xs, ys, pops))
 
     return seeds
 

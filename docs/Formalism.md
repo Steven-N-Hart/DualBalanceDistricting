@@ -104,6 +104,14 @@ the score is `1 / (1 + 0.5·mean(pop_dev) + 0.5·mean(area_dev))`.
 
 The two terms are weighted equally (β = γ = ½) so that each district is judged on representing roughly 1/N of the people *and* roughly 1/N of the state's geography. The 0.5/0.5 coefficients make the error a convex combination of the two mean deviations rather than a raw sum, so adding the area term cannot artificially inflate the error beyond what either component carries on its own.
 
+**Classic (sum-of-means) variant.** Alongside the weighted form above, the scoring harness also reports
+
+```
+DualBalance Score (classic) = 1 / (1 + mean(pop_dev) + mean(area_dev))
+```
+
+— the same per-district deviations, summed rather than averaged. The two forms are related by `score_classic = 1 / (1 + 2·(1 − 1/score))`, i.e. the classic error is exactly twice the weighted error. The classic form is strictly more punishing whenever either deviation is nonzero (at `pop_dev_mean = area_dev_mean = 1.0`, weighted = 0.5 vs. classic = 1/3). Both forms reach 1.0 for a perfectly balanced plan and approach 0.0 in the limit of unbounded deviation. The `--score-variant {weighted,classic}` flag on `dualbalance generate` selects which form Reynolds-tighten Phase A optimizes against (default: `weighted`); both scores appear in `metrics.json` regardless of the flag.
+
 **v0 vs v1.** In v0 (current), population is enforced as a hard capacity at the assignment step; area is diagnostic only — its deviation appears in the score but never constrains the generator. The intended **v1 ("Dual-Capacitated Voronoi Assignment")** replaces the assignment step with a two-dimensional capacitated transportation problem that bounds both `Pop(D_i)` and `Area(D_i)`. Only v1 *directly minimizes* the DualBalance objective; v0 minimizes a population-capacitated geographic-cost surrogate and reports the DualBalance score diagnostically.
 
 Subject to:

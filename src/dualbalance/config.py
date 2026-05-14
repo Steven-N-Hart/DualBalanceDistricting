@@ -32,8 +32,7 @@ def load_config(path: str | Path) -> dict[str, Any]:
         return {}
     if not isinstance(data, dict):
         raise ValueError(
-            f"config file {p!s} must contain a YAML mapping, "
-            f"got {type(data).__name__}"
+            f"config file {p!s} must contain a YAML mapping, got {type(data).__name__}"
         )
     return data
 

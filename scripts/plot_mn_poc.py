@@ -25,12 +25,8 @@ import numpy as np
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--plan", type=Path, default=Path("out/mn_a/map.geojson"))
-    parser.add_argument(
-        "--metrics", type=Path, default=Path("out/mn_a/metrics.json")
-    )
-    parser.add_argument(
-        "--out", type=Path, default=Path("docs/figures/mn_poc_districts.png")
-    )
+    parser.add_argument("--metrics", type=Path, default=Path("out/mn_a/metrics.json"))
+    parser.add_argument("--out", type=Path, default=Path("docs/figures/mn_poc_districts.png"))
     parser.add_argument(
         "--note",
         default="",

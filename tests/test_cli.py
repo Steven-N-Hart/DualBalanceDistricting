@@ -20,8 +20,7 @@ def test_subcommand_help_parses(cmd: str) -> None:
 def test_generate_accepts_geography_values(geo: str) -> None:
     parser, _ = build_parser()
     args = parser.parse_args(
-        ["generate", "--geography", geo, "--districts", "8",
-         "--units", "u.geojson", "--out", "o/"]
+        ["generate", "--geography", geo, "--districts", "8", "--units", "u.geojson", "--out", "o/"]
     )
     assert args.geography == geo
 
@@ -45,10 +44,7 @@ def test_apportion_csv_end_to_end(tmp_path: Path, capsys: pytest.CaptureFixture)
     csv_path = tmp_path / "pops.csv"
     csv_path.write_text("state,population\nA,1000\nB,500\nC,200\n", encoding="utf-8")
     out_path = tmp_path / "seats.json"
-    rc = main(
-        ["apportion", "--populations", str(csv_path), "--seats", "7",
-         "--out", str(out_path)]
-    )
+    rc = main(["apportion", "--populations", str(csv_path), "--seats", "7", "--out", str(out_path)])
     assert rc == 0
     assert json.loads(out_path.read_text()) == {"A": 4, "B": 2, "C": 1}
 
@@ -57,8 +53,7 @@ def test_apportion_json_input(tmp_path: Path) -> None:
     src = tmp_path / "pops.json"
     src.write_text(json.dumps({"A": 1000, "B": 500, "C": 200}), encoding="utf-8")
     out = tmp_path / "seats.json"
-    rc = main(["apportion", "--populations", str(src), "--seats", "7",
-               "--out", str(out)])
+    rc = main(["apportion", "--populations", str(src), "--seats", "7", "--out", str(out)])
     assert rc == 0
     assert json.loads(out.read_text()) == {"A": 4, "B": 2, "C": 1}
 
@@ -80,9 +75,7 @@ def test_apportion_cli_overrides_yaml(tmp_path: Path) -> None:
     cfg = tmp_path / "c.yaml"
     cfg.write_text(f"populations: {src}\nseats: 3\n", encoding="utf-8")
     out = tmp_path / "seats.json"
-    rc = main(
-        ["apportion", "--config", str(cfg), "--seats", "5", "--out", str(out)]
-    )
+    rc = main(["apportion", "--config", str(cfg), "--seats", "5", "--out", str(out)])
     assert rc == 0
     assert json.loads(out.read_text()) == {"A": 2, "B": 2, "C": 1}
 
@@ -97,25 +90,30 @@ def test_compare_stub_explains_scope() -> None:
         main(["compare", "--state", "MN", "--plans", "."])
 
 
-def test_generate_end_to_end_on_synthetic_grid(
-    tmp_path: Path, synthetic_grid_4x4
-) -> None:
+def test_generate_end_to_end_on_synthetic_grid(tmp_path: Path, synthetic_grid_4x4) -> None:
     units_path = tmp_path / "units.geojson"
     out_dir = tmp_path / "out"
     # Use the canonical column names the loader expects.
-    src = synthetic_grid_4x4.rename(
-        columns={"unit_id": "GEOID20"}
-    )[["GEOID20", "population", "geometry"]]
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
     src.to_file(units_path, driver="GeoJSON")
 
-    rc = main([
-        "generate",
-        "--state", "TEST",
-        "--districts", "4",
-        "--units", str(units_path),
-        "--geography", "vtd",
-        "--out", str(out_dir),
-    ])
+    rc = main(
+        [
+            "generate",
+            "--state",
+            "TEST",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--out",
+            str(out_dir),
+        ]
+    )
     assert rc == 0
     assert (out_dir / "map.geojson").is_file()
     assert (out_dir / "metrics.json").is_file()
@@ -126,19 +124,25 @@ def test_generate_end_to_end_on_synthetic_grid(
 
 def test_generate_determinism_via_cli(tmp_path: Path, synthetic_grid_4x4) -> None:
     units_path = tmp_path / "units.geojson"
-    src = synthetic_grid_4x4.rename(
-        columns={"unit_id": "GEOID20"}
-    )[["GEOID20", "population", "geometry"]]
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
     src.to_file(units_path, driver="GeoJSON")
 
     for out_subdir in ("a", "b"):
-        rc = main([
-            "generate",
-            "--districts", "4",
-            "--units", str(units_path),
-            "--geography", "vtd",
-            "--out", str(tmp_path / out_subdir),
-        ])
+        rc = main(
+            [
+                "generate",
+                "--districts",
+                "4",
+                "--units",
+                str(units_path),
+                "--geography",
+                "vtd",
+                "--out",
+                str(tmp_path / out_subdir),
+            ]
+        )
         assert rc == 0
     assert (tmp_path / "a" / "metrics.json").read_text() == (
         tmp_path / "b" / "metrics.json"
@@ -150,9 +154,9 @@ def test_generate_determinism_via_cli(tmp_path: Path, synthetic_grid_4x4) -> Non
 
 def test_generate_via_yaml_config(tmp_path: Path, synthetic_grid_4x4) -> None:
     units_path = tmp_path / "units.geojson"
-    src = synthetic_grid_4x4.rename(
-        columns={"unit_id": "GEOID20"}
-    )[["GEOID20", "population", "geometry"]]
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
     src.to_file(units_path, driver="GeoJSON")
     cfg = tmp_path / "c.yaml"
     cfg.write_text(
@@ -170,11 +174,21 @@ def test_generate_with_population_slice_seeding(tmp_path: Path, synthetic_grid_4
         ["GEOID20", "population", "geometry"]
     ]
     src.to_file(units_path, driver="GeoJSON")
-    rc = main([
-        "generate", "--districts", "4", "--units", str(units_path),
-        "--geography", "vtd", "--out", str(tmp_path / "ps"),
-        "--seed-method", "population-slice",
-    ])
+    rc = main(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--out",
+            str(tmp_path / "ps"),
+            "--seed-method",
+            "population-slice",
+        ]
+    )
     assert rc == 0
     assert (tmp_path / "ps" / "map.geojson").is_file()
     metrics = json.loads((tmp_path / "ps" / "metrics.json").read_text())
@@ -188,29 +202,89 @@ def test_generate_with_reynolds_tighten(tmp_path: Path, synthetic_grid_4x4) -> N
         ["GEOID20", "population", "geometry"]
     ]
     src.to_file(units_path, driver="GeoJSON")
-    rc = main([
-        "generate", "--districts", "4", "--units", str(units_path),
-        "--geography", "vtd", "--out", str(tmp_path / "rt"),
-        "--reynolds-tighten",
-    ])
+    rc = main(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--out",
+            str(tmp_path / "rt"),
+            "--reynolds-tighten",
+        ]
+    )
     assert rc == 0
+    metrics = json.loads((tmp_path / "rt" / "metrics.json").read_text())
+    # Both score keys are present regardless of variant.
+    assert "dualbalance_score" in metrics
+    assert "dualbalance_score_classic" in metrics
+
+
+def test_generate_with_reynolds_tighten_classic_variant(tmp_path: Path, synthetic_grid_4x4) -> None:
+    units_path = tmp_path / "units.geojson"
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
+    src.to_file(units_path, driver="GeoJSON")
+    rc = main(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--out",
+            str(tmp_path / "rt_classic"),
+            "--reynolds-tighten",
+            "--score-variant",
+            "classic",
+        ]
+    )
+    assert rc == 0
+    metrics = json.loads((tmp_path / "rt_classic" / "metrics.json").read_text())
+    assert metrics["dualbalance_score_classic"] == 1.0  # perfect grid
+
+
+def test_generate_rejects_unknown_score_variant() -> None:
+    parser, _ = build_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(["generate", "--score-variant", "bogus"])
 
 
 def test_score_via_cli(tmp_path: Path, synthetic_grid_4x4) -> None:
     units_path = tmp_path / "units.geojson"
     out_dir = tmp_path / "out"
-    src = synthetic_grid_4x4.rename(
-        columns={"unit_id": "GEOID20"}
-    )[["GEOID20", "population", "geometry"]]
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
     src.to_file(units_path, driver="GeoJSON")
-    main([
-        "generate", "--districts", "4", "--units", str(units_path),
-        "--geography", "vtd", "--out", str(out_dir),
-    ])
-    rc = main([
-        "score",
-        "--plan", str(out_dir / "map.geojson"),
-        "--units", str(units_path),
-        "--geography", "vtd",
-    ])
+    main(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--out",
+            str(out_dir),
+        ]
+    )
+    rc = main(
+        [
+            "score",
+            "--plan",
+            str(out_dir / "map.geojson"),
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+        ]
+    )
     assert rc == 0

@@ -1,4 +1,100 @@
 \section{Methods}
 
-% Mathematical formulation: objects, seeds, assignment rule, objective,
-% tie-breaking. Mirrors docs/Formalism.md in the repository.
+% This section mirrors docs/Formalism.md in the repository. If one changes,
+% update the other.
+
+\subsection{Problem statement}
+
+Given a state $S$ partitioned into atomic units $U = \{u_1, \ldots, u_M\}$
+(census blocks, block groups, or VTDs) and a target district count $N$
+fixed by apportionment, we seek a deterministic assignment
+$\pi : U \to \{1, \ldots, N\}$ such that each district
+$D_i = \pi^{-1}(i)$ is contiguous, non-empty, and close to representing
+both $1/N$ of the people and $1/N$ of the geography of $S$.
+
+Let $P = \sum_u \mathrm{pop}(u)$ and $A = \sum_u \mathrm{area}(u)$ denote
+state population and area, with per-district targets $P^* = P/N$ and
+$A^* = A/N$.
+
+\subsection{Capacitated assignment}
+
+The current implementation (the ``Population-Capacitated Voronoi
+Baseline,'' v0) treats districting as a capacitated transportation
+problem in the lineage of Hess et al.~\cite{hess1965}. Seeds
+$\{s_1, \ldots, s_N\}$ are placed deterministically by farthest-point
+sampling. In each Lloyd iteration~\cite{aurenhammer1987,cohenaddad2018},
+$(u, i)$ pairs are sorted by normalized Euclidean distance
+$\|c(u) - s_i\| / \mathrm{diam}(S)$ and assigned greedily, subject to the
+hard capacity $\sum_{u \in D_i} \mathrm{pop}(u) \leq P^*$. Seeds are then
+recomputed as population-weighted centroids and the assignment is
+repeated until it stabilizes. Population balance is thus enforced as a
+hard constraint at the assignment step, in keeping with
+\textit{Reynolds v.~Sims}~\cite{reynolds1964}; area balance is reported
+but not enforced.
+
+Ties on minimum normalized distance break first by ascending unit ID,
+then by ascending district ID, so the entire procedure is deterministic
+and reproducible.
+
+\subsection{DualBalance score}
+
+The scoring harness reports two scalar measures of how balanced a plan
+is on both dimensions. Define the per-district relative deviations
+\[
+  \mathrm{pop\_dev}_i  = \frac{\bigl|\mathrm{pop}(D_i)  - P^*\bigr|}{P^*},
+  \qquad
+  \mathrm{area\_dev}_i = \frac{\bigl|\mathrm{area}(D_i) - A^*\bigr|}{A^*},
+\]
+and let $\overline{\mathrm{pop\_dev}}$ and
+$\overline{\mathrm{area\_dev}}$ denote their means over $i = 1, \ldots, N$.
+
+The default \emph{weighted} score is the convex-combination form
+\begin{equation}
+  \mathrm{DBS}_{\mathrm{w}}
+    = \frac{1}{1 + \tfrac{1}{2}\,\overline{\mathrm{pop\_dev}}
+                       + \tfrac{1}{2}\,\overline{\mathrm{area\_dev}}},
+  \label{eq:dbs-weighted}
+\end{equation}
+weighting population and area equally so that each district is judged
+on representing roughly $1/N$ of the people and $1/N$ of the state's
+geography. The $0.5/0.5$ coefficients make the error a convex
+combination rather than a sum, so adding the area term cannot inflate
+the error beyond what either component carries on its own.
+
+Alongside the weighted form, the harness also reports the
+\emph{classic} sum-of-means score
+\begin{equation}
+  \mathrm{DBS}_{\mathrm{c}}
+    = \frac{1}{1 + \overline{\mathrm{pop\_dev}} + \overline{\mathrm{area\_dev}}}.
+  \label{eq:dbs-classic}
+\end{equation}
+Both scores reach $1.0$ for a perfectly balanced plan and approach $0$
+in the limit of unbounded deviation. The classic form is strictly more
+punishing whenever either deviation is nonzero: at
+$\overline{\mathrm{pop\_dev}} = \overline{\mathrm{area\_dev}} = 1.0$ the
+weighted score is $0.5$, the classic score is $1/3$. The two are
+related by $\mathrm{DBS}_{\mathrm{c}} = 1 / (1 + 2(1 - 1/\mathrm{DBS}_{\mathrm{w}}))$.
+
+\subsection{Reynolds-tightening pass}
+
+The capacity-greedy initial plan typically satisfies Reynolds tolerance
+out of the box, but a population-tightening pass and an optional
+pop-neutral area-reduction pass are available for plans that do not.
+Phase A moves boundary units from over-target to adjacent under-target
+districts until every district lies within a user-specified
+$|\mathrm{pop}(D_i) - P^*|/P^* \leq \tau$ band (default $\tau = 0.005$).
+A run-time flag selects the objective: \emph{weighted} (default) picks
+the move that maximally reduces $\max_i |\mathrm{pop}(D_i) - P^*|$,
+guaranteeing monotone $L^\infty$ improvement; \emph{classic} picks the
+move that maximally reduces
+$\overline{\mathrm{pop\_dev}} + \overline{\mathrm{area\_dev}}$, the
+denominator of~(\ref{eq:dbs-classic}). Phase B then performs pairwise
+swaps of equal-population boundary units that reduce area deviation
+while keeping both districts within $\tau$.
+
+\subsection{Out-of-scope inputs}
+
+The generator reads only geography and population. Politics, race,
+demographics, communities of interest, and competitiveness are not
+inputs; partisan diagnostics may be \emph{reported} by the scoring
+harness but are never fed back into the generator.

@@ -22,9 +22,7 @@ def synthetic_grid_4x4() -> gpd.GeoDataFrame:
     rows = []
     for r in range(4):
         for c in range(4):
-            poly = Polygon(
-                [(c, r), (c + 1, r), (c + 1, r + 1), (c, r + 1)]
-            )
+            poly = Polygon([(c, r), (c + 1, r), (c + 1, r + 1), (c, r + 1)])
             rows.append(
                 {
                     "unit_id": f"R{r}C{c}",

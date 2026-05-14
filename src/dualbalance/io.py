@@ -37,9 +37,7 @@ def load_units(
     """
     gdf = gpd.read_file(path)
     if id_column not in gdf.columns:
-        raise ValueError(
-            f"missing ID column {id_column!r}; available: {list(gdf.columns)}"
-        )
+        raise ValueError(f"missing ID column {id_column!r}; available: {list(gdf.columns)}")
     if pop_column not in gdf.columns:
         raise ValueError(
             f"missing population column {pop_column!r}; available: {list(gdf.columns)}"
@@ -90,12 +88,10 @@ def load_plan(path: str | Path, *, geography: str = "unknown") -> Plan:
     for col in ("unit_id", "district_id"):
         if col not in gdf.columns:
             raise ValueError(
-                f"plan file missing required column {col!r}; "
-                f"available: {list(gdf.columns)}"
+                f"plan file missing required column {col!r}; available: {list(gdf.columns)}"
             )
     assignment = {
-        str(uid): int(did)
-        for uid, did in zip(gdf["unit_id"], gdf["district_id"], strict=True)
+        str(uid): int(did) for uid, did in zip(gdf["unit_id"], gdf["district_id"], strict=True)
     }
     n_districts = max(assignment.values()) + 1 if assignment else 0
     return Plan(
@@ -119,9 +115,10 @@ def load_state_populations(path: str | Path) -> dict[str, int]:
         return {str(k): int(v) for k, v in data.items()}
     with p.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        if reader.fieldnames is None or "state" not in reader.fieldnames \
-                or "population" not in reader.fieldnames:
-            raise ValueError(
-                f"{p!s}: CSV must have header columns 'state' and 'population'"
-            )
+        if (
+            reader.fieldnames is None
+            or "state" not in reader.fieldnames
+            or "population" not in reader.fieldnames
+        ):
+            raise ValueError(f"{p!s}: CSV must have header columns 'state' and 'population'")
         return {row["state"]: int(row["population"]) for row in reader}

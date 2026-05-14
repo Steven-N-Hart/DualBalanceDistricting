@@ -54,18 +54,15 @@ def _load_dotenv(path: Path) -> None:
         if key and key not in os.environ:
             os.environ[key] = val
 
+
 URL_BY_GEOGRAPHY: dict[Geography, str] = {
     Geography.VTD: (
-        "https://www2.census.gov/geo/tiger/TIGER2020PL/STATE/"
-        "27_MINNESOTA/27/tl_2020_27_vtd20.zip"
+        "https://www2.census.gov/geo/tiger/TIGER2020PL/STATE/27_MINNESOTA/27/tl_2020_27_vtd20.zip"
     ),
     Geography.BLOCK: (
-        "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/"
-        "tl_2020_27_tabblock20.zip"
+        "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_27_tabblock20.zip"
     ),
-    Geography.BLOCK_GROUP: (
-        "https://www2.census.gov/geo/tiger/TIGER2020/BG/tl_2020_27_bg20.zip"
-    ),
+    Geography.BLOCK_GROUP: ("https://www2.census.gov/geo/tiger/TIGER2020/BG/tl_2020_27_bg20.zip"),
 }
 
 
@@ -142,17 +139,11 @@ def _attach_population(
     if csv_path is not None:
         pops = pd.read_csv(csv_path, dtype={id_column: str})
         if id_column not in pops.columns or "population" not in pops.columns:
-            raise ValueError(
-                f"{csv_path!s}: must have columns {id_column} and population"
-            )
-        merged = gdf.merge(
-            pops[[id_column, "population"]], on=id_column, how="left"
-        )
+            raise ValueError(f"{csv_path!s}: must have columns {id_column} and population")
+        merged = gdf.merge(pops[[id_column, "population"]], on=id_column, how="left")
         missing = int(merged["population"].isna().sum())
         if missing:
-            raise ValueError(
-                f"{csv_path!s}: missing population for {missing} unit(s)"
-            )
+            raise ValueError(f"{csv_path!s}: missing population for {missing} unit(s)")
         merged["population"] = merged["population"].astype(int)
         return merged
 
@@ -160,8 +151,10 @@ def _attach_population(
         try:
             pops_by_geoid = _fetch_population_via_api(geography, MN_FIPS, api_key)
         except RuntimeError as exc:
-            print(f"  WARNING: Census API call failed ({exc}); "
-                  "falling back to synthetic uniform population=1000.")
+            print(
+                f"  WARNING: Census API call failed ({exc}); "
+                "falling back to synthetic uniform population=1000."
+            )
             print("  If you just signed up, check your email for the activation link.")
             gdf = gdf.copy()
             gdf["population"] = 1000
@@ -170,12 +163,9 @@ def _attach_population(
         merged["population"] = merged[id_column].map(pops_by_geoid)
         missing = int(merged["population"].isna().sum())
         if missing:
-            sample = (
-                merged.loc[merged["population"].isna(), id_column].head(5).tolist()
-            )
+            sample = merged.loc[merged["population"].isna(), id_column].head(5).tolist()
             raise RuntimeError(
-                f"Census API returned no population for {missing} unit(s); "
-                f"example IDs: {sample}"
+                f"Census API returned no population for {missing} unit(s); example IDs: {sample}"
             )
         merged["population"] = merged["population"].astype(int)
         print(
@@ -192,9 +182,7 @@ def _attach_population(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description=(
-            "Download Minnesota TIGER/Line geometry and emit a CLI-ready GeoJSON."
-        )
+        description=("Download Minnesota TIGER/Line geometry and emit a CLI-ready GeoJSON.")
     )
     parser.add_argument(
         "--geography",
@@ -235,8 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     expected_id = geography.default_id_column
     if expected_id not in gdf.columns:
         raise RuntimeError(
-            f"shapefile missing expected ID column {expected_id!r}; "
-            f"have: {list(gdf.columns)}"
+            f"shapefile missing expected ID column {expected_id!r}; have: {list(gdf.columns)}"
         )
     gdf = gdf[[expected_id, "geometry"]].copy()
 

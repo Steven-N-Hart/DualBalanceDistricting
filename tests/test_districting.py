@@ -30,9 +30,9 @@ def test_uniform_grid_perfectly_balanced_population(
     plan = generate_plan(synthetic_grid_4x4, n_districts=4)
     pop_by_district: dict[int, int] = {}
     for uid, d in plan.assignment.items():
-        pop = int(synthetic_grid_4x4.loc[
-            synthetic_grid_4x4["unit_id"] == uid, "population"
-        ].iloc[0])
+        pop = int(
+            synthetic_grid_4x4.loc[synthetic_grid_4x4["unit_id"] == uid, "population"].iloc[0]
+        )
         pop_by_district[d] = pop_by_district.get(d, 0) + pop
     # Uniform 100 across 16 units, 4 districts -> exactly 400 each.
     assert pop_by_district == {0: 400, 1: 400, 2: 400, 3: 400}
@@ -129,9 +129,8 @@ def test_repair_dissolves_discontiguous_component(
     from dualbalance.districting import _repair_contiguity
     from dualbalance.types import Seed, Targets
 
-    units_sorted = (
-        synthetic_grid_4x4.sort_values("unit_id", kind="mergesort")
-        .reset_index(drop=True)
+    units_sorted = synthetic_grid_4x4.sort_values("unit_id", kind="mergesort").reset_index(
+        drop=True
     )
     # Hand-built discontiguity: district 0 owns two disconnected corners,
     # district 1 owns the rest.

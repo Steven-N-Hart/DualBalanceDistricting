@@ -20,6 +20,7 @@ def test_perfectly_balanced_grid_scores_one(
     assert metrics["area_deviation_mean"] == 0.0
     assert metrics["area_deviation_max"] == 0.0
     assert metrics["dualbalance_score"] == 1.0
+    assert metrics["dualbalance_score_classic"] == 1.0
 
 
 def test_compactness_of_2x2_blocks(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
@@ -64,6 +65,21 @@ def test_unbalanced_plan_has_lower_score(
     # District 0 has all 1600 vs target 400 -> deviation 3.0.
     assert metrics["pop_deviation_max"] == 3.0
     assert metrics["dualbalance_score"] < 0.5
+    # Classic form is strictly more punishing once any deviation is nonzero.
+    assert metrics["dualbalance_score_classic"] < metrics["dualbalance_score"]
+
+
+def test_classic_score_matches_sum_of_means_identity(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    bad = Plan(
+        assignment={uid: 0 for uid in synthetic_grid_4x4["unit_id"]},
+        n_districts=4,
+        geography="test",
+    )
+    metrics = score_plan(bad, synthetic_grid_4x4)
+    expected = 1.0 / (1.0 + metrics["pop_deviation_mean"] + metrics["area_deviation_mean"])
+    assert metrics["dualbalance_score_classic"] == pytest.approx(expected, rel=1e-12)
 
 
 def test_geography_tag_round_trips(synthetic_grid_4x4: gpd.GeoDataFrame) -> None:
@@ -76,6 +92,7 @@ def test_metrics_dict_is_json_serializable(
     synthetic_grid_4x4: gpd.GeoDataFrame,
 ) -> None:
     import json
+
     plan = generate_plan(synthetic_grid_4x4, n_districts=4)
     metrics = score_plan(plan, synthetic_grid_4x4)
     # If this raises, our metrics dict has a non-serializable type lurking.

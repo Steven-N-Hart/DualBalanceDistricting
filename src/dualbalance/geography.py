@@ -29,8 +29,7 @@ class Geography(Enum):
         label="Census block (2020)",
         default_id_column="GEOID20",
         tiger_url_template=(
-            "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/"
-            "tl_2020_{fips}_tabblock20.zip"
+            "https://www2.census.gov/geo/tiger/TIGER2020/TABBLOCK20/tl_2020_{fips}_tabblock20.zip"
         ),
     )
     BLOCK_GROUP = _GeographySpec(

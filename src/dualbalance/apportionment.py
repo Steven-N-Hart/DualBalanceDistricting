@@ -46,9 +46,7 @@ def apportion_seats(state_populations: dict[str, int], total_seats: int) -> dict
 
     # Max-heap by priority via negation. Tuples (-priority, state) tie-break on
     # state name in ascending order, matching the documented rule.
-    heap: list[tuple[float, str]] = [
-        (-priority(state, 1), state) for state in state_populations
-    ]
+    heap: list[tuple[float, str]] = [(-priority(state, 1), state) for state in state_populations]
     heapq.heapify(heap)
 
     for _ in range(total_seats - n_states):

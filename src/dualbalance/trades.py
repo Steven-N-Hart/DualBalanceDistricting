@@ -49,9 +49,7 @@ def _compute_totals(
     return pop_totals, area_totals
 
 
-def _removable_without_disconnect(
-    graph: DualGraph, assignment: dict[str, int], uid: str
-) -> bool:
+def _removable_without_disconnect(graph: DualGraph, assignment: dict[str, int], uid: str) -> bool:
     """True iff removing ``uid`` from its district keeps that district
     connected (and non-empty)."""
     d = assignment[uid]
@@ -70,8 +68,21 @@ def tighten_to_reynolds(
     reduce_area: bool = True,
     max_pop_passes: int = 5000,
     max_area_passes: int = 5000,
+    score_variant: str = "weighted",
 ) -> Plan:
     """Run pop-tightening (Phase A) then optionally area-reduction (Phase B).
+
+    ``score_variant`` controls Phase A's move-selection objective:
+
+    - ``"weighted"`` (default): minimize ``pop_dev_max`` (the L-infinity
+      objective that underlies the weighted DualBalance score). Guarantees
+      ``pop_dev_max`` never increases per move; reaches the ``pop_tolerance``
+      band when feasible.
+    - ``"classic"``: minimize ``pop_dev_mean + area_dev_mean`` (the
+      sum-of-means objective behind ``dualbalance_score_classic``). Trades
+      strict L-infinity progress for an aggregate pop+area improvement; the
+      final ``pop_dev_max`` may exceed ``pop_tolerance`` if no further
+      classic-improving move exists.
 
     Returns a new ``Plan`` whose ``metadata`` records the number of moves in
     each phase and the final ``pop_dev_max`` / ``area_dev_max`` achieved.
@@ -79,6 +90,8 @@ def tighten_to_reynolds(
     """
     if pop_tolerance < 0:
         raise ValueError(f"pop_tolerance must be >= 0, got {pop_tolerance}")
+    if score_variant not in ("weighted", "classic"):
+        raise ValueError(f"score_variant must be 'weighted' or 'classic', got {score_variant!r}")
     n_districts = plan.n_districts
     graph = _build_dual_graph(units)
 
@@ -93,16 +106,33 @@ def tighten_to_reynolds(
 
     # --- Phase A: population tightening ---
     pop_moves = _phase_a_pop_tighten(
-        graph, assignment, pop, area, pop_totals, area_totals,
-        p_target, pop_tolerance, max_pop_passes,
+        graph,
+        assignment,
+        pop,
+        area,
+        pop_totals,
+        area_totals,
+        p_target,
+        a_target,
+        pop_tolerance,
+        max_pop_passes,
+        score_variant,
     )
 
     # --- Phase B: pop-neutral area-reducing swaps ---
     area_swaps = 0
     if reduce_area:
         area_swaps = _phase_b_area_reduce(
-            graph, assignment, pop, area, pop_totals, area_totals,
-            p_target, a_target, pop_tolerance, max_area_passes,
+            graph,
+            assignment,
+            pop,
+            area,
+            pop_totals,
+            area_totals,
+            p_target,
+            a_target,
+            pop_tolerance,
+            max_area_passes,
         )
 
     final_pop_dev = np.abs(pop_totals - p_target) / p_target
@@ -112,6 +142,7 @@ def tighten_to_reynolds(
     new_meta["reynolds_pop_moves"] = pop_moves
     new_meta["reynolds_area_swaps"] = area_swaps
     new_meta["reynolds_pop_tolerance"] = pop_tolerance
+    new_meta["reynolds_score_variant"] = score_variant
     new_meta["reynolds_final_pop_dev_max"] = float(final_pop_dev.max())
     new_meta["reynolds_final_area_dev_max"] = float(final_area_dev.max())
 
@@ -131,14 +162,22 @@ def _phase_a_pop_tighten(
     pop_totals: np.ndarray,
     area_totals: np.ndarray,
     p_target: float,
+    a_target: float,
     pop_tolerance: float,
     max_passes: int,
+    score_variant: str,
 ) -> int:
     """Move boundary units from over-target to adjacent under-target districts.
 
-    Picks the move that maximally reduces ``pop_dev_max`` each step. Ties on
-    pop reduction break by smaller area-deviation increase, then by
-    ascending (unit_id, target district id) for full determinism.
+    Under ``score_variant="weighted"`` (default) picks the move that maximally
+    reduces ``pop_dev_max``; ties on pop reduction break by smaller
+    area-deviation increase, then by ascending (unit_id, target district id).
+
+    Under ``score_variant="classic"`` picks the move that maximally reduces
+    ``pop_dev_mean + area_dev_mean`` (the classic-score denominator); ties
+    break by ascending (unit_id, target district id). The tolerance band is
+    still the loop's natural exit, but the loop may also exit early if no
+    classic-improving move exists even though some district is out of band.
     """
     n = len(pop_totals)
     p_high = p_target * (1 + pop_tolerance)
@@ -149,10 +188,7 @@ def _phase_a_pop_tighten(
         pop_dev = pop_totals - p_target
         max_over_idx = int(np.argmax(pop_dev))
         max_under_idx = int(np.argmin(pop_dev))
-        if (
-            pop_totals[max_over_idx] <= p_high
-            and pop_totals[max_under_idx] >= p_low
-        ):
+        if pop_totals[max_over_idx] <= p_high and pop_totals[max_under_idx] >= p_low:
             return moves  # all districts within tolerance
 
         d_over = max_over_idx
@@ -166,9 +202,7 @@ def _phase_a_pop_tighten(
             if assignment.get(uid) != d_over:
                 continue
             neighbor_districts = {
-                assignment[nbr]
-                for nbr in graph.neighbors(uid)
-                if assignment[nbr] != d_over
+                assignment[nbr] for nbr in graph.neighbors(uid) if assignment[nbr] != d_over
             }
             for d_dest in neighbor_districts:
                 if pop_totals[d_dest] >= pop_totals[d_over]:
@@ -178,43 +212,69 @@ def _phase_a_pop_tighten(
         if not candidates:
             return moves  # nothing to do; perhaps non-adjacent over/under
 
-        # Score each candidate. We want to minimize max-deviation across all
-        # districts AFTER the move. Compute the deltas.
-        current_max = float(np.max(np.abs(pop_dev)))
-        best_score: tuple[float, float, str, int] | None = None
+        if score_variant == "classic":
+            current_obj = (
+                float(np.mean(np.abs(pop_totals - p_target))) / p_target
+                + float(np.mean(np.abs(area_totals - a_target))) / a_target
+            )
+        else:
+            current_obj = float(np.max(np.abs(pop_dev)))
+
+        best_key: tuple | None = None
         best_move: tuple[str, int] | None = None
         for uid, d_dest in candidates:
             delta_p = pop[uid]
-            new_over = over_pop - delta_p
-            new_dest = pop_totals[d_dest] + delta_p
-            # Worst pop deviation among the untouched districts:
-            other_max = 0.0
-            for k in range(n):
-                if k in (d_over, d_dest):
+            delta_a = area[uid]
+            new_over_pop = over_pop - delta_p
+            new_dest_pop = pop_totals[d_dest] + delta_p
+            new_over_area = area_totals[d_over] - delta_a
+            new_dest_area = area_totals[d_dest] + delta_a
+
+            if score_variant == "classic":
+                pop_sum = 0.0
+                area_sum = 0.0
+                for k in range(n):
+                    if k == d_over:
+                        pop_sum += abs(new_over_pop - p_target)
+                        area_sum += abs(new_over_area - a_target)
+                    elif k == d_dest:
+                        pop_sum += abs(new_dest_pop - p_target)
+                        area_sum += abs(new_dest_area - a_target)
+                    else:
+                        pop_sum += abs(pop_totals[k] - p_target)
+                        area_sum += abs(area_totals[k] - a_target)
+                new_obj = (pop_sum / (n * p_target)) + (area_sum / (n * a_target))
+                if new_obj >= current_obj:
                     continue
-                v = abs(pop_totals[k] - p_target)
-                if v > other_max:
-                    other_max = v
-            new_max = max(
-                other_max,
-                abs(new_over - p_target),
-                abs(new_dest - p_target),
-            )
-            # Skip moves that wouldn't improve the picture.
-            if new_max >= current_max:
-                continue
-            # Skip moves that would disconnect d_over.
-            if not _removable_without_disconnect(graph, assignment, uid):
-                continue
-            # Secondary preference: small area-deviation increase.
-            new_area_over = area_totals[d_over] - area[uid]
-            new_area_dest = area_totals[d_dest] + area[uid]
-            area_delta = (
-                abs(new_area_over - 0) + abs(new_area_dest - 0)
-            )  # raw magnitudes; just a tie-breaker
-            key = (new_max, area_delta, uid, d_dest)
-            if best_score is None or key < best_score:
-                best_score = key
+                if not _removable_without_disconnect(graph, assignment, uid):
+                    continue
+                key: tuple = (new_obj, uid, d_dest)
+            else:
+                # Worst pop deviation among the untouched districts:
+                other_max = 0.0
+                for k in range(n):
+                    if k in (d_over, d_dest):
+                        continue
+                    v = abs(pop_totals[k] - p_target)
+                    if v > other_max:
+                        other_max = v
+                new_max = max(
+                    other_max,
+                    abs(new_over_pop - p_target),
+                    abs(new_dest_pop - p_target),
+                )
+                if new_max >= current_obj:
+                    continue
+                if not _removable_without_disconnect(graph, assignment, uid):
+                    continue
+                # Secondary preference: small area-deviation increase.
+                area_delta = abs(new_over_area - 0) + abs(
+                    new_dest_area - 0
+                )  # raw magnitudes; just a tie-breaker
+                key = (new_max, area_delta, uid, d_dest)
+
+            if best_key is None or key < best_key:
+                best_key = key
                 best_move = (uid, d_dest)
 
         if best_move is None:
@@ -275,8 +335,10 @@ def _phase_b_area_reduce(
                 area_d1_new = area_totals[d1] - area[uid] + area[nbr]
                 area_d2_new = area_totals[d2] - area[nbr] + area[uid]
                 gain = (
-                    abs(area_totals[d1] - a_target) + abs(area_totals[d2] - a_target)
-                    - abs(area_d1_new - a_target) - abs(area_d2_new - a_target)
+                    abs(area_totals[d1] - a_target)
+                    + abs(area_totals[d2] - a_target)
+                    - abs(area_d1_new - a_target)
+                    - abs(area_d2_new - a_target)
                 )
                 if gain <= best_gain:
                     continue

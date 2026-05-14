@@ -30,9 +30,7 @@ from dualbalance.scoring import score_plan
 from dualbalance.types import Plan
 
 MN_FIPS = "27"
-CD_SHAPEFILE_URL = (
-    "https://www2.census.gov/geo/tiger/TIGER2024/CD/tl_2024_27_cd119.zip"
-)
+CD_SHAPEFILE_URL = "https://www2.census.gov/geo/tiger/TIGER2024/CD/tl_2024_27_cd119.zip"
 
 
 def _download_cd_shapefile(dest_dir: Path) -> Path:
@@ -48,9 +46,7 @@ def _download_cd_shapefile(dest_dir: Path) -> Path:
     return shps[0]
 
 
-def _enacted_assignment(
-    vtds: gpd.GeoDataFrame, cds: gpd.GeoDataFrame
-) -> dict[str, int]:
+def _enacted_assignment(vtds: gpd.GeoDataFrame, cds: gpd.GeoDataFrame) -> dict[str, int]:
     """Map each VTD's GEOID20 to its enacted CD's 0-indexed id.
 
     Strategy: VTD centroid sjoin within CD polygons; fall back to nearest CD
@@ -76,13 +72,11 @@ def _enacted_assignment(
     unmatched_mask = joined["district_id"].isna()
     n_unmatched = int(unmatched_mask.sum())
     if n_unmatched:
-        print(f"  {n_unmatched} VTD(s) centroid not strictly within any CD; "
-              "using nearest CD")
+        print(f"  {n_unmatched} VTD(s) centroid not strictly within any CD; using nearest CD")
         joined = joined.drop(columns=["index_right", "district_id", "cd_code"])
         joined = gpd.sjoin_nearest(centroids, cds, how="left")
     assignment = {
-        str(uid): int(d)
-        for uid, d in zip(joined["unit_id"], joined["district_id"], strict=True)
+        str(uid): int(d) for uid, d in zip(joined["unit_id"], joined["district_id"], strict=True)
     }
     return assignment
 
@@ -90,11 +84,15 @@ def _enacted_assignment(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--vtds", type=Path, default=Path("data/mn_vtd.geojson"),
+        "--vtds",
+        type=Path,
+        default=Path("data/mn_vtd.geojson"),
         help="Path to prepared MN VTD GeoJSON (default: data/mn_vtd.geojson).",
     )
     parser.add_argument(
-        "--out", type=Path, default=Path("out/mn_enacted"),
+        "--out",
+        type=Path,
+        default=Path("out/mn_enacted"),
         help="Output directory (default: out/mn_enacted).",
     )
     args = parser.parse_args(argv)

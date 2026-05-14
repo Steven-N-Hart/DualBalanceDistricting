@@ -69,13 +69,14 @@ These are non-negotiable properties the implementation must preserve. Check ever
 
 ## Objective function
 
-Reported by the scoring harness (the v0 generator does **not** directly minimize this; it minimizes population-capacitated geographic-assignment cost and reports the score diagnostically):
+Two scores are reported side-by-side; the v0 generator does **not** directly minimize either (it minimizes population-capacitated geographic-assignment cost and reports the scores diagnostically):
 
 ```
-DualBalance Score = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
+DualBalance Score          = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
+DualBalance Score, classic = 1 / (1 +       pop_deviation_mean +       area_deviation_mean)
 ```
 
-where `pop_deviation_d = |Pop(d) - P*| / P*` and similarly for area, averaged over districts. The 0.5/0.5 weighting makes the error a convex combination of the two mean deviations (β = γ = ½), enforcing the "each district holds ~1/N of people *and* ~1/N of geography" reading. Secondary metrics: Polsby-Popper compactness (via gerrychain.metrics), Reock (via shapely's minimum bounding radius), per-district population/area breakdown.
+where `pop_deviation_d = |Pop(d) - P*| / P*` and similarly for area, averaged over districts. The default (weighted) form's 0.5/0.5 weighting makes the error a convex combination of the two mean deviations (β = γ = ½), enforcing the "each district holds ~1/N of people *and* ~1/N of geography" reading. The classic (sum-of-means) form is strictly more punishing whenever either deviation is nonzero; both reach 1.0 for a perfectly balanced plan. The `--score-variant {weighted,classic}` flag on `dualbalance generate` selects which form Reynolds-tighten Phase A optimizes against (default: `weighted`); both scores still appear in `metrics.json` regardless. Per-district `pop_deviation` and `area_deviation` are exposed so consumers can recompute either form from the breakdown. Secondary metrics: Polsby-Popper compactness (via gerrychain.metrics), Reock (via shapely's minimum bounding radius), per-district population/area breakdown.
 
 ## Outputs
 

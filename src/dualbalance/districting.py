@@ -203,9 +203,7 @@ def generate_plan(
     if n_districts <= 0:
         raise ValueError(f"n_districts must be positive, got {n_districts}")
     if n_districts > len(units):
-        raise ValueError(
-            f"n_districts ({n_districts}) exceeds number of units ({len(units)})"
-        )
+        raise ValueError(f"n_districts ({n_districts}) exceeds number of units ({len(units)})")
     if max_iter < 1:
         raise ValueError(f"max_iter must be >= 1, got {max_iter}")
 
@@ -230,7 +228,13 @@ def generate_plan(
 
     for n_iters in range(1, max_iter + 1):  # noqa: B007 — n_iters read after loop
         assignment = _assign(
-            cx, cy, pops, unit_ids, seeds, targets, norm,
+            cx,
+            cy,
+            pops,
+            unit_ids,
+            seeds,
+            targets,
+            norm,
             capacity_slack=capacity_slack,
         )
         if assignment == previous_assignment:
@@ -243,8 +247,15 @@ def generate_plan(
     contiguous = None
     if repair:
         assignment, repair_iters, contiguous = _repair_contiguity(
-            assignment, units_sorted, seeds, targets,
-            alpha, beta, norm, n_districts, max_repair_iter,
+            assignment,
+            units_sorted,
+            seeds,
+            targets,
+            alpha,
+            beta,
+            norm,
+            n_districts,
+            max_repair_iter,
         )
 
     return Plan(
@@ -345,18 +356,14 @@ def _repair_contiguity(
             for comp in comps_sorted[1:]:
                 for uid in sorted(comp):
                     candidates = {
-                        assignment[nbr]
-                        for nbr in graph.neighbors(uid)
-                        if assignment[nbr] != d
+                        assignment[nbr] for nbr in graph.neighbors(uid) if assignment[nbr] != d
                     }
                     if not candidates:
                         continue  # truly isolated; leave in place
                     best_district: int | None = None
                     best_key: tuple[float, float, float, float, int] | None = None
                     for cand in candidates:
-                        dist = math.hypot(
-                            cx[uid] - seed_x[cand], cy[uid] - seed_y[cand]
-                        ) / norm
+                        dist = math.hypot(cx[uid] - seed_x[cand], cy[uid] - seed_y[cand]) / norm
                         pop_pen = abs(pop_totals[cand] + pop[uid] - p_star) / p_star
                         area_pen = abs(area_totals[cand] + area[uid] - a_star) / a_star
                         cost = alpha * dist + beta * pop_pen + beta * area_pen

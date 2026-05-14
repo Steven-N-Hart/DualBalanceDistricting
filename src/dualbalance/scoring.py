@@ -14,6 +14,17 @@ Primary metrics (the ones the algorithm optimizes against):
   than a sum, so adding the area term cannot push the score below what an
   area-blind capacitated-Voronoi pass would already report.
 
+- ``dualbalance_score_classic = 1 / (1 + pop_deviation_mean + area_deviation_mean)``
+
+  The "classic" sum-of-means variant: same per-district deviations, but
+  pop and area are *summed* rather than averaged. Strictly more punishing
+  than the weighted form when either deviation is nonzero (at
+  ``pop_dev = area_dev = 1.0``, weighted = 0.5 vs. classic = 1/3). Both
+  scores reach 1.0 for a perfectly balanced plan and 0.0 in the limit of
+  unbounded deviation. Reported alongside ``dualbalance_score`` so callers
+  can pick the form that best fits how their downstream analysis weights
+  the area term.
+
 Secondary metrics (reported, not optimized):
 
 - ``polsby_popper`` -- 4 * pi * area / perimeter^2  (via gerrychain.metrics)
@@ -65,16 +76,18 @@ def score_plan(plan: Plan, units: gpd.GeoDataFrame) -> dict[str, Any]:
     for d in sorted(members):
         uids = members[d]
         if not uids:
-            per_district.append({
-                "district_id": d,
-                "population": 0.0,
-                "area": 0.0,
-                "n_units": 0,
-                "pop_deviation": 1.0,
-                "area_deviation": 1.0,
-                "polsby_popper": 0.0,
-                "reock": 0.0,
-            })
+            per_district.append(
+                {
+                    "district_id": d,
+                    "population": 0.0,
+                    "area": 0.0,
+                    "n_units": 0,
+                    "pop_deviation": 1.0,
+                    "area_deviation": 1.0,
+                    "polsby_popper": 0.0,
+                    "reock": 0.0,
+                }
+            )
             pop_devs.append(1.0)
             area_devs.append(1.0)
             pp_scores.append(0.0)
@@ -99,16 +112,18 @@ def score_plan(plan: Plan, units: gpd.GeoDataFrame) -> dict[str, Any]:
         pp_scores.append(pp)
         reock_scores.append(reock)
 
-        per_district.append({
-            "district_id": d,
-            "population": pop,
-            "area": area,
-            "n_units": len(uids),
-            "pop_deviation": pop_dev,
-            "area_deviation": area_dev,
-            "polsby_popper": pp,
-            "reock": reock,
-        })
+        per_district.append(
+            {
+                "district_id": d,
+                "population": pop,
+                "area": area,
+                "n_units": len(uids),
+                "pop_deviation": pop_dev,
+                "area_deviation": area_dev,
+                "polsby_popper": pp,
+                "reock": reock,
+            }
+        )
 
     pop_dev_mean = float(np.mean(pop_devs))
     pop_dev_max = float(np.max(pop_devs))
@@ -116,9 +131,12 @@ def score_plan(plan: Plan, units: gpd.GeoDataFrame) -> dict[str, Any]:
     area_dev_max = float(np.max(area_devs))
     dual_error = 0.5 * pop_dev_mean + 0.5 * area_dev_mean
     dual_score = 1.0 / (1.0 + dual_error)
+    dual_error_classic = pop_dev_mean + area_dev_mean
+    dual_score_classic = 1.0 / (1.0 + dual_error_classic)
 
     return {
         "dualbalance_score": dual_score,
+        "dualbalance_score_classic": dual_score_classic,
         "pop_deviation_mean": pop_dev_mean,
         "pop_deviation_max": pop_dev_max,
         "area_deviation_mean": area_dev_mean,
