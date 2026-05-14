@@ -58,7 +58,7 @@ Those are all sources of human interpretation — and therefore bias.
 
 ## Algorithm (high level)
 
-A capacity-constrained variant of the Lloyd / Hess 1965 districting iteration applied to atomic census units (VTDs by default, also blocks / block groups). See [docs/Formalism.md](docs/Formalism.md) for the precise mathematical statement.
+A capacity-constrained Lloyd-style iteration on atomic census units (VTDs by default, also blocks / block groups). The assignment step resembles the soft-penalty location-allocation formulations used in early operations-research approaches to political districting, including Hess-style models. See [docs/Formalism.md](docs/Formalism.md) for the precise mathematical statement.
 
 1. **Place seeds.** Deterministic farthest-point sampling from units ranked by population; ties on min-distance break by ascending unit ID.
 2. **Capacitated assignment.** For each iteration, consider every `(unit, district)` pair in ascending normalized geographic distance and assign each unit to its closest district that still has remaining population capacity `P* = total_pop / N`. Population balance is enforced as a hard capacity, not a soft penalty.
@@ -66,7 +66,16 @@ A capacity-constrained variant of the Lloyd / Hess 1965 districting iteration ap
 4. **Iterate** steps 2–3 until the assignment stops changing (or a configurable iteration cap is reached).
 5. **Repair contiguity.** Build the rook-adjacency dual graph; for any district whose induced subgraph has more than one connected component, dissolve the smaller components into adjacent districts in deterministic order.
 
-Population and area weighting in the objective is *equal at the metric level* — the reported DualBalance Score combines population and area deviation with equal coefficients. The current generator enforces population balance as a capacity and reports area imbalance; the natural next extension is a two-dimensional capacitated transportation problem that bounds both.
+The current implementation minimizes geographic assignment cost subject to a *population* capacity. It then reports the DualBalance objective, which measures joint deviation from equal population share and equal land-area share. **Area balancing is currently diagnostic, not enforced** — see "v0 vs v1" below.
+
+### v0 vs v1
+
+The codebase distinguishes between what is implemented today and the intended next version:
+
+- **v0 — Population-Capacitated Voronoi Baseline (current).** Each district has a hard population capacity `P* = P/N` enforced at assignment time. Area balance is reported by the scoring harness but is not a constraint on the generator. The objective is *reported*, not minimized — what is minimized is total normalized geographic distance subject to population capacity.
+- **v1 — Dual-Capacitated Voronoi Assignment (planned).** Each district is bounded by both a population capacity `Pop(D_i) ≈ P*` *and* an area capacity `Area(D_i) ≈ A*`, via a two-dimensional capacitated transportation step. This is what would make the algorithm a *true* DualBalance generator rather than a population-capacitated Voronoi.
+
+Until v1 lands, read the spec and the implementation together: the *metric* weighs population and area equally; the *generator* enforces only population.
 
 For a worked example with reproduction commands, the actual MN PoC metrics, and visualization recipes, see [docs/mn-poc-walkthrough.md](docs/mn-poc-walkthrough.md).
 
@@ -170,10 +179,13 @@ Geographic balance:
 **DualBalance Score:**
 
 ```
-DualBalance Score = 1 / (1 + population_error + area_error)
+DualBalance Error = mean_i [ 0.5 · |Pop(D_i)/P  − 1/N| / (1/N)
+                           + 0.5 · |Area(D_i)/A − 1/N| / (1/N) ]
+
+DualBalance Score = 1 / (1 + DualBalance Error)
 ```
 
-This is the defining metric of the system, treating population and land area equally.
+The 0.5/0.5 coefficients are the explicit "each district should hold roughly 1/N of the people *and* roughly 1/N of the state's geography" statement — population and land area are weighted equally, and the error is the convex combination of their per-district deviations averaged across districts.
 
 ### Secondary metrics
 

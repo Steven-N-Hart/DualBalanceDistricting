@@ -74,16 +74,16 @@ DualBalance does **not** optimize for compactness; the PP and Reock numbers here
 ### DualBalance Score — the headline number
 
 ```
-dualbalance_score = 1 / (1 + pop_deviation_mean + area_deviation_mean)
-                  = 0.4583
+dualbalance_score = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
+                  = 0.6286
 ```
 
-This is the project's own metric. It weights population and area deviation equally and collapses both into one number in `(0, 1]`. Anchor values:
+This is the project's own metric. It weights population and area deviation equally (β = γ = ½) and collapses both into one number in `(0, 1]`. The 0.5/0.5 coefficients make the error a convex combination of the two mean deviations rather than a raw sum. Anchor values:
 
 - **1.0** = perfect balance on both pop and area. The synthetic 4×4 grid hits this exactly.
-- **0.500** = 50 % deviation on each. Bad but not catastrophic.
-- **0.458** = where this MN run lands — driven by the extreme area imbalance that the urban-vs-rural population density of Minnesota forces on any pop-balanced plan.
-- **< 0.30** = at least one of pop or area is wildly out of balance.
+- **0.667** = 50 % deviation on each. Bad but not catastrophic.
+- **0.629** = where this MN run lands — driven by the extreme area imbalance that the urban-vs-rural population density of Minnesota forces on any pop-balanced plan.
+- **< 0.40** = at least one of pop or area is wildly out of balance (combined deviation > 150 %).
 
 Comparing two plans against the *same* state geometry, **higher is better**. Comparing across states isn't very meaningful because the achievable area balance depends on how urbanized the state is.
 
@@ -211,10 +211,10 @@ python scripts/plot_mn_comparison.py                                         # 2
 
 | Plan | DualBalance Score | pop_dev_mean | pop_dev_max | area_dev_mean | area_dev_max | PP_mean | Reock_mean |
 |---|---|---|---|---|---|---|---|
-| 1. Farthest-point, no tighten | 0.4583 | 5.37 % | **21.27 %** | 112.8 % | 345.5 % | 0.351 | 0.558 |
-| 2. Population-slice, no tighten | 0.4600 | 5.60 % | 22.38 % | 111.8 % | 344.9 % | 0.332 | 0.554 |
-| 3. Pop-slice + Reynolds tighten | 0.4685 | 1.24 % | **4.95 %** | 112.2 % | 337.8 % | 0.270 | 0.556 |
-| **Enacted (119th Congress)** | **0.4696** | **0.42 %** | **1.32 %** | 112.6 % | **241.0 %** | 0.320 | 0.419 |
+| 1. Farthest-point, no tighten | 0.6286 | 5.37 % | **21.27 %** | 112.8 % | 345.5 % | 0.351 | 0.558 |
+| 2. Population-slice, no tighten | 0.6301 | 5.60 % | 22.38 % | 111.8 % | 344.9 % | 0.332 | 0.554 |
+| 3. Pop-slice + Reynolds tighten | 0.6381 | 1.24 % | **4.95 %** | 112.2 % | 337.8 % | 0.270 | 0.556 |
+| **Enacted (119th Congress)** | **0.6389** | **0.42 %** | **1.32 %** | 112.6 % | **241.0 %** | 0.320 | 0.419 |
 
 A few honest readings:
 

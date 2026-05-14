@@ -203,7 +203,7 @@ DualBalance, distilled:
 5. Repair contiguity.
 6. Deterministic tie-break cascade.
 
-The DualBalance Score = 1 / (1 + pop_err + area_err) is symmetric in population and area errors.
+The DualBalance Score = 1 / (1 + 0.5·pop_err + 0.5·area_err) is symmetric in population and area errors (β = γ = ½).
 
 ### 4.1 What is *not* novel
 

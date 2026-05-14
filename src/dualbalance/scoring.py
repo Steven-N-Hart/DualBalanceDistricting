@@ -4,7 +4,15 @@ Primary metrics (the ones the algorithm optimizes against):
 
 - ``pop_deviation_mean`` / ``pop_deviation_max`` -- |pop(D) - P*| / P*
 - ``area_deviation_mean`` / ``area_deviation_max`` -- |area(D) - A*| / A*
-- ``dualbalance_score = 1 / (1 + pop_deviation_mean + area_deviation_mean)``
+- ``dualbalance_score = 1 / (1 + 0.5 * (pop_deviation_mean + area_deviation_mean))``
+
+  Equivalently: ``1 / (1 + dualbalance_error)`` where
+  ``dualbalance_error = mean_i [0.5 * pop_dev_i + 0.5 * area_dev_i]``.
+  The 0.5/0.5 weighting is the explicit "each district should be ~1/N of
+  the people *and* ~1/N of the state's geography" statement; it makes the
+  score behave as a convex combination of pop- and area-deviation rather
+  than a sum, so adding the area term cannot push the score below what an
+  area-blind capacitated-Voronoi pass would already report.
 
 Secondary metrics (reported, not optimized):
 
@@ -106,7 +114,8 @@ def score_plan(plan: Plan, units: gpd.GeoDataFrame) -> dict[str, Any]:
     pop_dev_max = float(np.max(pop_devs))
     area_dev_mean = float(np.mean(area_devs))
     area_dev_max = float(np.max(area_devs))
-    dual_score = 1.0 / (1.0 + pop_dev_mean + area_dev_mean)
+    dual_error = 0.5 * pop_dev_mean + 0.5 * area_dev_mean
+    dual_score = 1.0 / (1.0 + dual_error)
 
     return {
         "dualbalance_score": dual_score,

@@ -77,7 +77,7 @@ cost(b, i) = α · d(x_b, s_i) + β · |pop(D_i) + p_b - P*| / P*
                               + γ · |area(D_i) + a_b - A*| / A*
 ```
 
-which is the canonical Hess 1965 cost function. The soft-penalty form was implemented first, but on real census geometry it converges to a 2-cycle in which units pile into whichever district is nearest target this iteration. The capacity-constrained form (equivalent to a single transportation step) avoids the cycle and matches the lineage from Hess et al. (1965) and Mehrotra-Johnson-Nemhauser (1998).
+which resembles the soft-penalty formulations used in early operations-research approaches to political districting, including Hess-style location-allocation models. The soft-penalty form was implemented first, but on real census geometry it converges to a 2-cycle in which units pile into whichever district is nearest target this iteration. The capacity-constrained form (a single transportation step) avoids the cycle and follows the broader lineage of capacitated location-allocation, including Hess et al. (1965) and Mehrotra-Johnson-Nemhauser (1998).
 
 ## 4. Iteration and objective
 
@@ -88,14 +88,23 @@ The full procedure is:
 3. Recompute each seed as the population-weighted centroid of its assigned blocks.
 4. If the assignment differs from the previous iteration, repeat from step 2.
 
-Reported objective (used for the DualBalance Score, not directly minimized):
+The current implementation — **v0, "Population-Capacitated Voronoi Baseline"** — minimizes total normalized geographic assignment cost subject to a population capacity `P*`. It then *reports* the DualBalance objective:
 
 ```
-Σ_i [ β · |Pop(D_i)  - P*| / P*
-    + β · |Area(D_i) - A*| / A* ]
+DualBalance Error = mean_i [ 0.5 · |Pop(D_i)/P  − 1/N| / (1/N)
+                           + 0.5 · |Area(D_i)/A − 1/N| / (1/N) ]
+
+DualBalance Score = 1 / (1 + DualBalance Error)
 ```
 
-with `β` shared between the population and area terms so the two are weighted equally. Population is enforced as a capacity at the assignment step; area is currently reported only. Extending the assignment step to a two-dimensional capacitated transportation problem that bounds area as well is a natural next step.
+Equivalently, writing the per-district deviations as
+`pop_dev_i  = |Pop(D_i) − P*| / P*` and
+`area_dev_i = |Area(D_i) − A*| / A*`,
+the score is `1 / (1 + 0.5·mean(pop_dev) + 0.5·mean(area_dev))`.
+
+The two terms are weighted equally (β = γ = ½) so that each district is judged on representing roughly 1/N of the people *and* roughly 1/N of the state's geography. The 0.5/0.5 coefficients make the error a convex combination of the two mean deviations rather than a raw sum, so adding the area term cannot artificially inflate the error beyond what either component carries on its own.
+
+**v0 vs v1.** In v0 (current), population is enforced as a hard capacity at the assignment step; area is diagnostic only — its deviation appears in the score but never constrains the generator. The intended **v1 ("Dual-Capacitated Voronoi Assignment")** replaces the assignment step with a two-dimensional capacitated transportation problem that bounds both `Pop(D_i)` and `Area(D_i)`. Only v1 *directly minimizes* the DualBalance objective; v0 minimizes a population-capacitated geographic-cost surrogate and reports the DualBalance score diagnostically.
 
 Subject to:
 

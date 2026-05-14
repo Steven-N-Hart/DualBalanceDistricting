@@ -62,20 +62,20 @@ These are non-negotiable properties the implementation must preserve. Check ever
 
 - **Deterministic.** No RNG, no wall-clock dependence. Capacitated assignment processes `(unit, district)` pairs in ascending normalized distance; ties on min cost break by `(unit_id, district_id)` ascending. Contiguity-repair tie cascade matches [docs/Formalism.md](docs/Formalism.md): lower population error → lower area error → shorter seed distance → smaller district ID → smaller block ID.
 - **Block-level atomicity.** Districts are unions of whole atomic units; boundaries follow unit boundaries.
-- **Population balance is a hard constraint.** Each district has a capacity `P* = P/N` enforced at the assignment step (the canonical Hess 1965 capacitated transportation formulation). Soft penalty forms (absolute or one-sided) destabilize on real census geometry — do not re-introduce them as the primary assignment rule.
-- **Area balance is reported, not enforced.** The DualBalance Score weights pop and area deviation equally for *reporting*; the generator currently only caps population. Extending to a two-dimensional capacitated transportation (both pop and area as capacities) is a planned follow-up — guard tests if you implement it.
+- **Population balance is a hard constraint.** Each district has a capacity `P* = P/N` enforced at the assignment step — a capacitated transportation step in the lineage of Hess-style location-allocation models. Soft penalty forms (absolute or one-sided) destabilize on real census geometry — do not re-introduce them as the primary assignment rule.
+- **Area balance is reported, not enforced (v0 baseline).** The current generator is the "Population-Capacitated Voronoi Baseline" (v0): only population is capped. The DualBalance Score weights pop and area deviation equally for *reporting*. The planned "Dual-Capacitated Voronoi Assignment" (v1) extends the assignment step to a two-dimensional capacitated transportation problem that bounds both pop and area — guard tests if you implement it.
 - **Contiguity, non-empty, full coverage.** Every unit belongs to exactly one district; the post-iteration repair pass guarantees every district is contiguous. Empty districts can appear only with extreme inputs (more districts than the geometry can spatially separate).
 - **Out of scope inputs.** Politics, race/demographics, communities of interest, competitiveness — the generator must not read these. Partisan metrics may be *reported* by the scoring harness but never fed back into the generator.
 
 ## Objective function
 
-Reported (not directly minimized — assignment is capacity-constrained):
+Reported by the scoring harness (the v0 generator does **not** directly minimize this; it minimizes population-capacitated geographic-assignment cost and reports the score diagnostically):
 
 ```
-DualBalance Score = 1 / (1 + pop_deviation_mean + area_deviation_mean)
+DualBalance Score = 1 / (1 + 0.5 · pop_deviation_mean + 0.5 · area_deviation_mean)
 ```
 
-where `pop_deviation_d = |Pop(d) - P*| / P*` and similarly for area, averaged over districts. Secondary metrics: Polsby-Popper compactness (via gerrychain.metrics), Reock (via shapely's minimum bounding radius), per-district population/area breakdown.
+where `pop_deviation_d = |Pop(d) - P*| / P*` and similarly for area, averaged over districts. The 0.5/0.5 weighting makes the error a convex combination of the two mean deviations (β = γ = ½), enforcing the "each district holds ~1/N of people *and* ~1/N of geography" reading. Secondary metrics: Polsby-Popper compactness (via gerrychain.metrics), Reock (via shapely's minimum bounding radius), per-district population/area breakdown.
 
 ## Outputs
 
