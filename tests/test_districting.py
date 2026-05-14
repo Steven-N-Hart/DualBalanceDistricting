@@ -170,3 +170,88 @@ def test_repair_no_op_when_already_contiguous(
     plan_raw = generate_plan(synthetic_grid_4x4, n_districts=4, repair=False)
     assert plan_repaired.assignment == plan_raw.assignment
     assert plan_repaired.metadata["repair_iterations"] == 0
+
+
+def test_enforce_area_off_is_identical_to_default(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    # Without the flag, the v1 plumbing must produce the same assignment
+    # as the legacy v0 call. Locks in byte-for-byte backward compatibility.
+    legacy = generate_plan(synthetic_grid_4x4, n_districts=4)
+    v0_explicit = generate_plan(synthetic_grid_4x4, n_districts=4, enforce_area=False)
+    assert legacy.assignment == v0_explicit.assignment
+    assert legacy.metadata["enforce_area"] is False
+    assert legacy.metadata["area_tolerance"] is None
+
+
+def test_enforce_area_on_perfectly_balanced_grid_matches_v0(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    # On a uniform grid both caps are slack; enforcing area should not move
+    # any unit. Quadrant layout must still emerge.
+    plan = generate_plan(synthetic_grid_4x4, n_districts=4, enforce_area=True, area_tolerance=0.10)
+    groups: dict[int, set[str]] = {}
+    for uid, d in plan.assignment.items():
+        groups.setdefault(d, set()).add(uid)
+    expected_quadrants = {
+        frozenset({"R0C0", "R0C1", "R1C0", "R1C1"}),
+        frozenset({"R0C2", "R0C3", "R1C2", "R1C3"}),
+        frozenset({"R2C0", "R2C1", "R3C0", "R3C1"}),
+        frozenset({"R2C2", "R2C3", "R3C2", "R3C3"}),
+    }
+    assert {frozenset(g) for g in groups.values()} == expected_quadrants
+    assert plan.metadata["enforce_area"] is True
+    assert plan.metadata["area_tolerance"] == 0.10
+
+
+def test_enforce_area_improves_area_balance_on_skewed_grid() -> None:
+    # 4x4 grid where the bottom-right cluster carries 10x the population.
+    # On this hostile geometry, pop and area constraints conflict and the
+    # area cap may be violated by the fallback path (pop cap takes
+    # precedence, area is best-effort). The assertion here is the honest
+    # one: v1 cannot make area balance *worse* than v0, even if it cannot
+    # always meet a strict tolerance band.
+    from shapely.geometry import Polygon
+
+    rows = []
+    for r in range(4):
+        for c in range(4):
+            poly = Polygon([(c, r), (c + 1, r), (c + 1, r + 1), (c, r + 1)])
+            pop = 10_000 if (r >= 2 and c >= 2) else 100
+            rows.append({"unit_id": f"R{r}C{c}", "population": pop, "geometry": poly})
+    gdf = gpd.GeoDataFrame(rows, crs="EPSG:5070")
+    gdf["area"] = gdf.geometry.area
+
+    plan_v0 = generate_plan(gdf, n_districts=4)
+    plan_v1 = generate_plan(gdf, n_districts=4, enforce_area=True, area_tolerance=0.25)
+
+    a_star = float(gdf["area"].sum()) / 4
+    area_v0 = {d: 0.0 for d in range(4)}
+    area_v1 = {d: 0.0 for d in range(4)}
+    for uid, d in plan_v0.assignment.items():
+        area_v0[d] += float(gdf.loc[gdf["unit_id"] == uid, "area"].iloc[0])
+    for uid, d in plan_v1.assignment.items():
+        area_v1[d] += float(gdf.loc[gdf["unit_id"] == uid, "area"].iloc[0])
+    max_dev_v0 = max(abs(a - a_star) / a_star for a in area_v0.values())
+    max_dev_v1 = max(abs(a - a_star) / a_star for a in area_v1.values())
+    assert max_dev_v1 <= max_dev_v0 + 1e-9
+
+
+def test_enforce_area_is_deterministic(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    a = generate_plan(synthetic_grid_4x4, n_districts=4, enforce_area=True, area_tolerance=0.10)
+    b = generate_plan(synthetic_grid_4x4, n_districts=4, enforce_area=True, area_tolerance=0.10)
+    assert a.assignment == b.assignment
+
+
+def test_enforce_area_rejects_negative_tolerance(
+    synthetic_grid_4x4: gpd.GeoDataFrame,
+) -> None:
+    with pytest.raises(ValueError, match="area_tolerance"):
+        generate_plan(
+            synthetic_grid_4x4,
+            n_districts=4,
+            enforce_area=True,
+            area_tolerance=-0.05,
+        )

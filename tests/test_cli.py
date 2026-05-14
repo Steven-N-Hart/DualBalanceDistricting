@@ -256,6 +256,51 @@ def test_generate_rejects_unknown_score_variant() -> None:
         parser.parse_args(["generate", "--score-variant", "bogus"])
 
 
+def test_generate_with_enforce_area_flag(tmp_path: Path, synthetic_grid_4x4) -> None:
+    units_path = tmp_path / "units.geojson"
+    src = synthetic_grid_4x4.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "geometry"]
+    ]
+    src.to_file(units_path, driver="GeoJSON")
+    rc = main(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--out",
+            str(tmp_path / "v1"),
+            "--enforce-area",
+            "--area-tolerance",
+            "0.15",
+        ]
+    )
+    assert rc == 0
+    metrics = json.loads((tmp_path / "v1" / "metrics.json").read_text())
+    # Uniform grid is already area-balanced -> max deviation 0 <= tolerance.
+    assert metrics["area_deviation_max"] <= 0.15 + 1e-9
+
+
+def test_generate_enforce_area_default_off_in_namespace() -> None:
+    parser, _ = build_parser()
+    args = parser.parse_args(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            "u.geojson",
+            "--out",
+            "o/",
+        ]
+    )
+    assert args.enforce_area is False
+    assert args.area_tolerance == 0.10  # documented default
+
+
 def test_score_via_cli(tmp_path: Path, synthetic_grid_4x4) -> None:
     units_path = tmp_path / "units.geojson"
     out_dir = tmp_path / "out"

@@ -112,7 +112,18 @@ DualBalance Score (classic) = 1 / (1 + mean(pop_dev) + mean(area_dev))
 
 — the same per-district deviations, summed rather than averaged. The two forms are related by `score_classic = 1 / (1 + 2·(1 − 1/score))`, i.e. the classic error is exactly twice the weighted error. The classic form is strictly more punishing whenever either deviation is nonzero (at `pop_dev_mean = area_dev_mean = 1.0`, weighted = 0.5 vs. classic = 1/3). Both forms reach 1.0 for a perfectly balanced plan and approach 0.0 in the limit of unbounded deviation. The `--score-variant {weighted,classic}` flag on `dualbalance generate` selects which form Reynolds-tighten Phase A optimizes against (default: `weighted`); both scores appear in `metrics.json` regardless of the flag.
 
-**v0 vs v1.** In v0 (current), population is enforced as a hard capacity at the assignment step; area is diagnostic only — its deviation appears in the score but never constrains the generator. The intended **v1 ("Dual-Capacitated Voronoi Assignment")** replaces the assignment step with a two-dimensional capacitated transportation problem that bounds both `Pop(D_i)` and `Area(D_i)`. Only v1 *directly minimizes* the DualBalance objective; v0 minimizes a population-capacitated geographic-cost surrogate and reports the DualBalance score diagnostically.
+**v0 vs v1.** In v0 (default), population is enforced as a hard capacity at the assignment step; area is diagnostic only — its deviation appears in the score but never constrains the generator. The opt-in **v1 ("Dual-Capacitated Voronoi Assignment"),** enabled with `dualbalance generate --enforce-area`, extends the assignment step to two-dimensional capacitated first-fit: a `(unit, district)` pair is accepted only when both
+
+```
+pop_remaining[d]  >= pop(u)        # P* * (1 + capacity_slack)
+area_remaining[d] >= area(u)       # A* * (1 + area_tolerance), default T=0.10
+```
+
+still hold. The flag `--area-tolerance T` sets the per-district area upper bound to `A* * (1 + T)`. Pop remains the higher-priority cap: if no district admits a leftover unit on both axes, the fallback rule assigns it to the district that minimizes combined normalized overrun
+`max(0, pop(u) − pop_remaining[d])/P* + max(0, area(u) − area_remaining[d])/A*`,
+breaking ties on smaller district id. This means v1 enforces area as a best-effort cap — on hostile geometries where pop and area constraints conflict (e.g. an urban high-pop cluster crammed against a rural low-pop fringe), the fallback may produce one or more districts whose area exceeds the cap. The contiguity-repair pass also softly prefers within-cap candidates but falls through to the full neighbor set if none qualify, so contiguity (a higher invariant) is always preserved.
+
+v0 minimizes a population-capacitated geographic-cost surrogate and reports the DualBalance score diagnostically. v1 minimizes the same surrogate subject to *two* capacities and is the closer approximation to directly minimizing the DualBalance objective; it still does not solve the exact two-dimensional transportation LP, only a greedy first-fit relaxation of it.
 
 Subject to:
 

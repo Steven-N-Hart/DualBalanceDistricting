@@ -18,7 +18,7 @@ $A^* = A/N$.
 
 \subsection{Capacitated assignment}
 
-The current implementation (the ``Population-Capacitated Voronoi
+The default implementation (the ``Population-Capacitated Voronoi
 Baseline,'' v0) treats districting as a capacitated transportation
 problem in the lineage of Hess et al.~\cite{hess1965}. Seeds
 $\{s_1, \ldots, s_N\}$ are placed deterministically by farthest-point
@@ -35,6 +35,23 @@ but not enforced.
 Ties on minimum normalized distance break first by ascending unit ID,
 then by ascending district ID, so the entire procedure is deterministic
 and reproducible.
+
+\paragraph{v1: dual-capacitated assignment.} Passing
+\verb|--enforce-area| at the command line switches the assignment step
+to the v1 form, which adds an area cap
+$\sum_{u \in D_i} \mathrm{area}(u) \leq A^* (1 + T)$, where the
+tolerance $T$ defaults to $0.10$. A $(u, i)$ pair is then accepted only
+when both pop and area capacities remain. Population retains priority:
+if a unit cannot be placed within both caps, the fallback assigns it to
+the district minimizing combined normalized overrun
+$\max(0, \mathrm{pop}(u) - p_i)/P^* + \max(0, \mathrm{area}(u) - a_i)/A^*$,
+where $p_i$, $a_i$ are the remaining capacities; ties resolve to the
+smaller district id. On hostile geometries where the pop and area caps
+conflict, the fallback may yield one or more districts exceeding the
+area cap; the v1 mode is thus best-effort on area and hard on
+population. The contiguity-repair pass uses the same soft area filter,
+falling through to the full candidate set when none qualify so that
+contiguity (a higher invariant) is preserved.
 
 \subsection{DualBalance score}
 

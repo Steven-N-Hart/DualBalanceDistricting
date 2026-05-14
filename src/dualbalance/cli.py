@@ -64,6 +64,8 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
         repair=not args.no_repair,
         seed_method=args.seed_method,
         capacity_slack=args.capacity_slack,
+        enforce_area=args.enforce_area,
+        area_tolerance=args.area_tolerance,
     )
     if args.reynolds_tighten:
         plan = tighten_to_reynolds(
@@ -228,6 +230,21 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         default=0.0,
         help="Extra capacity per district as fraction of P* "
         "(default 0.0; 0.005 absorbs integer-rounding edge cases).",
+    )
+    generate.add_argument(
+        "--enforce-area",
+        dest="enforce_area",
+        action="store_true",
+        help="Enforce area balance as a second hard capacity at assignment "
+        "time (v1 dual-capacitated mode; default v0 is pop-cap only).",
+    )
+    generate.add_argument(
+        "--area-tolerance",
+        dest="area_tolerance",
+        type=float,
+        default=0.10,
+        help="With --enforce-area, per-district area cap is "
+        "A* * (1 + area_tolerance) (default 0.10 = 10%%).",
     )
     generate.add_argument(
         "--reynolds-tighten",

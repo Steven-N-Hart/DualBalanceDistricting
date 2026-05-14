@@ -70,17 +70,26 @@ def _assign(
     targets: Targets,
     norm: float,
     capacity_slack: float = 0.0,
+    *,
+    areas: np.ndarray | None = None,
+    area_tolerance: float | None = None,
 ) -> dict[str, int]:
     """Capacity-constrained assignment.
 
     Builds the full list of ``(unit, district)`` pairs, sorts by normalized
     geographic distance ascending, and assigns each unit to its first district
-    with remaining population capacity ``P* * (1 + capacity_slack)``. Ties on
-    distance break by ``(unit_id ascending, district_id ascending)``.
+    with remaining capacity. Ties on distance break by
+    ``(unit_id ascending, district_id ascending)``.
+
+    Pop capacity is ``P* * (1 + capacity_slack)`` per district. When
+    ``area_tolerance`` is provided (v1, dual-capacitated mode), an additional
+    area cap of ``A* * (1 + area_tolerance)`` is enforced — a (unit, district)
+    pair is only accepted if both caps still admit it.
 
     Any unit that finds no district with capacity (a rare integer-rounding
-    edge case) is assigned to the district with the largest remaining
-    capacity. This guarantees every unit ends up in some district.
+    edge case, or an over-tight area cap) is assigned to the district that
+    minimizes combined normalized overrun. This guarantees every unit ends
+    up in some district even when caps cannot be satisfied exactly.
     """
     n_districts = len(seeds)
     n_units = len(unit_ids)
@@ -99,6 +108,15 @@ def _assign(
     flat.sort()
 
     capacity = np.full(n_districts, targets.population * (1.0 + capacity_slack))
+
+    enforce_area = area_tolerance is not None
+    if enforce_area:
+        if areas is None:
+            raise ValueError("areas array is required when area_tolerance is set")
+        area_capacity = np.full(n_districts, targets.area * (1.0 + area_tolerance))
+    else:
+        area_capacity = None  # not used
+
     assignment: dict[str, int] = {}
     assigned = np.zeros(n_units, dtype=bool)
     pops_arr = pops  # alias
@@ -106,19 +124,41 @@ def _assign(
     for _, u, d in flat:
         if assigned[u]:
             continue
-        if capacity[d] >= pops_arr[u]:
-            assignment[unit_ids[u]] = d
-            capacity[d] -= pops_arr[u]
-            assigned[u] = True
+        if capacity[d] < pops_arr[u]:
+            continue
+        if enforce_area and area_capacity[d] < areas[u]:
+            continue
+        assignment[unit_ids[u]] = d
+        capacity[d] -= pops_arr[u]
+        if enforce_area:
+            area_capacity[d] -= areas[u]
+        assigned[u] = True
 
-    # Sweep leftovers (integer-rounding case): give them to the district with
-    # most remaining capacity, breaking ties by ascending district id.
+    # Sweep leftovers. Without area enforcement, give to the district with
+    # most remaining pop capacity (legacy behavior). With area enforcement,
+    # pick the district that minimizes combined normalized overrun on both
+    # axes — so a district already over its area cap is preferred only if
+    # all alternatives are even worse.
     for u in range(n_units):
         if assigned[u]:
             continue
-        d = int(np.argmax(capacity))
+        if enforce_area:
+            best_d = 0
+            best_score = math.inf
+            for d in range(n_districts):
+                pop_overrun = max(0.0, pops_arr[u] - capacity[d]) / targets.population
+                area_overrun = max(0.0, areas[u] - area_capacity[d]) / targets.area
+                score = pop_overrun + area_overrun
+                if score < best_score:
+                    best_score = score
+                    best_d = d
+            d = best_d
+        else:
+            d = int(np.argmax(capacity))
         assignment[unit_ids[u]] = d
         capacity[d] -= pops_arr[u]
+        if enforce_area:
+            area_capacity[d] -= areas[u]
         assigned[u] = True
 
     return assignment
@@ -173,6 +213,8 @@ def generate_plan(
     max_repair_iter: int = 10,
     seed_method: str = "farthest-point",
     capacity_slack: float = 0.0,
+    enforce_area: bool = False,
+    area_tolerance: float = 0.10,
 ) -> Plan:
     """Generate a deterministic district plan.
 
@@ -195,10 +237,17 @@ def generate_plan(
         capacity_slack: extra population capacity per district as a fraction
             of ``P*``. ``0.0`` enforces ``P*`` exactly; ``0.005`` gives a
             0.5 % slack absorbing integer-rounding edge cases.
+        enforce_area: when True, switch to v1 (dual-capacitated) assignment
+            in which a unit can only be placed in a district that has both
+            remaining population AND area capacity. Default False preserves
+            v0 (population-only-cap) behavior byte-for-byte.
+        area_tolerance: with ``enforce_area=True``, the per-district area
+            upper bound is ``A* * (1 + area_tolerance)`` (default 0.10
+            = 10 %). Ignored when ``enforce_area=False``.
 
     Raises:
-        ValueError: for non-positive ``n_districts``, ``max_iter``, or a
-            degenerate units extent.
+        ValueError: for non-positive ``n_districts``, ``max_iter``, a
+            degenerate units extent, or a negative ``area_tolerance``.
     """
     if n_districts <= 0:
         raise ValueError(f"n_districts must be positive, got {n_districts}")
@@ -206,6 +255,10 @@ def generate_plan(
         raise ValueError(f"n_districts ({n_districts}) exceeds number of units ({len(units)})")
     if max_iter < 1:
         raise ValueError(f"max_iter must be >= 1, got {max_iter}")
+    if enforce_area and area_tolerance < 0:
+        raise ValueError(
+            f"area_tolerance must be >= 0 when enforce_area is set, got {area_tolerance}"
+        )
 
     units_sorted = units.sort_values("unit_id", kind="mergesort").reset_index(drop=True)
 
@@ -218,7 +271,13 @@ def generate_plan(
     cx = np.asarray(centroids.x, dtype=float)
     cy = np.asarray(centroids.y, dtype=float)
     pops = np.asarray(units_sorted["population"], dtype=float)
+    areas_arr = np.asarray(units_sorted["area"], dtype=float)
     unit_ids: list[str] = units_sorted["unit_id"].tolist()
+
+    # area_tolerance is threaded only when enforce_area is on, so default
+    # runs stay byte-for-byte identical to v0.
+    effective_area_tol = area_tolerance if enforce_area else None
+    assign_areas = areas_arr if enforce_area else None
 
     seeds = place_seeds(units_sorted, n_districts, method=seed_method)
     previous_assignment: dict[str, int] | None = None
@@ -236,6 +295,8 @@ def generate_plan(
             targets,
             norm,
             capacity_slack=capacity_slack,
+            areas=assign_areas,
+            area_tolerance=effective_area_tol,
         )
         if assignment == previous_assignment:
             converged = True
@@ -256,6 +317,7 @@ def generate_plan(
             norm,
             n_districts,
             max_repair_iter,
+            area_tolerance=effective_area_tol,
         )
 
     return Plan(
@@ -271,6 +333,8 @@ def generate_plan(
             "beta": beta,
             "seed_method": seed_method,
             "capacity_slack": capacity_slack,
+            "enforce_area": enforce_area,
+            "area_tolerance": area_tolerance if enforce_area else None,
             "targets": {
                 "population": targets.population,
                 "area": targets.area,
@@ -308,6 +372,8 @@ def _repair_contiguity(
     norm: float,
     n_districts: int,
     max_repair_iter: int,
+    *,
+    area_tolerance: float | None = None,
 ) -> tuple[dict[str, int], int, bool]:
     """Dissolve isolated district components into adjacent districts.
 
@@ -315,6 +381,11 @@ def _repair_contiguity(
     largest by total population and reassign units of the smaller components
     to the lowest-cost adjacent district. Iterates because a transfer can
     occasionally introduce a new discontiguity in the receiving district.
+
+    When ``area_tolerance`` is set (v1 mode), candidates that would push the
+    receiving district past ``A* * (1 + area_tolerance)`` are filtered out;
+    if no candidate qualifies, the filter is dropped so contiguity (a higher
+    invariant) still wins.
 
     Returns:
         (assignment, n_iterations_performed, contiguous_at_exit)
@@ -340,6 +411,7 @@ def _repair_contiguity(
 
     p_star = targets.population
     a_star = targets.area
+    area_cap = a_star * (1.0 + area_tolerance) if area_tolerance is not None else None
 
     for repair_iter in range(1, max_repair_iter + 1):
         comps_by_d = _components_by_district(graph, assignment, n_districts)
@@ -360,6 +432,14 @@ def _repair_contiguity(
                     }
                     if not candidates:
                         continue  # truly isolated; leave in place
+                    # In v1 mode, prefer candidates that won't bust the area
+                    # cap. Only fall back to the full set if none qualify.
+                    if area_cap is not None:
+                        within_cap = {
+                            c for c in candidates if area_totals[c] + area[uid] <= area_cap
+                        }
+                        if within_cap:
+                            candidates = within_cap
                     best_district: int | None = None
                     best_key: tuple[float, float, float, float, int] | None = None
                     for cand in candidates:
