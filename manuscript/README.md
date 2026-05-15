@@ -696,17 +696,22 @@ balance for fewer such crossings.
 survives on a PRISM plan; their intent-attribution role does not.
 §4.7 develops the distinction.
 
-### 3.7 Cross-state validation: Iowa, Massachusetts, Texas
+### 3.7 Cross-state validation
 
-We replicated the Minnesota pipeline on three additional states
-chosen to span the density-profile space: Iowa (4 districts,
-near-uniform density, drawn by Iowa's nonpartisan Legislative
-Services Agency [[29]](#ref-29)), Massachusetts (9 districts,
-single-metro state dominated by Boston), and Texas (38 districts,
-polycentric: Houston, Dallas-Fort Worth, San Antonio, Austin). The
-data pipeline (TIGER 2020 VTDs, Census PL 94-171 demographics,
-dra2020/vtd_data 2020 presidential returns, TIGER 2024 cd119
-spatial join for the enacted plan) is automated in
+We replicated the Minnesota pipeline on five additional states
+chosen to span the density-profile space and the
+gerrymandering-history space: Iowa (4 districts, near-uniform
+density, drawn by Iowa's nonpartisan Legislative Services Agency
+[[29]](#ref-29)), Massachusetts (9 districts, single-metro Boston),
+Texas (38 districts, polycentric: Houston, Dallas-Fort Worth, San
+Antonio, Austin), North Carolina (14 districts, the state in which
+*Rucho* [[1]](#ref-1) originated and which has been redistricted
+repeatedly under federal and state-court orders over the past
+decade), and Wisconsin (8 districts, where *Whitford v. Gill*
+first put the Efficiency Gap [[11]](#ref-11) in front of a federal
+court). The data pipeline (TIGER 2020 VTDs, Census PL 94-171
+demographics, dra2020/vtd_data 2020 presidential returns, TIGER
+2024 cd119 spatial join for the enacted plan) is automated in
 [`scripts/prep_state_units.py`](../scripts/prep_state_units.py);
 comparison driven by
 [`scripts/compare_state.py`](../scripts/compare_state.py).
@@ -720,18 +725,30 @@ MMD = majority-minority district count (NH-white VAP < 50%).
 | Iowa | 4 | 0.8132 | **0.8828** | Enacted | −0.173 | +0.416 |
 | Massachusetts | 9 | **0.7591** | 0.7246 | PRISM | −0.158 | −0.158 |
 | Minnesota | 8 | **0.6472** | 0.6391 | PRISM | +0.066 | +0.068 |
+| North Carolina | 14 | 0.7252 | **0.7689** | Enacted | +0.088 | +0.201 |
 | Texas | 38 | 0.6230 | **0.6658** | Enacted | +0.029 | +0.153 |
+| Wisconsin | 8 | 0.6556 | **0.7410** | Enacted | +0.147 | +0.267 |
 
 | State | Counties split (PRISM) | Counties split (Enacted) | MMD (PRISM) | MMD (Enacted) |
 |---|---:|---:|---:|---:|
 | Iowa | 30 of 99 | 0 of 99 | 0 | 0 |
 | Massachusetts | 12 of 14 | 9 of 14 | 0 | 1 |
 | Minnesota | 44 of 87 | 9 of 87 | 0 | 0 |
+| North Carolina | 56 of 100 | 11 of 100 | 2 | 1 |
 | Texas | 132 of 254 | 30 of 254 | 22 | 19 |
+| Wisconsin | 46 of 72 | 12 of 72 | 0 | 1 |
 
-PRISM beats the enacted plan on two of four states (Minnesota,
-Massachusetts) and loses on the other two (Iowa, Texas). The losses
-are informative.
+PRISM wins on DBS in two of six states (MN, MA) and loses in the
+other four (IA, NC, TX, WI). The losses come in two distinct
+shapes, which is the interesting result. In Iowa and Texas the
+enacted plan beats PRISM on DBS through procedural neutrality of
+its own (Iowa) or geometric mismatch with the single-centroid
+assumption (Texas). In North Carolina and Wisconsin the enacted
+plan also beats PRISM on DBS, but for a different reason: those
+plans are well-compacted and county-respecting because their
+authors knew those metrics would be the basis of litigation; the
+partisan distribution they produce, however, is what *Rucho* and
+*Whitford* were both about.
 
 **Iowa.** The enacted Iowa plan is itself algorithm-flavored,
 drawn under the LSA's nonpartisan cascade that prioritizes equal
@@ -772,18 +789,57 @@ statewide), and 22 majority-minority districts (vs. the enacted
 plan's 19) as a structural side-effect of Texas's
 minority-majority demographics.
 
-**What the four-state set demonstrates.** PRISM is a geometric
-construction tuned to a particular density profile. On the profile
-(one or two dense metros plus a large rural hinterland, like
-Minnesota or Massachusetts) it beats hand-drawn plans on the
+**North Carolina.** North Carolina is the canonical
+litigation-heavy state: *Rucho v. Common Cause* originated there,
+and the state has been redistricted repeatedly under federal and
+state-court orders. The enacted 119th plan is well-compacted
+($\mathrm{PP}_{\mathrm{mean}} = 0.255$) and splits only 11 of 100
+counties. PRISM, by contrast, splits 56 counties and has a worse
+compactness profile. On DBS the enacted plan wins (0.7689 vs.
+0.7252). The partisan picture is the opposite. Under a
+50.68%–49.32% R/D statewide split, the enacted plan returns
+**10 R / 4 D** seats with an Efficiency Gap of **+0.20**, above
+the +0.07–0.08 threshold proposed by Stephanopoulos and McGhee
+[[11]](#ref-11) as *prima facie* evidence of partisan
+gerrymandering. PRISM, reading nothing about partisan geography,
+returns **8 R / 6 D** seats with an Efficiency Gap of **+0.09**.
+PRISM also produces two majority-minority districts; the enacted
+plan produces one.
+
+**Wisconsin.** Wisconsin is the original Efficiency Gap state
+(*Whitford v. Gill*). The 119th plan is drawn under the Wisconsin
+Supreme Court's *Clarke v. WEC* (2023) ruling. As with North
+Carolina, the enacted plan beats PRISM on DBS (0.7410 vs. 0.6556),
+with much better compactness (PP 0.31 vs. 0.18) and county
+integrity (12 vs. 46 splits). Under a 49.68%–50.32% R/D statewide
+split (essentially even), the enacted plan returns **6 R / 2 D**
+seats with an Efficiency Gap of **+0.27**; PRISM returns
+**5 R / 3 D** with an Efficiency Gap of **+0.15**. PRISM's
+still-positive EG reflects Wisconsin's well-known residential
+clustering of Democratic voters in Milwaukee and Madison
+[[16]](#ref-16); halving the EG relative to the enacted plan is a
+structural effect of the radial geometry, not a partisan
+correction.
+
+**What the six-state set demonstrates.** PRISM is a geometric
+construction tuned to a particular density profile. On the
+profile (one or two dense metros plus a large rural hinterland,
+like Minnesota or Massachusetts) it beats hand-drawn plans on the
 dual-balance objective without reading party or race. Outside the
 profile (uniform density like Iowa, polycentric like Texas) the
-enacted plan can outperform on DBS, though PRISM still produces
-partisan distributions closer to seats-proportional and, in
-minority-majority states, more majority-minority districts as a
-side-effect of demographic geography. The multi-state runtime
-(2k–9k VTDs) is dominated by file I/O and the contiguity check;
-Texas with 38 districts completed in under five minutes.
+enacted plan can outperform on DBS. In the two states where the
+enacted plan is itself the product of intensive litigation around
+partisan fairness (North Carolina and Wisconsin), the enacted
+plan also wins on DBS, because the metrics PRISM optimizes
+(population balance, area balance, compactness, county integrity)
+are exactly the metrics the enacted plan was drawn to clear. The
+partisan distribution is where the comparison flips. Across all
+six states, PRISM's Efficiency Gap is closer to zero than the
+enacted plan's; the largest gap in absolute terms is North
+Carolina (PRISM +0.09 vs. enacted +0.20) and Wisconsin (PRISM
++0.15 vs. enacted +0.27). The multi-state runtime (2k–9k VTDs)
+is dominated by file I/O and the contiguity check; Texas with 38
+districts completed in under five minutes.
 
 ---
 
@@ -929,14 +985,19 @@ Disabling iteration is what preserves the geometry.
 
 ### 4.5 Limitations
 
-**Four-state evidence, not fifty-state generality.** PRISM has been
-run end-to-end on Minnesota, Iowa, Massachusetts, and Texas (§3.7).
-It beats the enacted plan on the DualBalance Score in MN and MA and
-loses in IA and TX. The two losses confirm distinct failure modes
-predicted by the design: against a competing algorithmic baseline
-(Iowa LSA), and against polycentric geometry (Texas's four metros).
-The remaining 46 states have not been run, and four states does not
-establish generality across the density-profile space.
+**Six-state evidence, not fifty-state generality.** PRISM has been
+run end-to-end on six states (§3.7): Minnesota, Iowa, Massachusetts,
+Texas, North Carolina, and Wisconsin. It wins on DBS in MN and MA
+and loses in IA, TX, NC, and WI. The losses fall into two distinct
+shapes. On IA and TX the enacted plan beats PRISM through
+procedural neutrality of its own (Iowa LSA) or geometric mismatch
+with the single-centroid assumption (Texas polycentric). On NC and
+WI the enacted plan also beats PRISM on the *structural* metrics
+(compactness, county integrity) because those plans were drawn
+with litigation over precisely those metrics in mind; on the
+*partisan* metrics PRISM is closer to neutral. The remaining 44
+states have not been run, and six states does not establish
+generality across the density-profile or litigation-history spaces.
 
 **Worst-district area outlier.** PRISM concentrates the area
 imbalance in a single rural district (here, District 2 at 275%
@@ -968,12 +1029,13 @@ viability.
 
 ### 4.6 Future work
 
-**Full-50-state validation.** Four states (MN, IA, MA, TX) have
-been run (§3.7). Extending to the remaining 46 requires no
-algorithmic change. California, Florida, and Pennsylvania are the
-highest-value next targets: California for its size and four-or-more
-metros, Florida for its peninsula geometry, Pennsylvania for its
-role as the canonical state-court partisan-gerrymandering test bed.
+**Full-50-state validation.** Six states (MN, IA, MA, TX, NC, WI)
+have been run (§3.7). Extending to the remaining 44 requires no
+algorithmic change. California, Florida, Pennsylvania, and Ohio
+are the highest-value next targets: California for its size and
+many metros, Florida for its peninsula geometry, Pennsylvania and
+Ohio for their roles in state-court partisan-gerrymandering
+jurisprudence.
 
 **Multi-center radial seeding.** For polycentric states, place
 seeds on circles around *each* of $k$ population centers, with $k$

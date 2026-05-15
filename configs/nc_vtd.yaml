@@ -1,0 +1,20 @@
+# North Carolina PoC config. Prepare with:
+#   python scripts/prep_state_units.py --state NC
+# Then run with:
+#   dualbalance generate --config configs/nc_vtd.yaml
+districts: 14
+units: data/nc_vtd.geojson
+geography: vtd
+id_column: GEOID20
+pop_column: population
+county_column: county
+extra_columns:
+  - vap_total
+  - vap_nhwhite
+  - vap_black
+  - vap_hispanic
+  - vap_aian
+  - vap_asian
+  - votes_R
+  - votes_D
+out: out/nc_yaml

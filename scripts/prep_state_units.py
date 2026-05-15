@@ -47,6 +47,8 @@ STATE_INFO: dict[str, dict[str, Any]] = {
     "IA": {"fips": "19", "tiger_name": "IOWA", "n_seats": 4},
     "MA": {"fips": "25", "tiger_name": "MASSACHUSETTS", "n_seats": 9},
     "TX": {"fips": "48", "tiger_name": "TEXAS", "n_seats": 38},
+    "NC": {"fips": "37", "tiger_name": "NORTH_CAROLINA", "n_seats": 14},
+    "WI": {"fips": "55", "tiger_name": "WISCONSIN", "n_seats": 8},
 }
 
 
