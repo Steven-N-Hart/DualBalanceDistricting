@@ -220,28 +220,26 @@ extensions and would not feed back into the generator
 \subsection{Forensic metrics applied to a generative procedure}
 \label{sec:discussion-forensic}
 
-Most gerrymandering diagnostics carry two distinct functions. They
-\emph{describe} an actual property of the plan: a shape, a vote
-distribution, a count of split counties. And they support an
-\emph{inference} about the line-drawer's motive: that the shape was
+Deterministic generation has interpretive consequences for the
+fairness-metrics literature. Most gerrymandering diagnostics carry
+two functions. They \emph{describe} a property of the plan (a shape,
+a vote distribution, a count of split counties). And they support an
+\emph{inference} about the line-drawer's motive (that the shape was
 chosen, that the votes were packed and cracked, that the splits
-followed a partisan or racial pattern. The two functions are nearly
-always entangled in practice because the literature was built around
+followed a partisan or racial pattern). The two are nearly always
+entangled in practice because the literature was built around
 enacted plans, where intent is always at issue.
 
 PRISM separates them. The descriptive function survives intact: a
-$\mathrm{PP}$ of 0.09 still names a non-compact shape, with the
-administrative and legitimacy consequences that follow; an
-Efficiency Gap of $+6.6\,\%$ still names a real asymmetry in
-wasted votes, with the representational consequences that follow;
-zero majority-minority districts still names a partition under which
-no minority group reaches a 50\,\% VAP share, with the Section~2
-consequences that follow. None of this is changed by who or what
-produced the plan. The inferential function is what does not
-survive. PRISM is a pure function of geometry, population, and seat
-count; no actor chose the shape, the vote split, or the absence of
-an MMD, so the chain from observed property back to motive has no
-endpoint to terminate on.
+$\mathrm{PP}$ of 0.09 still names a non-compact shape, with
+administrative and legitimacy consequences; an Efficiency Gap of
+$+6.6\,\%$ still names a real wasted-vote asymmetry, with
+representational consequences; zero majority-minority districts
+still names a partition under which no minority group reaches a
+50\,\% VAP share, with Section~2 consequences. The inferential
+function does not. PRISM is a pure function of geometry, population,
+and seat count, so the chain from observed property back to motive
+has no actor to terminate on.
 
 Three implications, narrowed accordingly.
 
@@ -269,9 +267,9 @@ question is moot on PRISM (there is no motivation), but the partisan
 $+6.6\,\%$ on a PRISM map still corresponds to wasted-vote asymmetry
 that affects representation; state-court tests that interpret EG as
 evidence of effect, rather than as evidence of intent, still bind.
-What changes is the rhetorical move from ``the map shows EG $+6.6\,\%$''
-to ``someone built that EG $+6.6\,\%$.'' The first survives; the
-second does not.
+The rhetorical move from ``the map shows EG $+6.6\,\%$'' to
+``someone built that EG $+6.6\,\%$'' becomes unavailable on PRISM,
+but the metric continues to measure what it measured.
 
 \paragraph{Ensemble outlier tests lose their baseline.} The Duke and
 MGGG ensembles~\cite{mattinglyduke,recom2021} compare an enacted plan
@@ -281,19 +279,19 @@ neutral line-drawer; the enacted plan being an outlier suggests the
 actual line-drawer differed from the neutral one. PRISM \emph{is}
 the neutral line-drawer in a stronger sense than the ensemble's
 sample mean. Asking whether the PRISM plan is an outlier against its
-own ensemble is not obviously meaningful: the ensemble collapses to
-one point. Ensembles can still play a comparison role across
+own ensemble may not be meaningful: the ensemble collapses to one
+point. Ensembles can still play a comparison role across
 \emph{different} algorithmic generators (e.g.\ PRISM vs.\ BDistricting
 vs.\ splitline), but the question is no longer ``is this map
 suspiciously different from neutral?''
 
-The point is not that metrics should be ignored. They should be read
-descriptively. A PRISM plan with $\mathrm{PP}_{\min} = 0.047$,
-Efficiency Gap $+6.6\,\%$, and zero majority-minority districts is a
-plan with low compactness, an R-favoring wasted-vote asymmetry, and
-no MMD. Those facts have administrative, representational, and
-Section~2 consequences. What is gone is the inference from those
-facts to a person who chose them.
+Metrics remain informative as descriptive summaries of plan effects.
+A PRISM plan with $\mathrm{PP}_{\min} = 0.047$, Efficiency Gap
+$+6.6\,\%$, and zero majority-minority districts has low compactness,
+an R-favoring wasted-vote asymmetry, and no MMD. Those facts carry
+administrative, representational, and Section~2 consequences. The
+inference from those facts to a person who chose them is what
+deterministic generation removes.
 
 \subsection{What this paper claims, and what it does not}
 
@@ -306,15 +304,13 @@ corresponding hand-drawn enacted plan on a prespecified
 population-and-area objective. The algorithm's output is
 byte-reproducible and updates only with the ten-year census.
 
-Second, that the algorithm's procedural neutrality is symmetric. By
-construction, the rule cannot be used to harm any group, party, or
-incumbent, and cannot be used to help any of them either. The
-same property that makes a partisan gerrymander impossible makes a
-race-conscious remedy impossible. Whether the symmetry is morally
+Second, that the algorithm's procedural neutrality is symmetric. The
+rule cannot be used to harm any group, party, or incumbent, and
+cannot be used to help any of them. The same property that forecloses
+a partisan gerrymander forecloses a race-conscious remedy. The
+symmetry is the algorithm's defining property; whether it is morally
 preferable to the status quo of partisan and remedial discretion is
-a question the algorithm itself cannot answer; it is a question for
-legislatures, courts, and voters. We claim only that the symmetry is
-the algorithm's defining property, not an incidental side-effect.
+a question for legislatures, courts, and voters.
 
 Third, that the post-\textit{Callais} legal landscape gives a
 generator of this kind a narrower constitutional exposure than any
@@ -332,16 +328,18 @@ counts) play two roles on enacted plans, only one of which transfers
 to PRISM. As descriptions of plan effects (shape, wasted-vote
 asymmetry, minority opportunity) they remain valid and are reported
 alongside the DualBalance Score. As evidence of line-drawer intent
-they do not transfer, because PRISM has no line-drawer. The narrow
-claim is that the \emph{intent-attribution} use of these metrics, not
-their measurement use, is what the generative case breaks. This is
-the most contested framing claim in the paper; we expect it to draw
-the most pushback.
+they do not transfer. The intent-attribution use of these metrics,
+not their measurement use, is what the generative case breaks. This
+is the most contested framing claim in the paper.
 
 The paper does not claim that DBS is universally the right objective,
-that PRISM dominates enacted plans on all states, that compactness can
-be ignored, that effects-based fairness analyses (including
+that PRISM dominates enacted plans on all states, that compactness
+can be ignored, that effects-based fairness analyses (including
 Section~2) become irrelevant, or that the metric toolkit developed
-over the past thirty years is wrong. It claims only that the
-\emph{intent} reading of those metrics presupposes a line-drawer who
-is not present in this construction.
+over the past thirty years is wrong. The narrow claim is that the
+intent reading of those metrics presupposes a line-drawer who is
+not present in this construction.
+
+Whether deterministic generation is preferable to discretionary
+redistricting is a political and constitutional question; the
+algorithm itself cannot answer it.

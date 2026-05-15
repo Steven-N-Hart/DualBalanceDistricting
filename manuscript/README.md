@@ -1,4 +1,4 @@
-# DualBalance Districting: A Deterministic Alternative to Gerrymandering
+# DualBalance Districting: From Detection to Generation
 
 **Steven Hart** · `hart.steven@mayo.edu`
 
@@ -12,40 +12,30 @@
 
 ## Abstract
 
-Most current work on gerrymandering tries to detect it: catch a human
-line-drawer crossing from neutral redistricting into partisan or
+Most current work on gerrymandering tries to detect it: identify when
+a line-drawer has crossed from neutral redistricting into partisan or
 racial manipulation. We generate maps instead. **DualBalance
-Districting** is the framing: each congressional district should carry
-roughly $1/N$ of a state's people *and* roughly $1/N$ of its land,
-weighted equally. The motivating intuition is the framers' refusal to
-reduce representation to a single dimension; the operational claim is
-narrower: districts that span both metropolitan and rural territory
-force each representative to answer to a mix of the state's people,
-not to a single dense metro or a single rural hinterland. **PRISM**
-(Population-weighted Radial Impartial Slicing Method) is the
-algorithm. It places $N$ seeds in a small circle around the state's
-population-weighted centroid and assigns each census unit to the
-nearest seed with capacity remaining. No random seed. No iteration.
-No tunable weight. No human input beyond geometry and population.
+Districting** asks each congressional district to carry roughly $1/N$
+of a state's people *and* roughly $1/N$ of its land, weighted equally.
+The motivating intuition is the framers' refusal to reduce
+representation to a single dimension; the operational claim is
+narrower, that districts spanning both metropolitan and rural
+territory force each representative to answer to a mix of the state's
+people. **PRISM** (Population-weighted Radial Impartial Slicing
+Method) is the algorithm. It places $N$ seeds in a small circle
+around the state's population-weighted centroid and assigns each
+census unit to the nearest seed with capacity remaining. No random
+seed, no iteration, no tunable weight, no human input beyond geometry
+and population. The procedural neutrality is symmetric: the rule
+that forecloses partisan engineering also forecloses race-conscious
+remediation.
 
-The procedural neutrality is symmetric. PRISM cannot be used to
-gerrymander, and it cannot be used to draw majority-minority
-districts, protect incumbents, or preserve communities of interest.
-The rule that forecloses partisan engineering also forecloses
-race-conscious remediation. There is no knob.
-
-This changes how the standard gerrymandering metrics should be read.
-Compactness scores, the efficiency gap, mean-median asymmetry,
-ensemble outlier tests, and majority-minority counts have two roles:
-they describe a plan's effects, and (the role we are concerned with
-here) they support inferences about the line-drawer's intent. The
-descriptive role is preserved on a PRISM map. The intent-attribution
-role is not, because there is no line-drawer to attribute intent to.
-A $+6.6\%$ efficiency gap on a PRISM map is still a real asymmetry
-in wasted votes; it is no longer evidence that someone packed
-Democrats. A Polsby-Popper of $0.09$ is still a non-compact shape;
-it is no longer evidence of a covert favor. The numbers compute.
-What they license you to conclude about motive is gone.
+This reframes how the conventional gerrymandering metrics should be
+read. Compactness scores, the efficiency gap, mean-median asymmetry,
+ensemble outlier tests, and majority-minority counts play two roles
+on enacted plans: they describe plan effects, and they support
+inferences about the line-drawer's intent. The descriptive role
+survives on a PRISM map; the intent-attribution role does not.
 
 On Minnesota (4,110 VTDs, 8 seats, 2020 PL 94-171), PRISM beats the
 enacted 119th-Congress plan on the DualBalance Score ($0.6472$ vs.
@@ -55,6 +45,13 @@ alongside, as descriptions of the partition.
 ---
 
 ## 1. Introduction
+
+This paper is principally about how districting metrics should be
+read once line-drawing becomes a deterministic function rather than
+a discretionary act. The algorithm we propose, PRISM, is the
+construction that makes the question concrete; the legal-doctrinal
+and metric-interpretation arguments that follow are where the
+paper's main weight sits.
 
 ### 1.1 The instability of human-drawn districts
 
@@ -112,14 +109,14 @@ state constitution. Roughly ten state supreme courts have so far
 recognized state-constitutional partisan-gerrymandering claims; the
 rest have not [[10]](#ref-10).
 
-The combined effect (federal partisan review foreclosed, Section 2
-narrowed, state review politically contingent) is that redistricting
-has shifted from a once-per-decade event into a continuous partisan
-exercise. Several states have already redrawn maps mid-decade in
+Federal partisan review is foreclosed. Section 2 has been narrowed.
+State review is uneven and politically contingent. Redistricting has
+shifted from a once-per-decade event into a continuous partisan
+exercise: several states have already redrawn maps mid-decade in
 response to electoral results rather than census revision, and the
-practice is expected to expand. A regime that redraws lines whenever
-the pen changes hands provides neither stable representation nor
-predictable constituencies.
+practice is expected to expand. A regime that redraws lines
+whenever the pen changes hands provides neither stable
+representation nor predictable constituencies.
 
 ### 1.2 The normative paradox of "bias detection"
 
@@ -291,9 +288,8 @@ occur only with the decennial census.
 
 The procedural neutrality is symmetric. PRISM cannot harm any
 group, party, or incumbent; it equally cannot help any of them. The
-same property that makes a partisan gerrymander impossible makes a
-race-conscious remedy impossible. There is no partisan knob PRISM
-refuses to turn: there is no knob.
+same property that forecloses a partisan gerrymander forecloses a
+race-conscious remedy.
 
 The legal exposure is correspondingly narrow. After *Rucho*
 [[1]](#ref-1), federal partisan review is foreclosed. After
@@ -489,7 +485,7 @@ sum. The canonical Reynolds-tightening literature uses $L^{\infty}$
 and bottoms out at ~5% on this geometry; the $L^{1}$ formulation
 runs to completion in ~80 swaps on Minnesota, reducing
 $\mathrm{pop\_dev\_max}$ from $0.1124$ to $0.0021$ while leaving
-$\mathrm{area\_dev\_mean}$ essentially unchanged at $1.04$. The
+$\mathrm{area\_dev\_mean}$ unchanged at $1.04$. The
 radial structure is preserved because the algorithm only moves
 units at slice boundaries between adjacent slices.
 
@@ -696,10 +692,9 @@ cross-district pieces. Any line from the population centroid to
 the boundary crosses county lines; the enacted plan trades area
 balance for fewer such crossings.
 
-**What to make of this.** See §4.7. Brief version: these metrics
-compute on PRISM but do not license the inferences they license on
-an enacted plan, because there is no line-drawer to draw inferences
-about.
+**What to make of this.** The descriptive content of these metrics
+survives on a PRISM plan; their intent-attribution role does not.
+§4.7 develops the distinction.
 
 ---
 
@@ -920,28 +915,26 @@ extensions and would not feed back into the generator (§2.8).
 
 ### 4.7 Forensic metrics applied to a generative procedure
 
-Most gerrymandering diagnostics carry two distinct functions. They
-*describe* an actual property of the plan: a shape, a vote
-distribution, a count of split counties. And they support an
-*inference* about the line-drawer's motive: that the shape was
+Deterministic generation has interpretive consequences for the
+fairness-metrics literature. Most gerrymandering diagnostics carry
+two functions. They *describe* a property of the plan (a shape, a
+vote distribution, a count of split counties). And they support an
+*inference* about the line-drawer's motive (that the shape was
 chosen, that the votes were packed and cracked, that the splits
-followed a partisan or racial pattern. The two functions are nearly
-always entangled in practice because the literature was built
-around enacted plans, where intent is always at issue.
+followed a partisan or racial pattern). The two are nearly always
+entangled in practice because the literature was built around
+enacted plans, where intent is always at issue.
 
 PRISM separates them. The descriptive function survives intact: a
-$\mathrm{PP}$ of 0.09 still names a non-compact shape, with the
-administrative and legitimacy consequences that follow; an
-Efficiency Gap of $+6.6\%$ still names a real asymmetry in wasted
-votes, with the representational consequences that follow; zero
-majority-minority districts still names a partition under which no
-minority group reaches a 50% VAP share, with the Section 2
-consequences that follow. None of this is changed by who or what
-produced the plan. The inferential function is what does not
-survive. PRISM is a pure function of geometry, population, and seat
-count; no actor chose the shape, the vote split, or the absence of
-an MMD, so the chain from observed property back to motive has no
-endpoint to terminate on.
+$\mathrm{PP}$ of 0.09 still names a non-compact shape, with
+administrative and legitimacy consequences; an Efficiency Gap of
+$+6.6\%$ still names a real wasted-vote asymmetry, with
+representational consequences; zero majority-minority districts
+still names a partition under which no minority group reaches a 50%
+VAP share, with Section 2 consequences. The inferential function
+does not. PRISM is a pure function of geometry, population, and
+seat count, so the chain from observed property back to motive has
+no actor to terminate on.
 
 Three implications, narrowed accordingly.
 
@@ -968,9 +961,9 @@ partisan *effect* the metrics measure is not. An Efficiency Gap of
 $+6.6\%$ on a PRISM map still corresponds to wasted-vote asymmetry
 that affects representation; state-court tests that interpret EG
 as evidence of effect, rather than as evidence of intent, still
-bind. What changes is the rhetorical move from "the map shows EG
-$+6.6\%$" to "someone built that EG $+6.6\%$." The first survives;
-the second does not.
+bind. The rhetorical move from "the map shows EG $+6.6\%$" to
+"someone built that EG $+6.6\%$" becomes unavailable on PRISM, but
+the metric continues to measure what it measured.
 
 **Ensemble outlier tests lose their baseline.** The Duke and MGGG
 ensembles [[14]](#ref-14), [[15]](#ref-15) compare an enacted plan
@@ -980,19 +973,19 @@ neutral line-drawer; the enacted plan being an outlier suggests
 the actual line-drawer differed from the neutral one. PRISM *is*
 the neutral line-drawer in a stronger sense than the ensemble's
 sample mean. Asking whether the PRISM plan is an outlier against
-its own ensemble is not obviously meaningful: the ensemble
-collapses to one point. Ensembles can still play a comparison role
+its own ensemble may not be meaningful: the ensemble collapses to
+one point. Ensembles can still play a comparison role
 across *different* algorithmic generators (e.g. PRISM vs.
 BDistricting vs. splitline), but the question is no longer "is
 this map suspiciously different from neutral?"
 
-The point is not that metrics should be ignored. They should be
-read descriptively. A PRISM plan with $\mathrm{PP}_{\min} = 0.047$,
-Efficiency Gap $+6.6\%$, and zero majority-minority districts is a
-plan with low compactness, an R-favoring wasted-vote asymmetry,
-and no MMD. Those facts have administrative, representational,
-and Section 2 consequences. What is gone is the inference from
-those facts to a person who chose them.
+Metrics remain informative as descriptive summaries of plan
+effects. A PRISM plan with $\mathrm{PP}_{\min} = 0.047$, Efficiency
+Gap $+6.6\%$, and zero majority-minority districts has low
+compactness, an R-favoring wasted-vote asymmetry, and no MMD. Those
+facts carry administrative, representational, and Section 2
+consequences. The inference from those facts to a person who chose
+them is what deterministic generation removes.
 
 ### 4.8 What this paper claims, and what it does not
 
@@ -1006,15 +999,13 @@ population-and-area objective. The algorithm's output is
 byte-reproducible and updates only with the ten-year census.
 
 Second, that the algorithm's procedural neutrality is symmetric.
-By construction, the rule cannot be used to harm any group, party,
-or incumbent, and cannot be used to help any of them either. The
-same property that makes a partisan gerrymander impossible makes
-a race-conscious remedy impossible. Whether the symmetry is
-morally preferable to the status quo of partisan and remedial
-discretion is a question the algorithm itself cannot answer; it is
-a question for legislatures, courts, and voters. We claim only
-that the symmetry is the algorithm's defining property, not an
-incidental side-effect.
+The rule cannot be used to harm any group, party, or incumbent, and
+cannot be used to help any of them. The same property that
+forecloses a partisan gerrymander forecloses a race-conscious
+remedy. The symmetry is the algorithm's defining property; whether
+it is morally preferable to the status quo of partisan and
+remedial discretion is a question for legislatures, courts, and
+voters.
 
 Third, that the post-*Callais* legal landscape gives a generator of
 this kind a narrower constitutional exposure than any
@@ -1031,20 +1022,22 @@ majority-minority counts) play two roles on enacted plans, only
 one of which transfers to PRISM. As descriptions of plan effects
 (shape, wasted-vote asymmetry, minority opportunity) they remain
 valid and are reported alongside the DualBalance Score. As
-evidence of line-drawer intent they do not transfer, because PRISM
-has no line-drawer. The narrow claim is that the
-*intent-attribution* use of these metrics, not their measurement
+evidence of line-drawer intent they do not transfer. The
+intent-attribution use of these metrics, not their measurement
 use, is what the generative case breaks. This is the most
-contested framing claim in the paper; we expect it to draw the
-most pushback.
+contested framing claim in the paper.
 
 The paper does not claim that DBS is universally the right
 objective, that PRISM dominates enacted plans on all states, that
 compactness can be ignored, that effects-based fairness analyses
 (including Section 2) become irrelevant, or that the metric
-toolkit developed over the past thirty years is wrong. It claims
-only that the *intent* reading of those metrics presupposes a
+toolkit developed over the past thirty years is wrong. The narrow
+claim is that the intent reading of those metrics presupposes a
 line-drawer who is not present in this construction.
+
+Whether deterministic generation is preferable to discretionary
+redistricting is a political and constitutional question; the
+algorithm itself cannot answer it.
 
 ---
 

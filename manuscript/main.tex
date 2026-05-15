@@ -9,7 +9,7 @@
 
 \graphicspath{{figures/}}
 
-\title{DualBalance Districting:\\A Deterministic Alternative to Gerrymandering}
+\title{DualBalance Districting:\\From Detection to Generation}
 \author{Steven Hart}
 \date{\today}
 
@@ -17,45 +17,34 @@
 \maketitle
 
 \begin{abstract}
-Most current work on gerrymandering tries to detect it: catch a human
-line-drawer crossing from neutral redistricting into partisan or
-racial manipulation. We generate maps instead. \emph{DualBalance
-Districting} is the framing: each congressional district should carry
-roughly $1/N$ of a state's people \emph{and} roughly $1/N$ of its
-land, weighted equally. The motivating intuition is the framers'
-refusal to reduce representation to a single dimension; the
-operational claim is narrower: districts that span both metropolitan
-and rural territory force each representative to answer to a mix of
-the state's people, not to a single dense metro or a single rural
-hinterland. \emph{PRISM} (Population-weighted Radial Impartial
-Slicing Method) is the algorithm. It places $N$ seeds in a small
-circle around the state's population-weighted centroid and assigns
-each census unit to the nearest seed with capacity remaining. No
-random seed. No iteration. No tunable weight. No human input beyond
-geometry and population.
+Most current work on gerrymandering tries to detect it: identify
+when a line-drawer has crossed from neutral redistricting into
+partisan or racial manipulation. We generate maps instead.
+\emph{DualBalance Districting} asks each congressional district to
+carry roughly $1/N$ of a state's people \emph{and} roughly $1/N$
+of its land, weighted equally. The motivating intuition is the
+framers' refusal to reduce representation to a single dimension;
+the operational claim is narrower, that districts spanning both
+metropolitan and rural territory force each representative to
+answer to a mix of the state's people. \emph{PRISM}
+(Population-weighted Radial Impartial Slicing Method) is the
+algorithm. It places $N$ seeds in a small circle around the state's
+population-weighted centroid and assigns each census unit to the
+nearest seed with capacity remaining. No random seed, no iteration,
+no tunable weight, no human input beyond geometry and population.
+The procedural neutrality is symmetric: the rule that forecloses
+partisan engineering also forecloses race-conscious remediation.
 
-The procedural neutrality is symmetric. PRISM cannot be used to
-gerrymander, and it cannot be used to draw majority-minority
-districts, protect incumbents, or preserve communities of interest.
-The rule that forecloses partisan engineering also forecloses
-race-conscious remediation. There is no knob.
+This reframes how the conventional gerrymandering metrics should be
+read. Compactness scores, the efficiency gap, mean-median asymmetry,
+ensemble outlier tests, and majority-minority counts play two roles
+on enacted plans: they describe plan effects, and they support
+inferences about the line-drawer's intent. The descriptive role
+survives on a PRISM map; the intent-attribution role does not.
 
-This changes how the standard gerrymandering metrics should be read.
-Compactness scores, the efficiency gap, mean-median asymmetry,
-ensemble outlier tests, and majority-minority counts have two roles:
-they describe a plan's effects, and (the role we are concerned with
-here) they support inferences about the line-drawer's intent. The
-descriptive role is preserved on a PRISM map. The intent-attribution
-role is not, because there is no line-drawer to attribute intent to.
-A $+6.6\,\%$ efficiency gap on a PRISM map is still a real
-asymmetry in wasted votes; it is no longer evidence that someone
-packed Democrats. A Polsby-Popper of $0.09$ is still a non-compact
-shape; it is no longer evidence of a covert favor. The numbers
-compute. What they license you to conclude about motive is gone.
-
-On Minnesota (4{,}110 VTDs, 8 seats, 2020 PL 94-171), PRISM beats the
-enacted 119\textsuperscript{th}-Congress plan on the DualBalance Score
-($0.6472$ vs.~$0.6390$). We report standard partisan and race
+On Minnesota (4{,}110 VTDs, 8 seats, 2020 PL 94-171), PRISM beats
+the enacted 119\textsuperscript{th}-Congress plan on the DualBalance
+Score ($0.6472$ vs.~$0.6390$). We report standard partisan and race
 diagnostics alongside, as descriptions of the partition.
 \end{abstract}
 
