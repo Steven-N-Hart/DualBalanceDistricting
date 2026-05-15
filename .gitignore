@@ -21,7 +21,6 @@ manuscript/*.blg
 manuscript/*.synctex.gz
 manuscript/*.fls
 manuscript/*.fdb_latexmk
-manuscript/main.pdf
 manuscript/sections/*.aux
 
 # Claude Code per-user settings
