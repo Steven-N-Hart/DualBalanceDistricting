@@ -1,9 +1,15 @@
-"""Score PRISM and the enacted 119th-Congress plan for a state, side by side.
+"""Score multiple plans for a state side by side.
 
 Loads the units geojson once (with the full set of diagnostic columns
-that scoring expects), scores both ``out/<state>_yaml/map.geojson``
-(PRISM output) and ``data/<state>_enacted.geojson`` (TIGER cd119
-spatial join from prep_state_units.py), and prints a comparison table.
+that scoring expects), then scores four plans against the same harness:
+
+- **PRISM**       (out/<state>_yaml/map.geojson)
+- **Cascade**     (out/<state>_cascade/map.geojson)
+- **BDistricting** (data/<state>_bdistricting.geojson)
+- **Enacted**     (data/<state>_enacted.geojson)
+
+Missing files are silently skipped. Prints a side-by-side table and
+writes per-plan metrics plus comparison.json.
 
 Usage:
   python scripts/compare_state.py --state IA
@@ -51,21 +57,17 @@ HEADLINE_KEYS = [
 ]
 
 
+PLAN_SOURCES = [
+    ("prism", "out/{state}_yaml/map.geojson"),
+    ("cascade", "out/{state}_cascade/map.geojson"),
+    ("bdistricting", "data/{state}_bdistricting.geojson"),
+    ("enacted", "data/{state}_enacted.geojson"),
+]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--state", required=True, help="Two-letter postal code (e.g. IA).")
-    parser.add_argument(
-        "--prism-plan",
-        type=Path,
-        help="Override path to the PRISM plan geojson "
-        "(default: out/<state-lower>_yaml/map.geojson).",
-    )
-    parser.add_argument(
-        "--enacted-plan",
-        type=Path,
-        help="Override path to the enacted plan geojson "
-        "(default: data/<state-lower>_enacted.geojson).",
-    )
     parser.add_argument(
         "--units",
         type=Path,
@@ -74,15 +76,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        help="Optional directory to write prism_metrics.json + enacted_metrics.json "
-        "+ comparison.json (default: out/<state-lower>_compare).",
+        help="Optional directory to write per-plan metrics + comparison.json "
+        "(default: out/<state-lower>_compare).",
     )
     args = parser.parse_args(argv)
 
     state = args.state.lower()
     units_path = args.units or (REPO_ROOT / "data" / f"{state}_vtd.geojson")
-    prism_path = args.prism_plan or (REPO_ROOT / "out" / f"{state}_yaml" / "map.geojson")
-    enacted_path = args.enacted_plan or (REPO_ROOT / "data" / f"{state}_enacted.geojson")
     out_dir = args.out_dir or (REPO_ROOT / "out" / f"{state}_compare")
 
     print(f"loading units: {units_path}")
@@ -94,38 +94,42 @@ def main(argv: list[str] | None = None) -> int:
         extra_columns=EXTRA_COLUMNS,
     )
 
-    print(f"scoring PRISM plan: {prism_path}")
-    prism_plan = load_plan(prism_path, geography="vtd")
-    prism = score_plan(prism_plan, units)
+    results: dict[str, dict] = {}
+    for name, tmpl in PLAN_SOURCES:
+        path = REPO_ROOT / tmpl.format(state=state)
+        if not path.is_file():
+            print(f"  skipping {name}: {path} not found")
+            continue
+        print(f"scoring {name}: {path}")
+        plan = load_plan(path, geography="vtd")
+        results[name] = score_plan(plan, units)
 
-    print(f"scoring enacted plan: {enacted_path}")
-    enacted_plan = load_plan(enacted_path, geography="vtd")
-    enacted = score_plan(enacted_plan, units)
+    if not results:
+        print("no plans scored")
+        return 1
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    write_metrics(prism, out_dir / "prism_metrics.json")
-    write_metrics(enacted, out_dir / "enacted_metrics.json")
-
+    for name, metrics in results.items():
+        write_metrics(metrics, out_dir / f"{name}_metrics.json")
     comparison = {
         "state": state.upper(),
         "n_units": len(units),
-        "prism": {k: prism.get(k) for k in HEADLINE_KEYS},
-        "enacted": {k: enacted.get(k) for k in HEADLINE_KEYS},
+        **{name: {k: m.get(k) for k in HEADLINE_KEYS} for name, m in results.items()},
     }
     write_metrics(comparison, out_dir / "comparison.json")
 
     print()
     print(f"=== {state.upper()} comparison ===")
-    print(f"{'Metric':<32} {'PRISM':>12} {'Enacted':>12}")
-    print("-" * 60)
+    plans_in_order = [n for n, _ in PLAN_SOURCES if n in results]
+    header = f"{'Metric':<32}" + "".join(f"{n.upper():>14}" for n in plans_in_order)
+    print(header)
+    print("-" * len(header))
     for k in HEADLINE_KEYS:
-        p = prism.get(k)
-        e = enacted.get(k)
-        if p is None and e is None:
+        row_vals = [results[n].get(k) for n in plans_in_order]
+        if all(v is None for v in row_vals):
             continue
-        p_str = _fmt(p, k)
-        e_str = _fmt(e, k)
-        print(f"{k:<32} {p_str:>12} {e_str:>12}")
+        row = f"{k:<32}" + "".join(f"{_fmt(v, k):>14}" for v in row_vals)
+        print(row)
     print(f"\nWrote {out_dir / 'comparison.json'}")
     return 0
 

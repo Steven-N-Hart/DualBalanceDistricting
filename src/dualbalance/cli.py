@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from dualbalance.apportionment import apportion_seats
+from dualbalance.cascade import generate_cascade_plan
 from dualbalance.config import load_config, merge_config
 from dualbalance.districting import generate_plan
 from dualbalance.geography import Geography
@@ -76,6 +77,42 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
     write_metrics(metrics, out_dir / "metrics.json")
     print(
         f"generated {plan.n_districts} districts over {len(units)} "
+        f"{geography.cli_name} unit(s); DualBalance Score = "
+        f"{metrics['dualbalance_score']:.4f}; wrote map.geojson + "
+        f"metrics.json to {out_dir}"
+    )
+    return 0
+
+
+def _cmd_generate_cascade(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
+    args = _apply_config(args, defaults)
+    _require(args, "units", "districts", "out")
+
+    geography = Geography.from_cli_name(args.geography)
+    id_column = args.id_column or geography.default_id_column
+    pop_column = args.pop_column or "population"
+
+    units = load_units(
+        args.units,
+        id_column=id_column,
+        pop_column=pop_column,
+        county_column=args.county_column,
+        extra_columns=args.extra_columns,
+    )
+    if "county" not in units.columns:
+        raise SystemExit(
+            "generate-cascade requires a county column on the units. "
+            "Pass --county-column COL or set county_column in the YAML config."
+        )
+    plan = generate_cascade_plan(units, args.districts, geography=geography.cli_name)
+    metrics = score_plan(plan, units)
+
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    write_plan(plan, units, out_dir / "map.geojson")
+    write_metrics(metrics, out_dir / "metrics.json")
+    print(
+        f"cascade: {plan.n_districts} districts over {len(units)} "
         f"{geography.cli_name} unit(s); DualBalance Score = "
         f"{metrics['dualbalance_score']:.4f}; wrote map.geojson + "
         f"metrics.json to {out_dir}"
@@ -140,6 +177,7 @@ def _cmd_compare(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
 
 _DISPATCH: dict[str, Callable[[argparse.Namespace, dict[str, Any]], int]] = {
     "generate": _cmd_generate,
+    "generate-cascade": _cmd_generate_cascade,
     "apportion": _cmd_apportion,
     "score": _cmd_score,
     "compare": _cmd_compare,
@@ -230,6 +268,34 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         "the typical Reynolds v. Sims threshold).",
     )
 
+    cascade = subparsers.add_parser(
+        "generate-cascade",
+        help="Iowa-LSA-flavored baseline: county-aggregated, county-integrity-first.",
+    )
+    _add_config_flag(cascade)
+    cascade.add_argument("--districts", type=int, help="Number of districts N.")
+    cascade.add_argument("--units", type=Path, help="Path to atomic-unit data.")
+    cascade.add_argument(
+        "--geography",
+        default="vtd",
+        choices=geography_choices,
+        help="Base unit type (default: vtd).",
+    )
+    cascade.add_argument("--id-column", dest="id_column")
+    cascade.add_argument("--pop-column", dest="pop_column")
+    cascade.add_argument(
+        "--county-column",
+        dest="county_column",
+        help="Column with county FIPS / name. Required for cascade.",
+    )
+    cascade.add_argument(
+        "--extra-columns",
+        dest="extra_columns",
+        default=None,
+        help=argparse.SUPPRESS,
+    )
+    cascade.add_argument("--out", type=Path, help="Output directory.")
+
     apportion = subparsers.add_parser(
         "apportion",
         help="Apportion seats across states using the Method of Equal Proportions.",
@@ -291,6 +357,7 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
 
     defaults: dict[str, dict[str, Any]] = {
         "generate": _defaults_for(generate),
+        "generate-cascade": _defaults_for(cascade),
         "apportion": _defaults_for(apportion),
         "score": _defaults_for(score),
         "compare": _defaults_for(compare),

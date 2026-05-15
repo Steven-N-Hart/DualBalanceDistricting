@@ -123,8 +123,10 @@ under equal-population, with Lloyd-style iteration to convergence.
 The resulting maps are blob-shaped and score well on compactness but
 exhibit large area imbalance. PRISM differs in two ways: seeds are
 radial-clustered around the centroid (not dispersed), and there is
-no iteration. PRISM trades compactness for area balance; it is a
-different point on the same curve.
+no iteration. On the six-state comparison (\S\ref{sec:results-multistate})
+BDistricting wins on no state outright on DBS, but produces the
+smallest $|\mathrm{EG}|$ on Iowa and the most-compact districts in
+every state.
 
 \paragraph{Versus centroidal power diagrams~\cite{cohenaddad2018}.}
 The Cohen-Addad-Klein-Young construction solves for additive weights
@@ -141,22 +143,38 @@ radial seeds produce a slice geometry that Lloyd iteration would
 destroy, because recentering pulls seeds away from the tight radial
 cluster. Disabling iteration is what preserves the geometry.
 
+\paragraph{Versus our own Cascade baseline.} Cascade
+(\S\ref{sec:results-multistate}, \verb|src/dualbalance/cascade.py|)
+is an Iowa-LSA-flavored construction we include in the empirical
+comparison: it aggregates VTDs to counties, picks $N$ farthest-spread
+county seeds, runs capacitated first-fit assignment at county
+granularity, and splits a county into pseudo-counties (via PRISM
+internally) only when its population exceeds the per-district cap.
+Cascade beats PRISM on DBS on all six states tested, sometimes by
+wide margins (MN $+0.12$, TX $+0.17$, NC $+0.09$, WI $+0.18$); on
+the six-state set Cascade is the stronger \emph{deterministic
+baseline} against the enacted plan. We include both algorithms
+because they make the conceptual contribution sharper: PRISM and
+Cascade prioritize different objectives (radial slicing for
+density mixing; county integrity for administrative coherence) and
+produce different maps on every state, yet both are race-blind,
+partisan-blind, and deterministic by construction. The forensic
+critique in \S\ref{sec:discussion-forensic} applies equally to
+either, and to BDistricting, and to any future deterministic
+generator built on similar principles.
+
 \subsection{Limitations}
 
-\paragraph{Six-state evidence, not fifty-state generality.} PRISM
-has been run end-to-end on six states (\S\ref{sec:results-multistate}):
-Minnesota, Iowa, Massachusetts, Texas, North Carolina, and Wisconsin.
-It wins on DBS in MN and MA and loses in IA, TX, NC, and WI. The
-losses fall into two distinct shapes. On IA and TX the enacted plan
-beats PRISM through procedural neutrality of its own (Iowa LSA) or
-geometric mismatch with the single-centroid assumption (Texas
-polycentric). On NC and WI the enacted plan beats PRISM on the
-\emph{structural} metrics (compactness, county integrity) because
-those plans were drawn with litigation over precisely those metrics
-in mind; on the \emph{partisan} metrics PRISM is closer to neutral.
-The remaining 44 states have not been run, and six states does not
-establish generality across the density-profile or
-litigation-history spaces.
+\paragraph{Six-state evidence, not fifty-state generality.} Three
+deterministic algorithms (PRISM, Cascade, BDistricting) have been
+run end-to-end on six states (\S\ref{sec:results-multistate}). On
+DBS, Cascade wins on MN, MA, TX, NC, and WI; the enacted plan wins
+only on Iowa. Across all six states with nonzero partisan asymmetry,
+every deterministic algorithm produces a smaller $|\mathrm{EG}|$
+than the enacted plan, with the largest gaps in the
+gerrymander-prone states. The remaining 44 states have not been
+run, and six states does not establish generality across the
+density-profile or litigation-history spaces.
 
 \paragraph{Worst-district area outlier.} PRISM concentrates the
 area imbalance in a single rural district (here, District~2 at
@@ -208,9 +226,12 @@ minimizes DBS under contiguity constraints. More expensive than the
 current pipeline; the mathematically clean answer to ``which plan
 directly minimizes the DualBalance objective.''
 
-\paragraph{Comparison against BDistricting and Splitline.} We compare
-PRISM against the enacted plan only. A full benchmark would score
-BDistricting and Splitline maps on the same metrics across states.
+\paragraph{Splitline benchmark.} The six-state benchmark
+(\S\ref{sec:results-multistate}) covers PRISM, Cascade, BDistricting,
+and the enacted plan. Adding Smith's Shortest
+Splitline~\cite{smithsplit} would give a fourth deterministic
+baseline; computing it from scratch on each state is straightforward
+but has not yet been done.
 
 \paragraph{Scoring-harness extensions.} The current harness reports
 population, area, Polsby-Popper, and Reock. Natural additions include

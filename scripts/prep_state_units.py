@@ -39,17 +39,7 @@ import pandas as pd
 
 from dualbalance.geography import Geography
 from dualbalance.io import EQUAL_AREA_CRS
-
-# Per-state metadata: FIPS code, TIGER state name (used in VTD URL path),
-# and apportioned 119th-Congress seat count.
-STATE_INFO: dict[str, dict[str, Any]] = {
-    "MN": {"fips": "27", "tiger_name": "MINNESOTA", "n_seats": 8},
-    "IA": {"fips": "19", "tiger_name": "IOWA", "n_seats": 4},
-    "MA": {"fips": "25", "tiger_name": "MASSACHUSETTS", "n_seats": 9},
-    "TX": {"fips": "48", "tiger_name": "TEXAS", "n_seats": 38},
-    "NC": {"fips": "37", "tiger_name": "NORTH_CAROLINA", "n_seats": 14},
-    "WI": {"fips": "55", "tiger_name": "WISCONSIN", "n_seats": 8},
-}
+from dualbalance.states import STATE_INFO
 
 
 def _load_dotenv(path: Path) -> None:
