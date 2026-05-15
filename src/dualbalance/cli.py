@@ -58,7 +58,13 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
     id_column = args.id_column or geography.default_id_column
     pop_column = args.pop_column or "population"
 
-    units = load_units(args.units, id_column=id_column, pop_column=pop_column)
+    units = load_units(
+        args.units,
+        id_column=id_column,
+        pop_column=pop_column,
+        county_column=args.county_column,
+        extra_columns=args.extra_columns,
+    )
     plan = generate_plan(units, args.districts, geography=geography.cli_name)
     if args.tighten_pop:
         plan = tighten_population(plan, units, pop_tolerance=args.pop_tolerance)
@@ -105,7 +111,13 @@ def _cmd_score(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
     )
     pop_column = args.pop_column or "population"
 
-    units = load_units(args.units, id_column=id_column, pop_column=pop_column)
+    units = load_units(
+        args.units,
+        id_column=id_column,
+        pop_column=pop_column,
+        county_column=args.county_column,
+        extra_columns=args.extra_columns,
+    )
     plan = load_plan(
         args.plan,
         geography=geography.cli_name if geography is not None else "unknown",
@@ -178,6 +190,21 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         dest="pop_column",
         help="Column with population (default: population).",
     )
+    generate.add_argument(
+        "--county-column",
+        dest="county_column",
+        help="Optional column with county FIPS / name. Preserved through "
+        "load_units and used by the scoring harness to report county splits. "
+        "The core generator never reads it.",
+    )
+    generate.add_argument(
+        "--extra-columns",
+        dest="extra_columns",
+        default=None,
+        # YAML-only: argparse can't ergonomically express a dict. Set via
+        # --config <yaml> with an ``extra_columns:`` mapping or list.
+        help=argparse.SUPPRESS,
+    )
     generate.add_argument("--out", type=Path, help="Output directory.")
     generate.add_argument(
         "--tighten-pop",
@@ -229,6 +256,18 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
     )
     score.add_argument("--id-column", dest="id_column")
     score.add_argument("--pop-column", dest="pop_column")
+    score.add_argument(
+        "--county-column",
+        dest="county_column",
+        help="Optional column with county FIPS / name; enables county-split "
+        "reporting in the metrics.",
+    )
+    score.add_argument(
+        "--extra-columns",
+        dest="extra_columns",
+        default=None,
+        help=argparse.SUPPRESS,
+    )
 
     compare = subparsers.add_parser(
         "compare",

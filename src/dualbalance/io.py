@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import csv
 import json
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,8 @@ def load_units(
     *,
     id_column: str = "GEOID",
     pop_column: str = "population",
+    county_column: str | None = None,
+    extra_columns: Mapping[str, str] | Iterable[str] | None = None,
 ) -> gpd.GeoDataFrame:
     """Load atomic units (VTDs, blocks, or block groups) as a GeoDataFrame.
 
@@ -34,6 +37,22 @@ def load_units(
     GeoPackage, ...) must carry the named ID and population columns plus a
     geometry. The result is reprojected to ``EQUAL_AREA_CRS`` and exposes
     canonical columns ``unit_id``, ``population``, ``area``, ``geometry``.
+
+    If ``county_column`` is provided and present in the input, the column
+    is preserved (canonicalized to ``county``) so the scoring harness can
+    report county-split diagnostics. The core generator does not read it.
+
+    ``extra_columns`` opts additional source columns through to the
+    returned GeoDataFrame under canonical names that the scoring harness
+    recognizes. Accepts either:
+
+    - a mapping ``{canonical_name: source_column}`` (preferred when the
+      source uses different column names, e.g. ``{"votes_R": "PRES20R"}``)
+    - an iterable of column names to preserve under their original name
+      (when the source already uses canonical names)
+
+    Missing source columns are silently dropped — these are opt-in
+    diagnostics; the generator never reads them.
     """
     gdf = gpd.read_file(path)
     if id_column not in gdf.columns:
@@ -45,10 +64,37 @@ def load_units(
     if gdf.crs is None:
         raise ValueError(f"input {path!s} has no CRS; cannot project to equal-area")
 
+    keep_county = county_column is not None and county_column in gdf.columns
+    extras_map = _normalize_extra_columns(extra_columns)
+
     gdf = gdf.to_crs(EQUAL_AREA_CRS)
-    gdf = gdf.rename(columns={id_column: "unit_id", pop_column: "population"})
+    rename = {id_column: "unit_id", pop_column: "population"}
+    if keep_county and county_column != "county":
+        rename[county_column] = "county"
+    for canonical, source in extras_map.items():
+        if source in gdf.columns and source != canonical:
+            rename[source] = canonical
+    gdf = gdf.rename(columns=rename)
     gdf["area"] = gdf.geometry.area
-    return gdf[["unit_id", "population", "area", "geometry"]]
+    cols = ["unit_id", "population", "area", "geometry"]
+    if keep_county:
+        gdf["county"] = gdf["county"].astype(str)
+        cols.append("county")
+    for canonical in extras_map:
+        if canonical in gdf.columns:
+            cols.append(canonical)
+    return gdf[cols]
+
+
+def _normalize_extra_columns(
+    extra: Mapping[str, str] | Iterable[str] | None,
+) -> dict[str, str]:
+    """Accept either {canonical: source} or [canonical, ...] (identity)."""
+    if extra is None:
+        return {}
+    if isinstance(extra, Mapping):
+        return {str(k): str(v) for k, v in extra.items()}
+    return {str(c): str(c) for c in extra}
 
 
 def write_metrics(metrics: dict[str, Any], path: str | Path) -> None:
@@ -70,7 +116,14 @@ def write_plan(plan: Plan, units: gpd.GeoDataFrame, path: str | Path) -> None:
     sorted_dids = [d for _, d in rows]
     sub = indexed.loc[sorted_uids].reset_index()
     sub["district_id"] = sorted_dids
-    out_gdf = sub[["unit_id", "district_id", "population", "area", "geometry"]]
+    required = {"unit_id", "district_id", "population", "area", "geometry"}
+    cols = ["unit_id", "district_id", "population", "area", "geometry"]
+    # Preserve any opt-in diagnostic columns (county, vap_*, votes_*, ...)
+    # so a written plan can be re-scored without rejoining the source data.
+    for c in sub.columns:
+        if c not in required and c not in cols:
+            cols.append(c)
+    out_gdf = sub[cols]
     out = Path(path)
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists():

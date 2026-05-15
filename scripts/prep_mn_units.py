@@ -21,10 +21,12 @@ import os
 import shutil
 import sys
 import tempfile
+import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import geopandas as gpd
 import pandas as pd
@@ -87,24 +89,38 @@ _API_GEO_LEVEL: dict[Geography, str] = {
 }
 
 
-def _fetch_population_via_api(
-    geography: Geography, state_fips: str, api_key: str
-) -> dict[str, int]:
-    """Query the 2020 PL 94-171 dataset for total population per unit.
+# Census PL 94-171 variables. P1 is total population; P3 is voting-age
+# population by race (alone); P4 is VAP by Hispanic/Latino origin and race.
+# Documented at https://api.census.gov/data/2020/dec/pl/variables.html.
+_PL_VARIABLES: dict[str, str] = {
+    "population": "P1_001N",  # Total population
+    "vap_total": "P3_001N",  # Total VAP
+    "vap_nhwhite": "P4_005N",  # Not Hispanic, White alone VAP
+    "vap_black": "P3_004N",  # Black or African American alone VAP
+    "vap_aian": "P3_005N",  # American Indian / Alaska Native alone VAP
+    "vap_asian": "P3_006N",  # Asian alone VAP
+    "vap_hispanic": "P4_002N",  # Hispanic or Latino VAP
+}
 
-    Returns ``{GEOID: population}`` keyed by the full census GEOID string
-    (state + county + unit subcode), matching the TIGER GEOID20 field.
+
+def _fetch_pl_via_api(geography: Geography, state_fips: str, api_key: str) -> pd.DataFrame:
+    """Query the 2020 PL 94-171 dataset for total pop + race VAP per unit.
+
+    Returns a DataFrame with columns ``GEOID`` plus one column per
+    canonical name in :data:`_PL_VARIABLES`. GEOID is the full census
+    GEOID string (state + county + unit subcode), matching TIGER's
+    GEOID20 field.
     """
     level = _API_GEO_LEVEL[geography]
     params = {
-        "get": "P1_001N",
+        "get": ",".join(_PL_VARIABLES.values()),
         "for": f"{level}:*",
         "in": f"state:{state_fips} county:*",
         "key": api_key,
     }
     query = urllib.parse.urlencode(params).replace("+", "%20")
     url = f"https://api.census.gov/data/2020/dec/pl?{query}"
-    print("  fetching population from Census Data API")
+    print(f"  fetching {len(_PL_VARIABLES)} PL 94-171 variables from Census Data API")
     with urllib.request.urlopen(url, timeout=120) as resp:
         body = resp.read()
     try:
@@ -114,21 +130,57 @@ def _fetch_population_via_api(
         raise RuntimeError(f"Census API returned non-JSON: {snippet}") from exc
 
     header = data[0]
-    pop_idx = header.index("P1_001N")
     state_idx = header.index("state")
     county_idx = header.index("county")
-    # The unit subcode column name matches `level` with spaces.
-    unit_col = level
-    unit_idx = header.index(unit_col)
+    unit_idx = header.index(level)
+    var_idx = {canonical: header.index(code) for canonical, code in _PL_VARIABLES.items()}
 
-    result: dict[str, int] = {}
+    rows = []
     for row in data[1:]:
         geoid = row[state_idx] + row[county_idx] + row[unit_idx]
-        result[geoid] = int(row[pop_idx])
-    return result
+        record: dict[str, Any] = {"GEOID": geoid}
+        for canonical, idx in var_idx.items():
+            record[canonical] = int(row[idx])
+        rows.append(record)
+    return pd.DataFrame(rows)
 
 
-def _attach_population(
+# Source: dra2020/vtd_data — 2020 precinct/VTD election results joined to
+# TIGER 2020 GEOID20 by the maintainers of Dave's Redistricting App.
+# https://github.com/dra2020/vtd_data
+DRA_ELECTION_URL = (
+    "https://github.com/dra2020/vtd_data/raw/master/2020_VTD/MN/Election_Data_MN.v07.zip"
+)
+
+
+def _fetch_dra_elections(url: str) -> pd.DataFrame:
+    """Download the dra2020 MN election ZIP and return 2020 presidential.
+
+    Output columns: ``GEOID20``, ``votes_R``, ``votes_D`` (renamed from
+    ``E_20_PRES_Rep`` / ``E_20_PRES_Dem``). Other races in the file are
+    ignored — pick a different one by post-processing the CSV manually.
+    """
+    print(f"  downloading election data from {url}")
+    with urllib.request.urlopen(url, timeout=120) as resp:
+        zip_bytes = resp.read()
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
+        csv_names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+        if not csv_names:
+            raise RuntimeError(f"no CSV inside {url}")
+        with zf.open(csv_names[0]) as f:
+            df = pd.read_csv(f, dtype={"GEOID20": str})
+    need = {"GEOID20", "E_20_PRES_Rep", "E_20_PRES_Dem"}
+    missing = need - set(df.columns)
+    if missing:
+        raise RuntimeError(f"dra2020 CSV missing expected columns: {sorted(missing)}")
+    return (
+        df[["GEOID20", "E_20_PRES_Rep", "E_20_PRES_Dem"]]
+        .rename(columns={"E_20_PRES_Rep": "votes_R", "E_20_PRES_Dem": "votes_D"})
+        .astype({"votes_R": int, "votes_D": int})
+    )
+
+
+def _attach_demographics(
     gdf: gpd.GeoDataFrame,
     *,
     geography: Geography,
@@ -136,6 +188,11 @@ def _attach_population(
     csv_path: Path | None,
     api_key: str | None,
 ) -> gpd.GeoDataFrame:
+    """Join total population + race VAP onto ``gdf``.
+
+    Precedence: ``csv_path`` > Census API > synthesized uniform fallback.
+    The CSV path is population-only (race VAP only loads via the API).
+    """
     if csv_path is not None:
         pops = pd.read_csv(csv_path, dtype={id_column: str})
         if id_column not in pops.columns or "population" not in pops.columns:
@@ -149,28 +206,31 @@ def _attach_population(
 
     if api_key:
         try:
-            pops_by_geoid = _fetch_population_via_api(geography, MN_FIPS, api_key)
+            pl_df = _fetch_pl_via_api(geography, MN_FIPS, api_key)
         except RuntimeError as exc:
             print(
                 f"  WARNING: Census API call failed ({exc}); "
-                "falling back to synthetic uniform population=1000."
+                "falling back to synthetic uniform population=1000 (no race data)."
             )
             print("  If you just signed up, check your email for the activation link.")
             gdf = gdf.copy()
             gdf["population"] = 1000
             return gdf
-        merged = gdf.copy()
-        merged["population"] = merged[id_column].map(pops_by_geoid)
+        merged = gdf.merge(pl_df, left_on=id_column, right_on="GEOID", how="left").drop(
+            columns=["GEOID"]
+        )
         missing = int(merged["population"].isna().sum())
         if missing:
             sample = merged.loc[merged["population"].isna(), id_column].head(5).tolist()
             raise RuntimeError(
-                f"Census API returned no population for {missing} unit(s); example IDs: {sample}"
+                f"Census API returned no data for {missing} unit(s); example IDs: {sample}"
             )
-        merged["population"] = merged["population"].astype(int)
+        for col in _PL_VARIABLES:
+            merged[col] = merged[col].astype(int)
         print(
-            f"  joined real population for {len(merged):,} units "
-            f"(total: {int(merged['population'].sum()):,})"
+            f"  joined real demographics for {len(merged):,} units "
+            f"(pop {int(merged['population'].sum()):,}; "
+            f"VAP {int(merged['vap_total'].sum()):,})"
         )
         return merged
 
@@ -178,6 +238,62 @@ def _attach_population(
     gdf = gdf.copy()
     gdf["population"] = 1000
     return gdf
+
+
+def _attach_elections(
+    gdf: gpd.GeoDataFrame,
+    *,
+    id_column: str,
+    csv_path: Path | None,
+    url: str | None,
+) -> gpd.GeoDataFrame:
+    """Join 2020 presidential vote totals onto ``gdf``.
+
+    Either reads a local CSV (must have ``GEOID20``, ``votes_R``,
+    ``votes_D``) or fetches the dra2020/vtd_data MN zip from ``url``.
+    On any failure prints a warning and returns ``gdf`` unchanged — the
+    scoring harness will then simply omit partisan metrics.
+    """
+    if csv_path is not None:
+        try:
+            edf = pd.read_csv(csv_path, dtype={id_column: str})
+        except OSError as exc:
+            print(f"  WARNING: failed to read --election-csv ({exc}); skipping partisan join")
+            return gdf
+        need = {id_column, "votes_R", "votes_D"}
+        missing = need - set(edf.columns)
+        if missing:
+            print(
+                f"  WARNING: --election-csv missing columns {sorted(missing)}; "
+                "skipping partisan join"
+            )
+            return gdf
+        edf = edf[[id_column, "votes_R", "votes_D"]]
+    elif url is not None:
+        try:
+            edf = _fetch_dra_elections(url)
+            edf = edf.rename(columns={"GEOID20": id_column})
+        except (urllib.error.URLError, RuntimeError) as exc:
+            print(
+                f"  WARNING: failed to fetch partisan data ({exc}); "
+                "skipping partisan join. Use --election-csv to provide locally."
+            )
+            return gdf
+    else:
+        return gdf
+
+    merged = gdf.merge(edf, on=id_column, how="left")
+    n_missing = int(merged["votes_R"].isna().sum())
+    if n_missing:
+        print(f"  NOTE: {n_missing} units missing election data; filled with 0 votes")
+        merged[["votes_R", "votes_D"]] = merged[["votes_R", "votes_D"]].fillna(0)
+    merged["votes_R"] = merged["votes_R"].astype(int)
+    merged["votes_D"] = merged["votes_D"].astype(int)
+    print(
+        f"  joined 2020 presidential votes for {len(merged):,} units "
+        f"(R {int(merged['votes_R'].sum()):,}; D {int(merged['votes_D'].sum()):,})"
+    )
+    return merged
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -199,6 +315,25 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         dest="population_csv",
         help="Optional path to a CSV with GEOID20,population.",
+    )
+    parser.add_argument(
+        "--election-csv",
+        type=Path,
+        dest="election_csv",
+        help="Optional path to a CSV with GEOID20,votes_R,votes_D. "
+        "Overrides the dra2020/vtd_data auto-fetch.",
+    )
+    parser.add_argument(
+        "--election-url",
+        dest="election_url",
+        default=DRA_ELECTION_URL,
+        help=f"URL to fetch partisan data from (default: {DRA_ELECTION_URL}).",
+    )
+    parser.add_argument(
+        "--no-elections",
+        dest="no_elections",
+        action="store_true",
+        help="Skip partisan join entirely (no votes_R / votes_D columns).",
     )
     args = parser.parse_args(argv)
 
@@ -227,7 +362,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     gdf = gdf[[expected_id, "geometry"]].copy()
 
-    gdf = _attach_population(
+    gdf = _attach_demographics(
         gdf,
         geography=geography,
         id_column=expected_id,
@@ -235,10 +370,29 @@ def main(argv: list[str] | None = None) -> int:
         api_key=api_key,
     )
 
+    if not args.no_elections:
+        gdf = _attach_elections(
+            gdf,
+            id_column=expected_id,
+            csv_path=args.election_csv,
+            url=args.election_url,
+        )
+
+    # County FIPS = first 5 chars of any Census GEOID (state[2] + county[3]).
+    # Preserved as a diagnostic column for the scoring harness; the core
+    # generator must not read it.
+    gdf["county"] = gdf[expected_id].astype(str).str[:5]
+
+    out_cols = [expected_id, "population", "county"]
+    for c in [*list(_PL_VARIABLES), "votes_R", "votes_D"]:
+        if c in gdf.columns and c not in out_cols:
+            out_cols.append(c)
+    out_cols.append("geometry")
+
     out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists():
         out.unlink()
-    gdf[[expected_id, "population", "geometry"]].to_file(out, driver="GeoJSON")
+    gdf[out_cols].to_file(out, driver="GeoJSON")
     print(f"wrote {len(gdf):,} {geography.cli_name} units to {out}")
     shutil.rmtree(out.with_suffix(""), ignore_errors=True)
     return 0

@@ -98,9 +98,51 @@ def test_generate_with_tighten_pop(tmp_path, synthetic_grid_4x4) -> None:
 
 def test_generate_defaults_dict_has_data_plumbing_keys() -> None:
     _, defaults = build_parser()
-    for k in ("districts", "config", "geography", "units", "out", "id_column", "pop_column"):
+    for k in (
+        "districts",
+        "config",
+        "geography",
+        "units",
+        "out",
+        "id_column",
+        "pop_column",
+        "county_column",
+        "extra_columns",
+    ):
         assert k in defaults["generate"]
     assert defaults["generate"]["geography"] == "vtd"
+    # county_column / extra_columns default to None: opt-in diagnostics.
+    assert defaults["generate"]["county_column"] is None
+    assert defaults["generate"]["extra_columns"] is None
+
+
+def test_generate_with_county_column_reports_county_splits(
+    tmp_path: Path, synthetic_grid_4x4_with_counties
+) -> None:
+    units_path = tmp_path / "units.geojson"
+    src = synthetic_grid_4x4_with_counties.rename(columns={"unit_id": "GEOID20"})[
+        ["GEOID20", "population", "county", "geometry"]
+    ]
+    src.to_file(units_path, driver="GeoJSON")
+    rc = main(
+        [
+            "generate",
+            "--districts",
+            "4",
+            "--units",
+            str(units_path),
+            "--geography",
+            "vtd",
+            "--county-column",
+            "county",
+            "--out",
+            str(tmp_path / "out"),
+        ]
+    )
+    assert rc == 0
+    metrics = json.loads((tmp_path / "out" / "metrics.json").read_text())
+    assert metrics["counties_total"] == 4
+    assert "counties_split" in metrics
 
 
 def test_apportion_csv_end_to_end(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:

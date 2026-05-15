@@ -5,4 +5,16 @@ units: data/mn_vtd.geojson
 geography: vtd
 id_column: GEOID20
 pop_column: population
+county_column: county
+# Opt-in diagnostic columns preserved through load_units for the scoring
+# harness. The core generator never reads them.
+extra_columns:
+  - vap_total
+  - vap_nhwhite
+  - vap_black
+  - vap_hispanic
+  - vap_aian
+  - vap_asian
+  - votes_R
+  - votes_D
 out: out/mn_yaml

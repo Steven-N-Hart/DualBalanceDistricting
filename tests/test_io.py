@@ -39,6 +39,106 @@ def test_load_units_roundtrip(tmp_path: Path) -> None:
     assert out.crs is not None and out.crs.to_string().upper() == EQUAL_AREA_CRS
 
 
+def test_load_units_preserves_county_column(tmp_path: Path) -> None:
+    src = gpd.GeoDataFrame(
+        {
+            "GEOID20": ["27001A", "27003B"],
+            "P0010001": [100, 200],
+            "COUNTYFP": ["27001", "27003"],
+            "geometry": [
+                Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+            ],
+        },
+        crs="EPSG:4326",
+    )
+    fp = tmp_path / "units.geojson"
+    src.to_file(fp, driver="GeoJSON")
+
+    out = load_units(fp, id_column="GEOID20", pop_column="P0010001", county_column="COUNTYFP")
+
+    assert "county" in out.columns
+    assert list(out["county"]) == ["27001", "27003"]
+
+
+def test_load_units_ignores_county_column_when_absent(tmp_path: Path) -> None:
+    fp = tmp_path / "units.geojson"
+    _toy_gdf().to_file(fp, driver="GeoJSON")
+    out = load_units(fp, id_column="GEOID20", pop_column="P0010001", county_column="NOPE")
+    # Missing column is silently dropped — not an error, since county is opt-in
+    # diagnostic data and the generator doesn't depend on it.
+    assert "county" not in out.columns
+
+
+def test_load_units_extra_columns_mapping(tmp_path: Path) -> None:
+    src = gpd.GeoDataFrame(
+        {
+            "GEOID20": ["A", "B"],
+            "P0010001": [100, 200],
+            "P3_004N": [10, 30],
+            "PRES20R": [55, 40],
+            "PRES20D": [45, 60],
+            "geometry": [
+                Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+            ],
+        },
+        crs="EPSG:4326",
+    )
+    fp = tmp_path / "units.geojson"
+    src.to_file(fp, driver="GeoJSON")
+
+    out = load_units(
+        fp,
+        id_column="GEOID20",
+        pop_column="P0010001",
+        extra_columns={"vap_black": "P3_004N", "votes_R": "PRES20R", "votes_D": "PRES20D"},
+    )
+
+    assert {"vap_black", "votes_R", "votes_D"}.issubset(out.columns)
+    assert list(out["vap_black"]) == [10, 30]
+    assert list(out["votes_R"]) == [55, 40]
+
+
+def test_load_units_extra_columns_list(tmp_path: Path) -> None:
+    src = gpd.GeoDataFrame(
+        {
+            "GEOID20": ["A", "B"],
+            "P0010001": [100, 200],
+            "vap_black": [10, 30],
+            "geometry": [
+                Polygon([(0, 0), (1, 0), (1, 1), (0, 1)]),
+                Polygon([(1, 0), (2, 0), (2, 1), (1, 1)]),
+            ],
+        },
+        crs="EPSG:4326",
+    )
+    fp = tmp_path / "units.geojson"
+    src.to_file(fp, driver="GeoJSON")
+
+    out = load_units(
+        fp,
+        id_column="GEOID20",
+        pop_column="P0010001",
+        extra_columns=["vap_black"],  # identity mapping when source uses canonical names
+    )
+    assert "vap_black" in out.columns
+    assert list(out["vap_black"]) == [10, 30]
+
+
+def test_load_units_extra_columns_missing_silently_dropped(tmp_path: Path) -> None:
+    fp = tmp_path / "units.geojson"
+    _toy_gdf().to_file(fp, driver="GeoJSON")
+    out = load_units(
+        fp,
+        id_column="GEOID20",
+        pop_column="P0010001",
+        extra_columns={"votes_R": "DOES_NOT_EXIST"},
+    )
+    # Opt-in column not in source -> silently absent (not an error).
+    assert "votes_R" not in out.columns
+
+
 def test_load_units_missing_id_column_raises(tmp_path: Path) -> None:
     fp = tmp_path / "units.geojson"
     _toy_gdf().to_file(fp, driver="GeoJSON")
