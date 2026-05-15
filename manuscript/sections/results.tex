@@ -20,17 +20,16 @@ documented end-to-end in \verb|docs/mn-poc-walkthrough.md|.
 We compare three plans on the same 4{,}110-VTD input:
 
 \begin{itemize}
-  \item \textbf{Pure radial.} The default algorithm
+  \item \textbf{PRISM.} The default algorithm
         (\S\ref{sec:methods-seeds}--\S\ref{sec:methods-repair}). No
         tuning knobs.
-  \item \textbf{Radial $+$ tighten-pop ($\tau = 0.005$).} The default
-        algorithm followed by the optional L$^1$ population-tightening
-        pass (\S\ref{sec:methods-tighten}) targeting per-district
-        deviation within 0.5\,\% of $P^{*}$.
-  \item \textbf{Enacted Minnesota 119th-Congress plan.} The
-        court-drawn, legislatively enacted U.S.~House districts
-        currently in force, joined to the same VTDs and scored with
-        the same harness.
+  \item \textbf{PRISM + tighten-pop ($\tau = 0.005$).} PRISM followed
+        by the optional $L^{1}$ pop-tightening pass
+        (\S\ref{sec:methods-tighten}) targeting per-district deviation
+        within 0.5\,\% of $P^{*}$.
+  \item \textbf{Enacted (119th).} The court-drawn, legislatively
+        enacted Minnesota U.S.~House districts currently in force,
+        scored with the same harness.
 \end{itemize}
 
 \subsection{Headline scores}
@@ -49,7 +48,7 @@ defined in \S\ref{sec:methods}. Best result per row in bold.}
 \label{tab:mn-results}
 \begin{tabular}{lrrr}
 \toprule
-Metric & Pure radial & Radial $+$ tighten-pop & Enacted (119th) \\
+Metric & PRISM & PRISM + tighten-pop & Enacted (119th) \\
 \midrule
 $\mathrm{DBS}$ & 0.6472 & \textbf{0.6574} & 0.6390 \\
 $\overline{\mathrm{pop\_dev}}$ & 5.08\,\% & \textbf{0.08\,\%} & 0.42\,\% \\
@@ -63,50 +62,38 @@ $\mathrm{Reock}_{\mathrm{mean}}$ & 0.361 & 0.342 & \textbf{0.419} \\
 \end{tabular}
 \end{table}
 
-Three findings:
+Three findings.
 
-\paragraph{Pure radial beats the enacted plan on the DualBalance Score.}
-The pure-radial pipeline scores 0.6472 against the enacted plan's
-0.6390, a margin of $+1.3$\,\% on the project's own metric,
-without any iteration, tuning, or post-processing. The advantage comes
+\paragraph{PRISM beats the enacted plan on the DualBalance Score.}
+PRISM scores 0.6472 against the enacted 0.6390, a $+1.3$\,\% margin
+with no iteration, no tuning, no post-processing. The advantage comes
 entirely from area balance ($\overline{\mathrm{area\_dev}}$ 103.9\,\%
-vs 112.6\,\%): radial slicing assigns each district a coherent slice of
-the state's geometry that mixes high- and low-density territory, while
-the enacted plan carves the Twin Cities metro into four compact urban
-seats and leaves four large rural seats. The DualBalance Score
-penalizes the latter pattern more heavily because it weights area
-deviation equally with population deviation.
+vs 112.6\,\%). Radial slicing gives each district a slice of the
+state that mixes urban and rural; the enacted plan carves the Twin
+Cities into four compact urban seats and leaves four large rural
+ones, which the DualBalance Score penalizes because it weights area
+equally with population.
 
-\paragraph{The optional tighten-pop pass closes the legal gap and
-improves the DualBalance Score.} The pure-radial plan's
-$\mathrm{pop\_dev}_{\max}$ of 11.24\,\% is well above the
-\textasciitilde{}0.5\,\% deviation typical of enacted U.S.~House
-plans~\cite{reynolds1964}. Running the optional L$^1$ pop-tightening
-pass (\S\ref{sec:methods-tighten}) executed 81 boundary-unit swaps in
-\textasciitilde{}18\,seconds of compute, driving
-$\mathrm{pop\_dev}_{\max}$ from 11.24\,\% to 0.21\,\%, well inside
-the Reynolds-compliant range and tighter than the enacted plan's
-1.32\,\%. $\overline{\mathrm{area\_dev}}$ rose by only 0.3 percentage
-points; the DualBalance Score \emph{improved} from 0.6472 to 0.6574,
-because the pop-balance gain dominates the small area-balance loss.
-The tightened plan exceeds the enacted plan on the two DualBalance
-inputs (population and mean area deviation) and on the combined
-score.
+\paragraph{Tightening closes the legal gap and improves DBS.} Pure
+PRISM's $\mathrm{pop\_dev}_{\max}$ of 11.24\,\% exceeds the
+\textasciitilde{}0.5\,\% \emph{Reynolds v.~Sims} threshold for U.S.
+House plans~\cite{reynolds1964}. The optional pass
+(\S\ref{sec:methods-tighten}) ran 81 boundary swaps in
+\textasciitilde{}18\,s and drove $\mathrm{pop\_dev}_{\max}$ to
+0.21\,\%, tighter than the enacted plan's 1.32\,\%.
+$\overline{\mathrm{area\_dev}}$ rose only 0.3 points and the score
+\emph{improved} to 0.6574.
 
-\paragraph{Compactness is the price.} The enacted plan beats DualBalance
-on every compactness measure: $\mathrm{PP}_{\min}$ 0.178 vs 0.094 in
-the radial plan and 0.047 after pop-tightening, $\mathrm{PP}_{\mathrm{mean}}$
+\paragraph{Compactness is the price.} The enacted plan beats PRISM on
+every compactness measure: $\mathrm{PP}_{\min}$ 0.178 vs 0.094 (pure
+PRISM) and 0.047 (after tightening), $\mathrm{PP}_{\mathrm{mean}}$
 0.320 vs 0.200 / 0.162, $\mathrm{Reock}_{\mathrm{mean}}$ 0.419 vs
-0.361 / 0.342. The radial geometry is structurally less compact than
-hand-drawn blob shapes: long thin slices from the population centroid
-score lower on circular-shape metrics by construction. Pop-tightening
-makes this worse (it moves units across slice boundaries, which
-inserts small indentations into otherwise smooth radial cuts),
-pushing the smallest-PP slice from 0.094 (already at the
-``0.10 raises eyebrows'' informal threshold) down to 0.047. Whether
-the trade is acceptable is a normative question we return to in
-\S\ref{sec:discussion-compactness}; on the algorithm's own metric,
-the trade is favorable.
+0.361 / 0.342. Radial slices are structurally less compact than
+hand-drawn blobs. Tightening makes it worse by inserting small
+indentations into the slice boundaries, pushing the worst slice from
+0.094 (at the informal 0.10 threshold) to 0.047. Whether the trade
+is acceptable is a normative question taken up in
+\S\ref{sec:discussion-compactness}.
 
 \subsection{Map comparison}
 
@@ -118,13 +105,12 @@ Figure~\ref{fig:mn-comparison} displays the three plans side by side.
 \caption{Minnesota congressional districts under three plans.
 \textbf{Left:} the enacted 119th-Congress plan, with four compact
 Twin Cities seats and four large rural seats.
-\textbf{Center:} pure-radial DualBalance (score $0.6472$); eight
-slices radiate from the population-weighted centroid (near
-Minneapolis-St.\ Paul), each spanning both dense and sparse
-territory. \textbf{Right:} radial $+$ \texttt{--tighten-pop 0.005}
-(score $0.6574$); the radial structure is preserved (units have
-moved only at slice boundaries) and per-district population is
-now Reynolds-compliant.}
+\textbf{Center:} PRISM (score $0.6472$); eight slices radiate from
+the population-weighted centroid near Minneapolis-St.~Paul, each
+spanning dense and sparse territory. \textbf{Right:} PRISM $+$
+\texttt{--tighten-pop 0.005} (score $0.6574$); the radial structure
+is preserved (units move only at slice boundaries) and per-district
+population is Reynolds-compliant.}
 \label{fig:mn-comparison}
 \end{figure}
 
@@ -141,15 +127,15 @@ output remained byte-identical. The CLI integration test
 \subsection{Per-district breakdown}
 
 Table~\ref{tab:mn-perdistrict} reports the per-district metrics for
-the radial $+$ tighten-pop plan, indexed by seed angle (district 0
-sits due east of the population-weighted centroid; subsequent
-districts advance counter-clockwise in steps of $2\pi/8$ rad).
-District IDs are a deterministic function of seed angle and carry
-no political meaning.
+PRISM $+$ tighten-pop, indexed by seed angle (district 0 sits due
+east of the population-weighted centroid; subsequent districts
+advance counter-clockwise in steps of $2\pi/8$ rad). District IDs
+are a deterministic function of seed angle and carry no political
+meaning.
 
 \begin{table}[h]
 \centering
-\caption{Per-district breakdown, radial $+$ tighten-pop 0.5\,\%.
+\caption{Per-district breakdown, PRISM $+$ tighten-pop 0.5\,\%.
 Areas are in km$^2$.}
 \label{tab:mn-perdistrict}
 \begin{tabular}{rrrrrrr}
@@ -168,91 +154,53 @@ District & Population & Area & $\mathrm{pop\_dev}$ & $\mathrm{area\_dev}$ & $\ma
 \end{tabular}
 \end{table}
 
-District 2 inherits Minnesota's northern panhandle and is the largest
-by area ($\sim$3.8$\times A^{*}$), while District 7 contains only the
-Twin Cities urban core ($\sim$0.02$\times A^{*}$). All eight districts
-are within 0.21\,\% of $P^{*}$. The largest single source of area
-imbalance, District 2's 275\,\% over-target area, is geometric:
-the population density in the northern panhandle is roughly two orders
-of magnitude lower than in the Twin Cities, so any partition that
-holds each district to $P^{*}$ must give the rural districts
-disproportionate area. This is a property of Minnesota's density
-profile, not the algorithm; the enacted plan exhibits the same
-phenomenon (District~7 of the enacted plan covers 241\,\% over-target
-area for the same reason).
+District 2 inherits the northern panhandle ($\sim$3.8$\times A^{*}$);
+District 7 is the Twin Cities urban core ($\sim$0.02$\times A^{*}$).
+All eight districts are within 0.21\,\% of $P^{*}$. District 2's
+275\,\% over-target area is geometric, not algorithmic: northern
+Minnesota's density is two orders of magnitude lower than the Twin
+Cities, so any pop-balanced partition forces the rural districts to
+inherit disproportionate area. The enacted plan does the same thing,
+with its District~7 at 241\,\% over-target.
 
 \subsection{Descriptive diagnostics: partisan, race, county}
 \label{sec:results-diagnostics}
 
-We report a second tier of numbers (partisan, racial, and
-county-split metrics) not because the algorithm uses them, but
-because readers will reasonably ask how a procedurally-neutral plan
-\emph{looks} on the diagnostics conventionally applied to enacted
-maps. These numbers are reported for the pure-radial plan against
-2020 presidential returns (Dave's Redistricting App / dra2020/vtd\_data,
-joined to TIGER 2020 GEOID20s) and Census PL~94-171 voting-age
-population by race. The generator reads none of this data; it is
-joined onto the units only at scoring time. We emphasize, in line
-with \S\ref{sec:discussion-forensic}, that these are descriptive
-statistics of the resulting partition, not evaluative scores of it.
+PRISM reads none of these inputs. We report them anyway, because
+readers will ask. They are descriptions of the partition, not
+evaluations of it (\S\ref{sec:discussion-forensic}). Partisan totals
+come from 2020 presidential returns
+(\href{https://github.com/dra2020/vtd_data}{dra2020/vtd\_data}, keyed
+on GEOID20). Race comes from Census PL~94-171 VAP.
 
-\paragraph{Partisan profile.} Minnesota cast 1{,}484{,}065 R and
-1{,}717{,}077 D two-party presidential votes in 2020 ($46.4\,\%$
-statewide R share, $53.6\,\%$ D). On the pure-radial plan the eight
-districts split 4--4 between R-winning and D-winning, against a
-seats-proportional expectation of $3.7$ R seats. The two D-leaning
-slices contain the Minneapolis-St.~Paul metro and run at 64--75\,\% D;
-the two R-leaning slices reaching into the western and southern parts
-of the state run at 55--65\,\% R; the four remaining slices are within
-$\pm 5$ points of even. The efficiency gap is $+6.6\,\%$ (positive =
-R-favorable) and the mean-median R difference is $+3.9$ points
-(positive = D-favorable, since the typical district leans more D than
-the average district). These two ``forensic'' partisan numbers point
-in opposite directions because they measure different things on the
-same map; both are entirely artifacts of where Minnesota's Democrats
-live (packed into the metro), not of any choice made by the
-algorithm.
+\paragraph{Partisan.} Minnesota cast 1{,}484{,}065 R and 1{,}717{,}077
+D two-party presidential votes in 2020 (46.4\,\% R, 53.6\,\% D). PRISM
+splits the eight seats 4--4 against a seats-proportional expectation
+of 3.7 R seats. The two D-leaning slices contain the Twin Cities and
+run 64--75\,\% D; two R-leaning slices reach into western and southern
+Minnesota and run 55--65\,\% R; the other four are within $\pm 5$
+points of even. The efficiency gap is $+6.6\,\%$ (positive = R-favorable);
+the mean-median R difference is $+3.9$ points (positive = D-favorable).
+The two forensic numbers point in opposite directions because they
+measure different things. Both are artifacts of where Minnesota's
+Democrats live (packed into the metro), not of any choice by PRISM.
 
-\paragraph{Race / VAP profile.} Minnesota's voting-age population is
-80.0\,\% non-Hispanic white, 5.9\,\% Black, 5.0\,\% Hispanic, 4.9\,\%
-Asian, and 1.1\,\% American Indian / Alaska Native. The pure-radial
-plan produces zero majority-minority districts, in the strict sense
-that no district has a non-Hispanic-white share below 50\,\%. The
-district containing the Minneapolis-St.~Paul urban core (District~7)
-has the lowest non-Hispanic-white share at 65.3\,\%, the highest
-Black VAP share at 15.7\,\%, and the highest Hispanic VAP share at
-6.7\,\%; the remaining seven districts run 73--90\,\% non-Hispanic
-white. The enacted 119\textsuperscript{th}-Congress Minnesota plan
-also has no majority-minority districts. Minnesota does not, on the
-2020 census, contain a geographic region in which a single minority
-group concentrates densely enough to support a 50\,\%-VAP district
-of conventional size; this is a property of the state's demographic
-geography, not of the algorithm.
+\paragraph{Race / VAP.} Statewide VAP is 80.0\,\% non-Hispanic white,
+5.9\,\% Black, 5.0\,\% Hispanic, 4.9\,\% Asian, 1.1\,\% AIAN. PRISM
+draws zero majority-minority districts. The Twin Cities slice
+(District~7) has the lowest non-Hispanic-white share (65.3\,\%) and
+the highest Black VAP share (15.7\,\%); the remaining seven run
+73--90\,\% non-Hispanic white. The enacted 119\textsuperscript{th}
+Congress plan also draws zero majority-minority districts. Minnesota
+does not contain a region where a single minority group concentrates
+densely enough to support a 50\,\%-VAP district of conventional size.
 
-\paragraph{County splits.} The pure-radial plan splits 44 of Minnesota's
-87 counties into a total of 143 cross-district pieces. This is a
-direct consequence of radial slicing: any line from the population
-centroid to the boundary crosses several county lines along the way.
-The enacted plan splits fewer counties (it is drawn to follow them
-more closely), at the cost of the larger area imbalance that
-Table~\ref{tab:mn-results} reports. Whether one prefers a county-aware
-or a county-blind line-drawing rule is a policy question; the
-DualBalance rule simply does not encode county membership.
+\paragraph{County splits.} PRISM splits 44 of 87 counties into 143
+cross-district pieces. Any line from the population centroid to the
+boundary crosses county lines; the enacted plan trades area balance
+for fewer such crossings.
 
-\paragraph{What to read into these numbers.} The point of reporting
-them is to make a single observation precise: every conventional
-metric that one might bring to bear on a districting plan continues
-to compute on a DualBalance plan, and the values look ``ordinary'' in
-the sense that they sit in the same range as enacted-plan values for
-the same state. But the metrics' \emph{interpretation} differs by
-construction. On an enacted plan, an efficiency gap of $+6.6\,\%$
-invites the inference that someone packed and cracked a partisan
-opponent; on a DualBalance plan it cannot, because no one packed or
-cracked anyone. On an enacted plan, zero majority-minority districts
-invites the inference that the line-drawers either declined to honor
-\textit{Allen v.~Milligan}~\cite{milligan2023} or did honor it on a
-geography that could not support a majority-minority seat; on a
-DualBalance plan only the latter inference is available, because
-the algorithm has no way of seeing race. The numbers are the same;
-what they license is different. We return to this point in
-\S\ref{sec:discussion-forensic}.
+\paragraph{What to make of this.} See \S\ref{sec:discussion-forensic}.
+Brief version: these metrics compute on PRISM but do not license the
+inferences they license on an enacted plan, because there is no
+line-drawer to draw inferences about.

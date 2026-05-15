@@ -54,17 +54,14 @@ supreme court and the language of its state constitution. Roughly ten
 state supreme courts have so far recognized state-constitutional
 partisan-gerrymandering claims; the rest have not~\cite{stateline2025}.
 
-The practical consequence of this combined doctrine, with federal
-partisan review foreclosed by \emph{Rucho}, Section~2 narrowed by
-\emph{Alexander} and \emph{Callais}, and state review uneven and
-politically contingent, is that redistricting has shifted from a
-once-per-decade event into a
-continuous partisan exercise. Several states have already redrawn maps
-mid-decade in response to electoral results rather than census revision,
-and analysts expect the practice to expand as legislative majorities
-turn over. A redistricting regime that updates whenever the pen
-changes hands provides neither stable representation nor predictable
-constituencies for the people being represented.
+The combined effect (federal partisan review foreclosed, Section~2
+narrowed, state review politically contingent) is that redistricting
+has shifted from a once-per-decade event into a continuous partisan
+exercise. Several states have already redrawn maps mid-decade in
+response to electoral results rather than census revision, and the
+practice is expected to expand. A regime that redraws lines whenever
+the pen changes hands provides neither stable representation nor
+predictable constituencies.
 
 \subsection{The Normative Paradox of ``Bias Detection''}
 
@@ -102,37 +99,34 @@ has long argued that no neutral baseline exists~\cite{pildes2004}, and
 Cain has framed districting as a tradeoff among incommensurable goods
 that no scalar metric can collapse without bias~\cite{cain2014}.
 
-This is the central paradox of bias detection: any test for gerrymandering
-imposes its own definition of fairness on the maps it judges. The
-question is not whether the test is neutral (it is not) but whether
-the normative commitments it encodes are made explicit and are defensible
-on their own terms.
+Beneath the surveyed objections sits a sharper one about what these
+metrics are \emph{for}. Each plays two roles in the literature:
+a descriptive role (the metric measures an actual property of the
+plan: shape, wasted votes, partisan-share distribution) and an
+inferential role (the metric serves as evidence of the line-drawer's
+intent). The two roles are usually entangled in practice because
+the literature was built around enacted plans, where intent is
+always at issue.
 
-Step back from the technical details and a simpler observation
-emerges: every one of these tests was built to catch a human in the
-act. Polsby-Popper~\cite{polsbypopper1991} and Reock~\cite{reock1961}
-flag districts that look ``wrong,'' meaning shapes too contorted to
-have arisen by ordinary line-drawing, which suggests that someone
-drew them that way on purpose. The Efficiency Gap~\cite{stephanopoulosmcghee2015},
-mean-median asymmetry~\cite{wang2016},
-declination~\cite{warrington2018}, and the ensemble outlier tests of
-the Duke and MGGG groups~\cite{mattinglyduke,recom2021} do the same
-job at the level of partisan outcomes: they ask whether the partisan
-profile of the enacted plan is what a neutral line-drawer would
-plausibly have produced, and call out plans that look engineered.
-These are \emph{forensic} instruments. They infer an actor's motives
-from the traces the actor leaves. Their value depends on there being
-an actor to investigate.
+Polsby-Popper~\cite{polsbypopper1991} and Reock~\cite{reock1961}
+flag shapes too contorted to have arisen by ordinary line-drawing;
+the Efficiency Gap~\cite{stephanopoulosmcghee2015}, mean-median
+asymmetry~\cite{wang2016}, declination~\cite{warrington2018}, and
+the Duke and MGGG ensemble outlier
+tests~\cite{mattinglyduke,recom2021} flag partisan profiles that
+look engineered. The inferential power of all of these depends on
+there being a line-drawer to investigate.
 
-A district-drawing algorithm that admits no human input does not leave
-those traces, because there is no actor in the loop to leave them. A
-radial slice with $\mathrm{PP} = 0.09$ is not a covert favor to a
-party or a community; it is the shape the rule produces on this
-geometry. An Efficiency Gap of $+6.6\,\%$ on a deterministic plan is
-not the fingerprint of a partisan operator; it is a description of
-where the state's Democratic voters happen to live. The metrics still
-compute. What they are designed to point at, a person making choices
-in a process that gives them choices, is no longer in the picture.
+Remove the line-drawer and the descriptive role survives intact. A
+radial slice with $\mathrm{PP} = 0.09$ is still geometrically
+non-compact, with all the administrative and legitimacy implications
+that follow. An Efficiency Gap of $+6.6\,\%$ on a deterministic plan
+still describes a real asymmetry in wasted votes, with real
+representational consequences. What the metrics no longer do, on a
+plan with no line-drawer, is support the inference back to motive.
+Section~2 of the Voting Rights Act, which asks about
+\emph{effects}, still applies. \emph{Shaw}-style intent inference,
+which asks who drew the line and why, does not.
 
 \subsection{Deterministic Districting: A Sixty-Year Tradition}
 
@@ -182,117 +176,94 @@ procedure of any U.S.~jurisdiction, though Iowa's Legislative Services
 Agency~\cite{iowalsa} operates under a strict criteria cascade that has
 produced widely accepted maps since 1980.
 
-\subsection{Contribution: Dual Balance of Population and Geography}
+\subsection{Contribution: DualBalance Districting and the PRISM algorithm}
 
-The United States Constitution embeds, at the federal level, an
-explicit balance between population-based and geography-based
-representation: the House apportions seats by population (Art.~I, \S2),
-the Senate allocates them equally per state (Art.~I, \S3). The design,
-defended by Madison in \emph{Federalist} Nos.~54--58~\cite{federalist54},
-reflects the framers' judgment that representation should reflect both
-\emph{people} and \emph{place}. This balance operates \emph{between}
-chambers; it has not, to our knowledge, been operationalized as a
-districting objective \emph{within} a single chamber. The proposal
-that follows is novel in exactly that sense: the framers' bicameral
-compromise applied as a single criterion at the level of one chamber's
-internal boundaries, so that each congressional district represents
-both roughly $1/N$ of a state's people and roughly $1/N$ of its
-territory.
+The U.S. Constitution divides representation along two axes: the
+House apportions seats by population (Art.~I, \S2), the Senate by
+sovereign state regardless of population (Art.~I, \S3). Madison's
+defense in \emph{Federalist} Nos.~54--58~\cite{federalist54}
+treats this as a principled refusal to make representation reduce
+to a single dimension. We do not claim that the Senate represents
+land area; it represents states. We take the framers' refusal as
+motivating intuition: within a single chamber, district lines
+should not collapse representation to population alone.
 
-The procedural commitment underneath that proposal is equally
-strong. The algorithm reads only the state's shape, its census-unit
-populations, and the seat count $N$. It cannot be used to harm any
-group, party, or incumbent, and, by the same token, cannot be
-used to help any of them. The deterministic-districting tradition
-surveyed above has often defended procedural neutrality as a guard
-against gerrymandering. We make the same commitment from the other
-side as well: the rule that forecloses partisan engineering also
-forecloses majority-minority remediation, incumbent protection, and
-community-of-interest preservation. There is no partisan knob the
-algorithm refuses to turn; there is no knob. Whether the symmetry is
-preferable to the status quo of partisan and remedial discretion is
-not a question the algorithm can answer; we argue only that the
-symmetry is the design's defining property, not an accident.
-
-Given a state boundary, census-unit population and area data, and a
-target district count $N$, the algorithm produces a partition of the
-state into $N$ districts whose score
+\emph{DualBalance Districting} operationalizes that intuition with
+two coequal targets. Each district should carry roughly $1/N$ of a
+state's people \emph{and} roughly $1/N$ of its land:
 \begin{equation}
   \mathrm{DBS}
     = \frac{1}{1
        + \tfrac{1}{2}\,\overline{\mathrm{pop\_dev}}
-       + \tfrac{1}{2}\,\overline{\mathrm{area\_dev}}}
+       + \tfrac{1}{2}\,\overline{\mathrm{area\_dev}}},
 \end{equation}
-weights mean population deviation and mean area deviation equally,
-where $\mathrm{pop\_dev}_i = |P(D_i) - P^{*}|/P^{*}$,
-$\mathrm{area\_dev}_i = |A(D_i) - A^{*}|/A^{*}$, $P^{*} = P/N$,
-$A^{*} = A/N$, and the overlines denote means over districts. The
-generator does not iterate against this score directly; it places $N$
-seeds radially around the population-weighted centroid (\S\ref{sec:methods})
-and performs a single capacitated first-fit assignment. Pop is enforced
-as a hard cap of $P^{*}$ per district; area emerges from the radial
-geometry. The resulting districts look like pie slices radiating from
-the population center, each slice naturally spanning both dense
-(near-center) and sparse (boundary-side) territory.
+with $\mathrm{pop\_dev}_i = |P(D_i) - P^{*}|/P^{*}$ and
+$\mathrm{area\_dev}_i = |A(D_i) - A^{*}|/A^{*}$,
+$P^{*} = P/N$, $A^{*} = A/N$, overlines denoting means. The area
+term is not Senate-style sovereignty; it is the
+operationalization of a simpler claim: districts that span both
+metropolitan and rural territory force each elected representative
+to answer to constituents across the state's density range, rather
+than to a single dense metro or a single rural hinterland. Its
+discussion of trade-offs against compactness and minority
+representation appears in \S\ref{sec:discussion-compactness} and
+\S\ref{sec:discussion-forensic}.
 
-Seats are apportioned among the states by the Method of Equal
-Proportions (Huntington--Hill), the standard since
-1941~\cite{balinskiyoung}. The core pipeline (seed placement,
-assignment, contiguity repair) is a pure function of $(\text{units},
-N)$. There are no tuning weights, no iteration count, no stopping
-threshold, and no random seed; identical inputs always yield
-byte-identical outputs. A single optional post-pass
-(\verb|--tighten-pop|) is provided to close the residual per-district
-population deviation to a user-supplied \emph{Reynolds v.~Sims}
-tolerance via greedy L$^1$ boundary-unit swaps; this is the only piece
-of the pipeline that is not a pure function of the inputs and is off
-by default. Updates occur only when the underlying census changes,
-every ten years.
+\emph{PRISM} (Population-weighted Radial Impartial Slicing Method)
+is the algorithm that pursues this objective. PRISM places $N$ seeds
+in a small circle around the state's population-weighted centroid and
+assigns each census unit to the nearest seed with capacity remaining.
+The districts come out as radial slices through the population center.
+Each slice spans both dense (near-center) and sparse
+(boundary-side) territory, so the area each slice inherits trends
+toward $A^{*}$ by geometry rather than by penalty. The pipeline (seed
+placement, capacitated assignment, contiguity repair) is a pure
+function of $(\text{units}, N)$: no random seed, no iteration, no
+tunable weight. Identical inputs always yield byte-identical outputs.
+A single optional post-pass (\verb|--tighten-pop|) closes the residual
+per-district population gap to a user-supplied \emph{Reynolds
+v.~Sims} tolerance via greedy $L^{1}$ boundary swaps. Apportionment
+across states uses the Method of Equal Proportions, the standard since
+1941~\cite{balinskiyoung}. Updates occur only with the decennial
+census.
 
-The algorithm reads neither party registration, vote history, nor
-race. After \emph{Alexander} and \emph{Callais}, a generator that does
-not consider race cannot, by construction, be a racial gerrymander
-under \emph{Shaw}. After \emph{Rucho}, partisan gerrymandering is
-federally unreviewable in any case. State constitutional review remains
-available, but most state-court partisan-gerrymandering tests rely on
-outcome metrics (Efficiency Gap, mean--median, ensemble outliers) that
-a geography-only generator should pass routinely except where the
-underlying political geography itself produces bias~\cite{chenrodden2013}.
-A residual concern is Section~2 of the VRA: a race-blind generator
-will not automatically satisfy Section~2 in jurisdictions where the
-Gingles preconditions are met, and the scoring harness must therefore
-flag this risk without compromising the generator's content-neutrality.
+The procedural neutrality is symmetric. PRISM cannot harm any group,
+party, or incumbent; it equally cannot help any of them. The same
+property that makes a partisan gerrymander impossible makes a
+race-conscious remedy impossible. There is no partisan knob PRISM
+refuses to turn: there is no knob.
 
-The contributions of this paper are:
+The legal exposure is correspondingly narrow. After
+\emph{Rucho}~\cite{rucho2019}, federal partisan review is foreclosed.
+After \emph{Alexander}~\cite{alexander2024} and
+\emph{Callais}~\cite{callais2026}, a generator that does not consider
+race cannot be a racial gerrymander under \emph{Shaw}~\cite{shaw1993}.
+State-court partisan tests rely on outcome metrics (Efficiency Gap,
+mean--median, ensemble outliers) that a geography-only generator
+should pass routinely, with the caveat that those metrics already
+measure geography on enacted plans
+too~\cite{chenrodden2013}. A residual risk is Section~2: in
+jurisdictions where the Gingles preconditions are met, a race-blind
+plan may not satisfy Section~2 where a race-conscious plan would.
+
+\paragraph{Contributions.}
 \begin{enumerate}
-  \item A deterministic, knob-free districting algorithm that produces
-        radially-sliced districts and balances population and area
-        equally as scored quantities. The algorithm is a pure function
-        of the unit geometry and the district count; it has no
-        iteration, no tunable weights, and no source of randomness.
-  \item A fully specified deterministic tie-breaking cascade sufficient
-        to guarantee byte-identical output from a given input, and a
-        proof that the cascade resolves every comparison the algorithm
-        makes.
-  \item A decoupled scoring harness that applies the same metrics to
-        the algorithm's output, to enacted maps, and to alternative
-        plans, enabling transparent benchmarking against the methods
-        surveyed above. Empirical results on Minnesota show DualBalance
-        outperforming the enacted 119\textsuperscript{th}-Congress map
-        on the dual objective.
-  \item A discussion of the legal and normative tradeoffs the radial
-        design imposes, including its tension with strict
-        \emph{Reynolds v.~Sims}~\cite{reynolds1964} population-equality
-        jurisprudence, its weaker compactness profile relative to
-        hand-drawn or blob-Voronoi designs, and its alignment with the
-        post-\emph{Callais} legal regime in which a content-neutral
-        race-blind generator faces a narrower constitutional risk than
-        any race-conscious remedy.
+  \item PRISM: a deterministic, knob-free districting algorithm
+        producing radially-sliced districts that balance population
+        and area equally. Pure function of $(\text{units}, N)$.
+  \item A fully specified tie-breaking cascade guaranteeing
+        byte-identical output, plus a proof that the cascade resolves
+        every comparison the algorithm makes.
+  \item A scoring harness decoupled from the generator, applying the
+        same metrics to PRISM, enacted plans, and alternatives.
+        Empirical results on Minnesota show PRISM beating the enacted
+        119\textsuperscript{th}-Congress map on the DualBalance Score.
+  \item An argument that the standard gerrymandering metrics
+        (compactness, Efficiency Gap, mean--median, ensemble outliers,
+        majority-minority counts) are forensic instruments built to
+        infer human intent, and so do not license, on a PRISM plan,
+        the inferences they license on an enacted plan.
 \end{enumerate}
 
-The remainder of the paper proceeds as follows. Section~2 formalizes
-the algorithm in correspondence with \texttt{docs/Formalism.md}. Section~3
-reports computational results on a representative set of U.S.~states
-and benchmarks against enacted plans, Olson's BDistricting, and shortest
-splitline. Section~4 discusses limitations, legal considerations, and
-directions for future work.
+Section~2 formalizes PRISM. Section~3 reports the Minnesota result.
+Section~4 discusses limitations and legal considerations.

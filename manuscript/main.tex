@@ -17,58 +17,46 @@
 \maketitle
 
 \begin{abstract}
-Congressional district lines in the United States are drawn by people,
-and a great deal of recent legal and mathematical work tries to detect
-when those people have crossed from neutral line-drawing into partisan
-or racial manipulation. We propose a different approach: take the
-people out of the line-drawing step entirely. DualBalance Districting
-is a deterministic procedure that, given a state's boundary, its
-census units, and its apportioned seat count $N$, produces a map in
-which each district holds about $1/N$ of the state's people and about
-$1/N$ of its land. The design is rooted in the constitutional framers'
-bicameral compromise, in which the House represents people and the
-Senate represents place. Here that compromise is applied for the
-first time, to our knowledge, as a single criterion \emph{within}
-one chamber. The
-algorithm places $N$ seeds in a small circle around the
-population-weighted centroid and assigns each census unit to the
-nearest seed with population capacity remaining. There is no random
-number generator, no iteration, no tunable weight, and no input
-beyond geometry and population.
+Most current work on gerrymandering tries to detect it: catch a human
+line-drawer crossing from neutral redistricting into partisan or
+racial manipulation. We generate maps instead. \emph{DualBalance
+Districting} is the framing: each congressional district should carry
+roughly $1/N$ of a state's people \emph{and} roughly $1/N$ of its
+land, weighted equally. The motivating intuition is the framers'
+refusal to reduce representation to a single dimension; the
+operational claim is narrower: districts that span both metropolitan
+and rural territory force each representative to answer to a mix of
+the state's people, not to a single dense metro or a single rural
+hinterland. \emph{PRISM} (Population-weighted Radial Impartial
+Slicing Method) is the algorithm. It places $N$ seeds in a small
+circle around the state's population-weighted centroid and assigns
+each census unit to the nearest seed with capacity remaining. No
+random seed. No iteration. No tunable weight. No human input beyond
+geometry and population.
 
-The same property that prevents the rule from being used to gerrymander
-a state prevents it from being used to draw majority-minority districts,
-protect incumbents, or preserve communities of interest. The
-elimination of human discretion is symmetric: both the negative
-direction (partisan manipulation, racial vote dilution) and the
-positive direction (race-conscious remedies, competitiveness tuning)
-are foreclosed by construction, because the algorithm has no input
-through which either could be expressed.
+The procedural neutrality is symmetric. PRISM cannot be used to
+gerrymander, and it cannot be used to draw majority-minority
+districts, protect incumbents, or preserve communities of interest.
+The rule that forecloses partisan engineering also forecloses
+race-conscious remediation. There is no knob.
 
-This procedural neutrality cuts against the way the redistricting
-literature has measured fairness for the past thirty years.
+This changes how the standard gerrymandering metrics should be read.
 Compactness scores, the efficiency gap, mean-median asymmetry,
-ensemble outlier tests, and majority-minority counts are all
-\emph{forensic} instruments. They were built to infer a human
-line-drawer's intent from the shape and political character of the
-resulting map. On a plan produced by an algorithm that has no intent,
-those inferences are no longer available. An efficiency gap of
-$+6.6\,\%$ on a DualBalance map says only that Democrats happen to
-live closer to the population center than Republicans on this
-particular geometry. A Polsby-Popper score of $0.09$ says only that
-the radial slice has that shape. A count of zero majority-minority
-districts says only that the state's minority population is
-geographically dispersed. The numbers still compute. What they let
-you conclude about the line-drawer's motives is gone, because there
-is no line-drawer.
+ensemble outlier tests, and majority-minority counts have two roles:
+they describe a plan's effects, and (the role we are concerned with
+here) they support inferences about the line-drawer's intent. The
+descriptive role is preserved on a PRISM map. The intent-attribution
+role is not, because there is no line-drawer to attribute intent to.
+A $+6.6\,\%$ efficiency gap on a PRISM map is still a real
+asymmetry in wasted votes; it is no longer evidence that someone
+packed Democrats. A Polsby-Popper of $0.09$ is still a non-compact
+shape; it is no longer evidence of a covert favor. The numbers
+compute. What they license you to conclude about motive is gone.
 
-On a single-state proof of concept (Minnesota, 4{,}110 VTDs, 8 seats,
-2020 PL 94-171), DualBalance produces a plan that beats the enacted
-119\textsuperscript{th}-Congress map on its own dual objective
-($\mathrm{DBS} = 0.6472$ vs.~$0.6390$). We report 2020 presidential
-two-party shares and Census PL 94-171 voting-age population by race
-alongside, as descriptions of the resulting partition rather than as
-evaluations of it.
+On Minnesota (4{,}110 VTDs, 8 seats, 2020 PL 94-171), PRISM beats the
+enacted 119\textsuperscript{th}-Congress plan on the DualBalance Score
+($0.6472$ vs.~$0.6390$). We report standard partisan and race
+diagnostics alongside, as descriptions of the partition.
 \end{abstract}
 
 \input{sections/introduction}

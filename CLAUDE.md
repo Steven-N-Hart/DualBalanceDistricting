@@ -47,16 +47,16 @@ dualbalance score --plan out/mn_yaml/map.geojson --units data/mn_vtd.geojson --g
 
 ## What the project is
 
-DualBalance Districting is a deterministic redistricting algorithm. Given a state boundary, census-unit data, and a fixed district count `N`, it produces a district map that weights population balance and geographic-area balance equally. There is no randomness, no manual adjustment, and no tuning knobs — same input always yields the same output.
+DualBalance Districting is the project framing: each congressional district should carry both ~1/N of a state's people and ~1/N of its land, weighted equally. The objective is captured by the DualBalance Score (DBS); the algorithm that pursues it is **PRISM** (Population-weighted Radial Impartial Slicing Method). Given a state boundary, census-unit data, and a fixed district count `N`, PRISM places `N` seeds radially around the population-weighted centroid and runs a single capacitated first-fit assignment. There is no randomness, no manual adjustment, and no tuning knobs — same input always yields the same output. The CLI, Python package, and repo retain the `dualbalance` umbrella name; algorithm references in the manuscript and docs use `PRISM`.
 
 The motivating context (2026): partisan gerrymandering is entrenched, the Supreme Court's *Rucho* / *Alexander* / *Callais* line has significantly limited Section 2 of the Voting Rights Act in practice, and states are now redrawing maps for partisan advantage on every cycle rather than once per decade. The project proposes a deterministic alternative: a districting rule that updates only with each 10-year census, cannot be tuned to advantage a party, and reframes congressional districts as carrying *both* the House (population) and Senate (geography) representation principles within a single chamber.
 
 Two-level structure:
 
 - **National apportionment** assigns each state its district count `N_s` using the Method of Equal Proportions, where `priority(s, n) = population(s) / sqrt(n(n+1))`.
-- **State-level districting** runs the DualBalance algorithm independently inside each state to produce `N_s` districts.
+- **State-level districting** runs PRISM independently inside each state to produce `N_s` districts.
 
-The scoring harness is intentionally decoupled from the generator: it can score any plan (enacted, court-drawn, third-party) using the same metrics applied to DualBalance's own output.
+The scoring harness is intentionally decoupled from the generator: it can score any plan (enacted, court-drawn, third-party) using the same metrics applied to PRISM's own output.
 
 ## The algorithm
 

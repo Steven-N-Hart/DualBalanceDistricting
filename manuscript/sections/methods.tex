@@ -8,20 +8,18 @@
 
 Given a state $S$ partitioned into atomic units
 $U = \{u_1, \ldots, u_M\}$ (census blocks, block groups, or VTDs) and
-a target district count $N$ fixed by apportionment, we seek a
-deterministic assignment $\pi : U \to \{1, \ldots, N\}$ such that
-each district $D_i = \pi^{-1}(i)$ is contiguous, non-empty, and as
-close as the geometry allows to representing both $1/N$ of the
-state's people and $1/N$ of the state's geography. Let
-$P = \sum_u \mathrm{pop}(u)$ and $A = \sum_u \mathrm{area}(u)$ denote
-state population and area, with per-district targets $P^* = P/N$
+a target district count $N$, PRISM produces a deterministic
+assignment $\pi : U \to \{1, \ldots, N\}$ such that each district
+$D_i = \pi^{-1}(i)$ is contiguous, non-empty, and as close as the
+geometry allows to representing both $1/N$ of the state's people and
+$1/N$ of its geography. Let $P = \sum_u \mathrm{pop}(u)$ and
+$A = \sum_u \mathrm{area}(u)$ with per-district targets $P^* = P/N$
 and $A^* = A/N$.
 
-The pipeline has three steps: radial seed placement
-(\S\ref{sec:methods-seeds}), capacitated first-fit assignment
-(\S\ref{sec:methods-assign}), and contiguity repair
-(\S\ref{sec:methods-repair}). The output of step three is the final
-plan; there is no iteration and no post-hoc tightening.
+Three steps: radial seed placement (\S\ref{sec:methods-seeds}),
+capacitated first-fit assignment (\S\ref{sec:methods-assign}),
+contiguity repair (\S\ref{sec:methods-repair}). No iteration; no
+post-hoc tightening in the core pipeline.
 
 \subsection{Radial seed placement}
 \label{sec:methods-seeds}
@@ -128,10 +126,10 @@ against; radial slices have lower compactness than blob-Voronoi or
 hand-drawn districts by construction, and this is a deliberate trade
 in service of the dual-balance objective.
 
-The generator does not directly minimize~\eqref{eq:dbs}; it minimizes
-population-capacitated geographic assignment cost with radial seeding,
-which on the Minnesota PoC produces a higher DBS than the enacted plan
-($0.6472$ vs $0.6390$) despite its weaker compactness profile.
+PRISM does not directly minimize~\eqref{eq:dbs}; it minimizes
+population-capacitated geographic assignment cost under radial
+seeding. On the Minnesota PoC this still beats the enacted plan on
+DBS ($0.6472$ vs $0.6390$) despite the lower compactness.
 
 \subsection{Optional: \texorpdfstring{L\textsuperscript{1}}{L1} pop-tightening}
 \label{sec:methods-tighten}

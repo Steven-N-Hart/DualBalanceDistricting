@@ -3,65 +3,72 @@
 
 \subsection{What the Minnesota result does and does not show}
 
-The headline finding, that a knob-free deterministic algorithm
-(with or without the optional pop-tightening pass) beats the
-human-drawn enacted Minnesota plan on the DualBalance Score, is a
-single-state
-existence result. It demonstrates that radial slicing through the
-population-weighted centroid can produce a districting that scores
-competitively on the project's own dual-balance objective without
-reading party, race, or any other discretionary input. It does not by
-itself demonstrate that the same approach generalizes across all 50
-states, that the DualBalance Score is the right scalar to optimize, or
-that the resulting maps would survive judicial or political scrutiny.
-We discuss each of these in turn.
+The headline (PRISM beats the enacted Minnesota plan on the DualBalance
+Score) is a single-state existence result. It shows that radial slicing
+can score competitively on the dual-balance objective without reading
+party, race, or any discretionary input. It does not show that PRISM
+generalizes to all 50 states, that DBS is the right scalar to optimize,
+or that PRISM maps would survive judicial scrutiny. We take those up
+below.
 
-\subsection{The score formula privileges what the algorithm produces}
+\subsection{Co-design of score and algorithm}
 
-A natural objection to a result of the form ``Algorithm $A$ beats Plan
-$B$ on Metric $M$'' is that $A$ and $M$ may have been co-designed.
-We address this directly. The DualBalance Score
-\eqref{eq:dbs} was specified in advance of the algorithmic
-choice. We considered three forms during development: the published
-weighted form $\mathrm{DBS}_{\mathrm{w}} = 1/(1 + 0.5\,\overline{\mathrm{pop\_dev}}
-+ 0.5\,\overline{\mathrm{area\_dev}})$; a sum-of-means
-``classic'' form $\mathrm{DBS}_{\mathrm{c}} = 1/(1 + \overline{\mathrm{pop\_dev}}
-+ \overline{\mathrm{area\_dev}})$; and an $L^{\infty}$ form
+A natural objection: ``$A$ beats $B$ on Metric $M$ because $A$ and
+$M$ were co-designed.'' DBS~\eqref{eq:dbs} was specified before the
+algorithm choice. We tested three forms: the weighted form used here,
+a sum-of-means form
+$1/(1 + \overline{\mathrm{pop\_dev}} + \overline{\mathrm{area\_dev}})$,
+and an $L^{\infty}$ form
 $1/(1 + \max_i [0.5\,\mathrm{pop\_dev}_i + 0.5\,\mathrm{area\_dev}_i])$.
-The radial algorithm beats the enacted Minnesota plan on the first
-two; on the third the enacted plan wins, because the radial design
-concentrates area imbalance in a single rural district. We selected
-the weighted form for the headline metric because it cleanly
-implements the ``each district holds roughly $1/N$ of people \emph{and}
-$1/N$ of geography'' reading, but readers should know that the choice
-matters. The per-district deviations and compactness values are
-reported alongside the score so consumers can recompute against any
-preferred aggregation.
+PRISM beats the enacted plan on the first two; the enacted plan wins
+on the third, because PRISM concentrates area imbalance in a single
+rural district. We use the weighted form as the headline because it
+cleanly implements ``each district carries $1/N$ of people
+\emph{and} $1/N$ of geography.'' Per-district deviations are reported
+alongside so readers can recompute against any preferred aggregation.
 
-A separate concern is that population density variance fundamentally
-bounds the achievable $\overline{\mathrm{area\_dev}}$ on any
-pop-balanced plan. Both the enacted plan and our radial pipeline land
-in the same neighborhood ($\overline{\mathrm{area\_dev}} \approx 1.0$
-to $1.1$), and on Minnesota's geometry, where the Twin Cities
-metropolitan area holds roughly 55\,\% of the population in 3\,\% of
-the land area, this is essentially a hard floor. Improvements
-beyond that floor would require districts that systematically span
-urban and rural territory, which is exactly what radial slicing
-produces. The 8.7-percentage-point gap (103.9 vs.~112.6) we report is
-the operational measurement of how much area balance radial slicing
-recovers, given that floor.
+The functional form satisfies four properties we wanted from the
+outset. (i) \emph{Scale invariance}: the per-district inputs are
+relative deviations $|x - x^*|/x^*$, so the score is invariant to
+the units of population and area. (ii) \emph{Equal treatment of the
+two objectives}: the $0.5/0.5$ weighting is the unique convex
+combination treating $\overline{\mathrm{pop\_dev}}$ and
+$\overline{\mathrm{area\_dev}}$ symmetrically. (iii)
+\emph{Monotonicity}: the score strictly decreases as either
+deviation increases. (iv) \emph{Boundedness in $[0,1]$}: the
+reciprocal form maps zero error to $1$ and unbounded error toward
+$0$, giving a calibrated reading rather than a raw cost. These do
+not pin DBS down uniquely, but they constrain the design space
+enough that the remaining choice (arithmetic mean of deviations
+versus a max-norm or Lp aggregation) becomes a tradeoff between
+average-case fairness and worst-case fairness. We report all the
+per-district numbers needed to compute both.
+
+Population density variance bounds the achievable
+$\overline{\mathrm{area\_dev}}$ on any pop-balanced plan. Both PRISM
+and the enacted plan land near $\overline{\mathrm{area\_dev}} \approx
+1.0$--$1.1$. On Minnesota's geometry (Twin Cities = 55\,\% of
+population in 3\,\% of land area) this is a hard floor. Improvements
+would require districts that span urban and rural, which is exactly
+what radial slicing does. The 8.7-point gap (103.9 vs.~112.6) is the
+operational measure of how much area balance PRISM recovers given
+that floor.
 
 \subsection{Compactness is the trade}
 \label{sec:discussion-compactness}
 
-The radial design pays its area-balance dividend in compactness. The
-smallest-PP slice in the tightened plan is 0.047, against an informal
-court-testimony threshold of $\sim$0.10 below which a district is
-considered unusually shaped~\cite{polsbypopper1991}. The enacted
-Minnesota plan's worst PP is 0.178; our worst is roughly a quarter of
-that value.
+PRISM trades compactness for area balance by design. This is not an
+incidental cost we apologize for: it is the mechanism. A district
+that holds $1/N$ of a high-variance density distribution must
+either span the full density range (and look elongated) or sit
+inside a single density regime (and produce an unbalanced area
+share). Hand-drawn maps typically choose the second; PRISM chooses
+the first. The PP=0.047 worst-slice number is what choosing the
+first looks like on Minnesota's geometry. The enacted Minnesota
+plan's worst PP is 0.178, roughly four times higher, and its
+$\overline{\mathrm{area\_dev}}$ is correspondingly 8.7 points worse.
 
-We make three observations about this trade:
+Three observations qualify the trade.
 
 \paragraph{Compactness is a metric, not a constitutional requirement.}
 \textit{Polsby-Popper} as a measure was published in
@@ -84,156 +91,123 @@ the surrounding norm of compact blobs. A scheme in which every
 district is a slice does not pick anything out.
 
 \paragraph{The Voting Rights Act trade-off is real.}
-\textit{Allen~v.\ Milligan}~\cite{milligan2023} reaffirmed
-Section~2's vote-dilution doctrine; \textit{Alexander}
-\cite{alexander2024} and \textit{Callais}~\cite{callais2026}
-significantly narrowed its practical reach. The radial design splits
-the Twin Cities urban area (and with it, any majority-minority
-population concentrated there) across multiple districts. In
-jurisdictions where the \textit{Gingles}~\cite{gingles1986}
-preconditions are met, a race-blind generator may produce a plan that
-fails Section~2 review where a race-conscious plan would not. After
-\textit{Callais} the constitutional risk of a race-conscious remedy
-has grown; the legislative question of whether to accept slightly
-diluted minority representation in exchange for a generator that
-cannot be partisan-tuned is, properly, for legislatures and
-constitutional litigation rather than for an algorithm.
+\textit{Allen~v.\ Milligan}~\cite{milligan2023} reaffirmed Section~2's
+effects-based vote-dilution doctrine; \textit{Alexander}~\cite{alexander2024}
+and \textit{Callais}~\cite{callais2026} narrowed its practical reach.
+Section~2 asks about effects on minority voters' opportunity to elect,
+not about intent. PRISM is race-blind, but blindness to race does not
+satisfy Section~2 by itself. In jurisdictions where the
+\textit{Gingles}~\cite{gingles1986} preconditions are met, PRISM may
+produce a plan that fails Section~2 review even though no one drew
+lines to dilute. The legislative question (whether to accept reduced
+minority opportunity in exchange for a generator that cannot be
+partisan-tuned) is for legislatures and courts, not for the
+algorithm.
 
 \subsection{Relationship to prior deterministic methods}
 \label{sec:discussion-prior}
 
-DualBalance fits within the deterministic-districting tradition
-surveyed in \S1.3 but differs from each prior method on a specific axis:
+PRISM differs from each prior method on a specific axis.
 
 \paragraph{Versus Smith's Shortest Splitline~\cite{smithsplit}.}
-Splitline is also fully deterministic and unique. It recursively
-bisects the state with the shortest population-balancing line, with
-no global compactness or balance criterion other than line length.
-Splitline produces visually striking but completely arbitrary
-splits, because a district can lose half its territory once the
-shortest cut happens to fall on that side. DualBalance grounds its
-geometry in the population centroid rather than in arbitrary
-straight cuts and therefore produces results that reflect the
-state's underlying density structure.
+Splitline recursively bisects the state with the shortest
+population-balancing line, with no global compactness or balance
+criterion. The cuts are visually striking but arbitrary: a district
+can lose half its territory because the shortest cut happens to land
+there. PRISM grounds its geometry in the population centroid, so the
+slices reflect the state's density structure.
 
 \paragraph{Versus Olson's BDistricting~\cite{olsonbd}.} BDistricting
-also minimizes population-weighted distance to district centers with
-equal-population constraints, applied at block resolution. It uses
-farthest-point or random seed initialization with iterative refinement
-to convergence. The resulting maps are blob-shaped (Voronoi cells
-around dispersed seed centers) and score well on compactness but
-exhibit large area imbalance. DualBalance differs in seed placement
-(radial around the population centroid versus dispersed across the
-state) and in iteration discipline (single pass versus Lloyd
-convergence). Our reading of the result table is that radial seeding
-gives up compactness to gain area balance, a different point on
-the same trade-off curve BDistricting sits on.
+minimizes population-weighted distance to dispersed seed centers
+under equal-population, with Lloyd-style iteration to convergence.
+The resulting maps are blob-shaped and score well on compactness but
+exhibit large area imbalance. PRISM differs in two ways: seeds are
+radial-clustered around the centroid (not dispersed), and there is
+no iteration. PRISM trades compactness for area balance; it is a
+different point on the same curve.
 
 \paragraph{Versus centroidal power diagrams~\cite{cohenaddad2018}.}
-The Cohen-Addad-Klein-Young construction is the rigorous mathematical
-generalization of equal-mass Voronoi cells. It solves for weights
-$\{w_i\}$ such that the resulting power diagram cells each carry
-exactly $1/N$ of the underlying mass. Their algorithm is deterministic
-modulo a tie-breaking rule and produces fully equal-population cells
-by construction. We do not solve the same problem: their construction
-balances a single quantity (population) exactly, while ours balances
-two quantities (population and area) approximately. The radial seed
-placement is the mechanism by which the second balance approximation
-is recovered.
+The Cohen-Addad-Klein-Young construction solves for additive weights
+$\{w_i\}$ so each power-diagram cell carries exactly $1/N$ of the
+mass. It balances one quantity (population) exactly. PRISM balances
+two (population and area) approximately, with the second recovered
+from the radial seed geometry rather than from the optimization.
 
 \paragraph{Versus capacitated $k$-means~\cite{levinfriedler2019} and
-the Hess-style location-allocation lineage~\cite{hess1965,mjn1998}.}
-These are the closest mathematical cousins. The capacitated
-assignment step (\S\ref{sec:methods-assign}) is essentially Hess's
-1965 transportation step. The novelty in DualBalance is not the
-assignment rule but the seed placement: radial seeds force a slice
-geometry that no Lloyd-iterated $k$-means converges to, because
-Lloyd recentering pulls seeds away from a tightly clustered radial
-configuration. Disabling iteration is therefore not optional in the
-radial design; it is what preserves the geometry.
+Hess-style location-allocation~\cite{hess1965,mjn1998}.} The
+capacitated assignment step (\S\ref{sec:methods-assign}) is Hess's
+1965 transportation step. PRISM's novelty is the seed placement:
+radial seeds produce a slice geometry that Lloyd iteration would
+destroy, because recentering pulls seeds away from the tight radial
+cluster. Disabling iteration is what preserves the geometry.
 
 \subsection{Limitations}
 
-\paragraph{Single-state evidence.} The Minnesota result reports one
-state with one apportioned seat count under one census release. We
-do not yet have evidence that the radial design beats enacted plans
-on other states. States with markedly different density profiles
-(for example, a single dominant metropolitan area in a small
-geography such as Massachusetts or Connecticut, versus a multi-center
-state such as Texas or Florida, versus a near-uniform-density state
-such as Iowa or Vermont) should be expected to produce qualitatively
-different results.
-Section~\ref{sec:future-work} below identifies cross-state validation
-as the most important near-term follow-up.
+\paragraph{Single-state evidence.} Minnesota is one state, one seat
+count, one census. The result is an existence proof, not a claim of
+generality. States with very different density profiles should produce
+qualitatively different results: PRISM is likely to perform best on
+states with one or two dense metro centers and a large rural
+hinterland (the Minnesota profile), and worst on polycentric coastal
+states (Texas, California, Florida) where the single-centroid
+assumption breaks down. The natural next state is Iowa: four
+districts, near-uniform density, and a long-standing nonpartisan
+line-drawing tradition~\cite{iowalsa} that gives a clean comparison
+target. We have not yet run it.
 
-\paragraph{Worst-district area outlier.} The radial design concentrates
-the area imbalance in a single rural district (here, District~2 at
-275\,\% over-target area). This is geometric (it cannot be avoided
-on any partition that imposes a population cap on a state with the
-density profile of Minnesota), but our $\mathrm{area\_dev}_{\max}$
-of 275\,\% is worse than the enacted plan's 241\,\%, even though
-$\overline{\mathrm{area\_dev}}$ is lower. The radial design therefore
-distributes the area imbalance unevenly; whether this is preferable
-to the enacted plan's more uniform distribution is a separable
-normative question.
+\paragraph{Worst-district area outlier.} PRISM concentrates the
+area imbalance in a single rural district (here, District~2 at
+275\,\% over-target). This is geometric, not algorithmic: any
+pop-balanced partition of a state with Minnesota's density profile
+must give some rural district disproportionate area. PRISM's
+$\mathrm{area\_dev}_{\max}$ of 275\,\% is worse than the enacted
+plan's 241\,\% even though the mean is lower, so PRISM distributes
+the imbalance unevenly. Whether evenly distributed area imbalance is
+preferable to a single concentrated outlier is a separable normative
+question.
 
 \paragraph{No multi-unit transportation step.} The optional
-\texttt{--tighten-pop} pass is a greedy single-unit swap procedure.
-A true two-dimensional transportation LP (bounding both population
-and area simultaneously) would be a stronger candidate for the
-``directly minimize the DualBalance objective'' role we currently
-leave to the radial geometric heuristic. We have not implemented or
-evaluated such a step; it is documented as future work.
+\texttt{--tighten-pop} pass is a greedy single-unit swap. A true 2D
+transportation LP bounding both population and area would directly
+minimize the DBS objective; we leave that to future work.
 
-\paragraph{Computational cost.} Pure radial assignment runs in a
-fraction of a second on Minnesota. The optional pop-tightening pass
-takes \textasciitilde{}18~seconds to drive 80~swaps. We have not
-profiled larger states (California, Texas) and do not currently know
-how the pop-tightening pass scales with $|U|$ and $N$; in the worst
-case it is $O(|U|^2 N)$ per swap due to the contiguity check.
+\paragraph{Computational cost.} Pure PRISM runs in under a second on
+Minnesota. The tightening pass takes $\sim$18~s for 80 swaps. We have
+not profiled California or Texas; worst-case scaling is $O(|U|^2 N)$
+per swap due to the contiguity check.
 
-\paragraph{The compactness floor.} The worst slice's $\mathrm{PP}$ of
-0.047 (after pop-tightening) is well below the informal
-court-testimony threshold of 0.10. We argue in
-\S\ref{sec:discussion-compactness} that the constitutional doctrine
-on compactness turns on intent rather than shape per~se, but readers
-who reject that argument should regard the 0.047 figure as a hard
-ceiling on the maps' legal viability under the
-\textit{Shaw}~\cite{shaw1993} line.
+\paragraph{The compactness floor.} The worst slice's
+$\mathrm{PP}=0.047$ is well below the informal court-testimony
+threshold of 0.10. We argue in \S\ref{sec:discussion-compactness}
+that the \emph{Shaw}~\cite{shaw1993} doctrine turns on intent rather
+than shape per se, but readers who reject that argument should
+regard the 0.047 figure as a hard ceiling on legal viability.
 
 \subsection{Future work}
 \label{sec:future-work}
 
-\paragraph{Multi-state validation.} Reproduce the Minnesota result for
-the other 49 states. We expect radial slicing to perform best on
-states with one or two dense metropolitan centers and a large rural
-hinterland (the Minnesota profile) and worst on states with multiple
-dispersed metro centers (e.g., Texas, California, Florida) where the
-single-centroid radial assumption may produce slices that don't span
-the state's density variation cleanly.
+\paragraph{Multi-state validation.} Reproduce the Minnesota result on
+the other 49 states. PRISM should perform best on states with one or
+two dense metro centers and a large rural hinterland (the Minnesota
+profile), and worst on polycentric states (Texas, California, Florida)
+where the single-centroid assumption breaks down. Start with Iowa
+(four districts, near-uniform density, nonpartisan
+tradition~\cite{iowalsa}) as a low-noise test case.
 
-\paragraph{Multi-center radial seeding.} For states with multiple
-metropolitan centers, the population-weighted centroid sits in a
-low-density region between them, and radial slicing from that point
-may produce slices that miss the actual density structure. A
-generalization in which seeds are placed on circles around
-\emph{each} of $k$ pre-computed metropolitan centers (with the
-choice of $k$ deterministic from the population distribution) is a
-natural extension. We have not implemented this.
+\paragraph{Multi-center radial seeding.} For polycentric states, place
+seeds on circles around \emph{each} of $k$ population centers, with
+$k$ chosen deterministically from the density distribution. Not yet
+implemented.
 
-\paragraph{Direct 2D transportation step.} Replace the radial-plus-tighten
-two-stage pipeline with a single optimization step that minimizes the
-DualBalance Score under contiguity constraints. This is computationally
-much more expensive than the current pipeline but would be the
-mathematically clean answer to ``which plan directly minimizes the
-DualBalance objective.'' Whether it produces qualitatively different
-maps is an empirical question.
+\paragraph{Direct 2D transportation step.} Replace the
+PRISM-plus-tighten two-stage pipeline with a single optimization that
+minimizes DBS under contiguity constraints. More expensive than the
+current pipeline; the mathematically clean answer to ``which plan
+directly minimizes the DualBalance objective.''
 
 \paragraph{Comparison against BDistricting and Splitline.} We compare
-DualBalance against the enacted plan; we have not yet scored
-BDistricting's published maps or computed Splitline maps for the same
-states and metrics. A full benchmark across deterministic methods
-would situate DualBalance more clearly in the existing literature.
+PRISM against the enacted plan only. A full benchmark would score
+BDistricting and Splitline maps on the same metrics across states.
 
 \paragraph{Scoring-harness extensions.} The current harness reports
 population, area, Polsby-Popper, and Reock. Natural additions include
@@ -246,99 +220,80 @@ extensions and would not feed back into the generator
 \subsection{Forensic metrics applied to a generative procedure}
 \label{sec:discussion-forensic}
 
-The full menu of gerrymandering diagnostics (Polsby-Popper, Reock,
-convex-hull and length-width compactness, the Efficiency Gap, mean-median
-asymmetry, declination, majority-minority counts, county-split counts,
-ensemble outlier tests) was developed for a single purpose: to detect
-when a human drawing district lines has crossed from neutral
-line-drawing into deliberate manipulation. Each is a forensic
-instrument. Each presupposes the kind of process where ``something
-happened'' is a coherent question and the metric is supposed to help
-answer it.
+Most gerrymandering diagnostics carry two distinct functions. They
+\emph{describe} an actual property of the plan: a shape, a vote
+distribution, a count of split counties. And they support an
+\emph{inference} about the line-drawer's motive: that the shape was
+chosen, that the votes were packed and cracked, that the splits
+followed a partisan or racial pattern. The two functions are nearly
+always entangled in practice because the literature was built around
+enacted plans, where intent is always at issue.
 
-Generation by deterministic algorithm changes the question. There is
-no human drawing the lines. There is no party-aware decision, no
-race-aware decision, no incumbent-aware decision, and no
-community-aware decision, because the algorithm has no input by which
-any such consideration could enter. There is no place in the pipeline
-at which a decision-maker chose one boundary over another for a
-reason a metric might detect. The line-drawing is a function:
-$\pi = f(\text{geometry}, \text{population}, N)$.
+PRISM separates them. The descriptive function survives intact: a
+$\mathrm{PP}$ of 0.09 still names a non-compact shape, with the
+administrative and legitimacy consequences that follow; an
+Efficiency Gap of $+6.6\,\%$ still names a real asymmetry in
+wasted votes, with the representational consequences that follow;
+zero majority-minority districts still names a partition under which
+no minority group reaches a 50\,\% VAP share, with the Section~2
+consequences that follow. None of this is changed by who or what
+produced the plan. The inferential function is what does not
+survive. PRISM is a pure function of geometry, population, and seat
+count; no actor chose the shape, the vote split, or the absence of
+an MMD, so the chain from observed property back to motive has no
+endpoint to terminate on.
 
-This matters in two ways. First, the metrics' \emph{measurement} is
-still informative. A district with $\mathrm{PP} = 0.09$ is still
-geometrically less compact than a district with $\mathrm{PP} = 0.35$;
-a plan with an Efficiency Gap of $+6.6\,\%$ still produces, under that
-year's voter distribution, more wasted votes on one side than the
-other. Reporting these numbers is reasonable; consumers of the plan
-deserve to know them. Second, the metrics' \emph{inference} is no
-longer available. A $\mathrm{PP}$ of 0.09 in an enacted plan invites
-the question ``who drew this oddly-shaped district and what were they
-trying to do?''. In a DualBalance plan there is no \emph{who} and no
-\emph{trying}: the district has $\mathrm{PP} = 0.09$ because radial
-slices through a population-weighted centroid have that compactness on
-the geometry of Minnesota, period. An Efficiency Gap of $+6.6\,\%$ in
-an enacted plan suggests packed and cracked Democratic voters; in a
-DualBalance plan it reports where Democratic voters \emph{actually
-live} relative to the radial geometry, with no human packing or
-cracking anywhere in the pipeline. Zero majority-minority districts
-in an enacted plan invites scrutiny about whether the line-drawers
-honored \textit{Allen v.~Milligan}~\cite{milligan2023}; in a
-DualBalance plan it reports the demographic geography of the state,
-unfiltered by any race-aware human intervention. The numbers continue
-to compute. What they license has changed.
+Three implications, narrowed accordingly.
 
-Three implications follow.
+\paragraph{\emph{Shaw}-style shape inference loses purchase, but
+compactness still matters administratively.}
+\textit{Shaw v.~Reno}~\cite{shaw1993} uses bizarre shape as evidence
+that race predominated in line-drawing. The inference chain runs
+shape $\to$ unusual process $\to$ illegitimate criterion $\to$ race.
+On PRISM the first link is broken: every district produced by the
+rule has the same shape character, so unusual shape no longer
+implies unusual process. \emph{Shaw} does not reach a race-blind
+algorithm. But compactness still has a non-inferential role.
+Districts that are hard to identify with on a map, hard to administer,
+or hard to campaign in carry costs independent of who drew them.
+PRISM's PP=0.047 worst slice is a real cost. The argument here is
+not that compactness ceases to matter, only that it ceases to be
+evidence of motive.
 
-\paragraph{Compactness as a constitutional threshold loses purchase.}
-\textit{Shaw v.~Reno}~\cite{shaw1993} and its progeny use the bizarre
-shape of a district as evidence that race predominated in its
-drawing. The evidentiary logic is straightforward: a normal
-line-drawing process tends to produce ordinarily-shaped districts;
-an unusual shape suggests an unusual process; an unusual process
-suggests that something other than ordinary criteria drove the
-drawing; race, where alleged, becomes the residual explanation. The
-chain breaks at the first link in our case. The unusual shape is a
-property of the rule, not of the process applied to this particular
-district by this particular line-drawer; every district produced by
-the rule on every state has the same shape character. There is no
-inference from shape back to motive because there is no motive
-in the chain.
-
-\paragraph{Partisan diagnostics measure geography, not intent.}
+\paragraph{Partisan metrics describe effects, not intent.}
 \textit{Rucho v.~Common Cause}~\cite{rucho2019} foreclosed federal
-partisan-gerrymandering review on the ground that no judicially
-manageable standard exists for distinguishing constitutionally
-acceptable from unacceptable partisan motivation in line-drawing. The
-Court's reasoning supposes a line-drawer whose motivation is the
-analytic object. A DualBalance plan has no such object. State-court
-tests that rely on the Efficiency Gap or mean-median asymmetry
-typically interpret a non-zero value as \emph{prima facie} evidence
-of partisan intent; on a DualBalance plan the same value is evidence
-only of a particular voter-density distribution. The plan is in no
-useful sense ``partisan''; it is a function of geometry and
-population, evaluated against a layer of vote data the function never
-saw.
+partisan-gerrymandering review for lack of a manageable standard for
+distinguishing acceptable from unacceptable partisan motivation. The
+question is moot on PRISM (there is no motivation), but the partisan
+\emph{effect} the metrics measure is not. An Efficiency Gap of
+$+6.6\,\%$ on a PRISM map still corresponds to wasted-vote asymmetry
+that affects representation; state-court tests that interpret EG as
+evidence of effect, rather than as evidence of intent, still bind.
+What changes is the rhetorical move from ``the map shows EG $+6.6\,\%$''
+to ``someone built that EG $+6.6\,\%$.'' The first survives; the
+second does not.
 
 \paragraph{Ensemble outlier tests lose their baseline.} The Duke and
 MGGG ensembles~\cite{mattinglyduke,recom2021} compare an enacted plan
-to a sample of legally compliant alternatives that a hypothetical
-neutral line-drawer might have produced. The ensemble is meaningful
-because it stands in for the absent neutral line-drawer; the enacted
-plan being an outlier suggests the actual line-drawer differed from
-the neutral one. DualBalance \emph{is} the neutral line-drawer, in a
-much stronger sense than the ensemble's sample mean. Asking whether
-the DualBalance plan is an outlier with respect to its own ensemble
-is not an obviously meaningful question; the ensemble has been
-collapsed to a single point.
+to a sample of legally compliant alternatives a neutral line-drawer
+might plausibly have produced. The sample stands in for the absent
+neutral line-drawer; the enacted plan being an outlier suggests the
+actual line-drawer differed from the neutral one. PRISM \emph{is}
+the neutral line-drawer in a stronger sense than the ensemble's
+sample mean. Asking whether the PRISM plan is an outlier against its
+own ensemble is not obviously meaningful: the ensemble collapses to
+one point. Ensembles can still play a comparison role across
+\emph{different} algorithmic generators (e.g.\ PRISM vs.\ BDistricting
+vs.\ splitline), but the question is no longer ``is this map
+suspiciously different from neutral?''
 
-These observations do not amount to a claim that metrics should be
-ignored. They are useful as descriptive geometry, as inputs to a
-public discussion of what a plan looks like, and as comparison
-anchors when the same metrics are applied to several plans together.
-What they cannot do, on a deterministic generated plan, is what they
-were built to do on an enacted plan: tell us whether a person
-manipulated the lines and to what end.
+The point is not that metrics should be ignored. They should be read
+descriptively. A PRISM plan with $\mathrm{PP}_{\min} = 0.047$,
+Efficiency Gap $+6.6\,\%$, and zero majority-minority districts is a
+plan with low compactness, an R-favoring wasted-vote asymmetry, and
+no MMD. Those facts have administrative, representational, and
+Section~2 consequences. What is gone is the inference from those
+facts to a person who chose them.
 
 \subsection{What this paper claims, and what it does not}
 
@@ -371,23 +326,22 @@ each state's supreme court. A rule whose inputs do not contain race
 or party is, in the strict sense, not subject to either body of
 doctrine.
 
-Fourth, that the conventional gerrymandering metrics (compactness
-scores, Efficiency Gap, mean-median, ensemble outliers,
-majority-minority counts) are forensic instruments for inferring
-intent in a line-drawing process that has none under this procedure.
-They continue to compute and are reported alongside the
-DualBalance metrics for transparency; they should not be taken to
-license, on this plan, the inferences they license on an enacted
-plan. This is the strongest framing claim of the paper, and the
-one most likely to draw resistance: it asks the redistricting
-literature to accept that an entire toolkit of normative measurement,
-developed over thirty years for very good reasons, is the wrong
-toolkit for the generative case.
+Fourth, the conventional gerrymandering metrics (compactness scores,
+Efficiency Gap, mean-median, ensemble outliers, majority-minority
+counts) play two roles on enacted plans, only one of which transfers
+to PRISM. As descriptions of plan effects (shape, wasted-vote
+asymmetry, minority opportunity) they remain valid and are reported
+alongside the DualBalance Score. As evidence of line-drawer intent
+they do not transfer, because PRISM has no line-drawer. The narrow
+claim is that the \emph{intent-attribution} use of these metrics, not
+their measurement use, is what the generative case breaks. This is
+the most contested framing claim in the paper; we expect it to draw
+the most pushback.
 
-The paper does not claim that the DualBalance Score is universally
-the right objective for redistricting, that radial slicing dominates
-all enacted plans across all states, that compactness can or should
-be ignored, or that Section~2 of the Voting Rights Act can be safely
-disregarded after \textit{Callais}. The trade-offs documented above
-are real, and a serious adopter of the method would have to weigh
-them against the trade-offs the status quo presents.
+The paper does not claim that DBS is universally the right objective,
+that PRISM dominates enacted plans on all states, that compactness can
+be ignored, that effects-based fairness analyses (including
+Section~2) become irrelevant, or that the metric toolkit developed
+over the past thirty years is wrong. It claims only that the
+\emph{intent} reading of those metrics presupposes a line-drawer who
+is not present in this construction.
