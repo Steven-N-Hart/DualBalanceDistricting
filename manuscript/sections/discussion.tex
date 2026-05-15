@@ -3,9 +3,10 @@
 
 \subsection{What the Minnesota result does and does not show}
 
-The headline finding --- a knob-free deterministic algorithm that, with
-or without the optional pop-tightening pass, beats the human-drawn
-enacted Minnesota plan on the DualBalance Score --- is a single-state
+The headline finding, that a knob-free deterministic algorithm
+(with or without the optional pop-tightening pass) beats the
+human-drawn enacted Minnesota plan on the DualBalance Score, is a
+single-state
 existence result. It demonstrates that radial slicing through the
 population-weighted centroid can produce a districting that scores
 competitively on the project's own dual-balance objective without
@@ -41,9 +42,9 @@ A separate concern is that population density variance fundamentally
 bounds the achievable $\overline{\mathrm{area\_dev}}$ on any
 pop-balanced plan. Both the enacted plan and our radial pipeline land
 in the same neighborhood ($\overline{\mathrm{area\_dev}} \approx 1.0$
-to $1.1$), and on Minnesota's geometry --- where the Twin Cities
+to $1.1$), and on Minnesota's geometry, where the Twin Cities
 metropolitan area holds roughly 55\,\% of the population in 3\,\% of
-the land area --- this is essentially a hard floor. Improvements
+the land area, this is essentially a hard floor. Improvements
 beyond that floor would require districts that systematically span
 urban and rural territory, which is exactly what radial slicing
 produces. The 8.7-percentage-point gap (103.9 vs.~112.6) we report is
@@ -87,8 +88,8 @@ district is a slice does not pick anything out.
 Section~2's vote-dilution doctrine; \textit{Alexander}
 \cite{alexander2024} and \textit{Callais}~\cite{callais2026}
 significantly narrowed its practical reach. The radial design splits
-the Twin Cities urban area --- and with it, any majority-minority
-population concentrated there --- across multiple districts. In
+the Twin Cities urban area (and with it, any majority-minority
+population concentrated there) across multiple districts. In
 jurisdictions where the \textit{Gingles}~\cite{gingles1986}
 preconditions are met, a race-blind generator may produce a plan that
 fails Section~2 review where a race-conscious plan would not. After
@@ -109,7 +110,7 @@ Splitline is also fully deterministic and unique. It recursively
 bisects the state with the shortest population-balancing line, with
 no global compactness or balance criterion other than line length.
 Splitline produces visually striking but completely arbitrary
-splits --- a district can lose half its territory because the
+splits, because a district can lose half its territory once the
 shortest cut happens to fall on that side. DualBalance grounds its
 geometry in the population centroid rather than in arbitrary
 straight cuts and therefore produces results that reflect the
@@ -125,7 +126,7 @@ exhibit large area imbalance. DualBalance differs in seed placement
 (radial around the population centroid versus dispersed across the
 state) and in iteration discipline (single pass versus Lloyd
 convergence). Our reading of the result table is that radial seeding
-gives up compactness to gain area balance --- a different point on
+gives up compactness to gain area balance, a different point on
 the same trade-off curve BDistricting sits on.
 
 \paragraph{Versus centroidal power diagrams~\cite{cohenaddad2018}.}
@@ -157,18 +158,19 @@ radial design; it is what preserves the geometry.
 state with one apportioned seat count under one census release. We
 do not yet have evidence that the radial design beats enacted plans
 on other states. States with markedly different density profiles
---- e.g., a single dominant metropolitan area in a small geography
-(Massachusetts, Connecticut) versus a multi-center state (Texas,
-Florida) versus a near-uniform-density state (Iowa, Vermont) ---
-should be expected to produce qualitatively different results.
+(for example, a single dominant metropolitan area in a small
+geography such as Massachusetts or Connecticut, versus a multi-center
+state such as Texas or Florida, versus a near-uniform-density state
+such as Iowa or Vermont) should be expected to produce qualitatively
+different results.
 Section~\ref{sec:future-work} below identifies cross-state validation
 as the most important near-term follow-up.
 
 \paragraph{Worst-district area outlier.} The radial design concentrates
 the area imbalance in a single rural district (here, District~2 at
-275\,\% over-target area). This is geometric --- it cannot be avoided
+275\,\% over-target area). This is geometric (it cannot be avoided
 on any partition that imposes a population cap on a state with the
-density profile of Minnesota --- but our $\mathrm{area\_dev}_{\max}$
+density profile of Minnesota), but our $\mathrm{area\_dev}_{\max}$
 of 275\,\% is worse than the enacted plan's 241\,\%, even though
 $\overline{\mathrm{area\_dev}}$ is lower. The radial design therefore
 distributes the area imbalance unevenly; whether this is preferable
@@ -241,17 +243,146 @@ representation diagnostics under Section~2. These are reporting
 extensions and would not feed back into the generator
 (\S\ref{sec:methods}, ``out-of-scope inputs'').
 
+\subsection{Forensic metrics applied to a generative procedure}
+\label{sec:discussion-forensic}
+
+The full menu of gerrymandering diagnostics (Polsby-Popper, Reock,
+convex-hull and length-width compactness, the Efficiency Gap, mean-median
+asymmetry, declination, majority-minority counts, county-split counts,
+ensemble outlier tests) was developed for a single purpose: to detect
+when a human drawing district lines has crossed from neutral
+line-drawing into deliberate manipulation. Each is a forensic
+instrument. Each presupposes the kind of process where ``something
+happened'' is a coherent question and the metric is supposed to help
+answer it.
+
+Generation by deterministic algorithm changes the question. There is
+no human drawing the lines. There is no party-aware decision, no
+race-aware decision, no incumbent-aware decision, and no
+community-aware decision, because the algorithm has no input by which
+any such consideration could enter. There is no place in the pipeline
+at which a decision-maker chose one boundary over another for a
+reason a metric might detect. The line-drawing is a function:
+$\pi = f(\text{geometry}, \text{population}, N)$.
+
+This matters in two ways. First, the metrics' \emph{measurement} is
+still informative. A district with $\mathrm{PP} = 0.09$ is still
+geometrically less compact than a district with $\mathrm{PP} = 0.35$;
+a plan with an Efficiency Gap of $+6.6\,\%$ still produces, under that
+year's voter distribution, more wasted votes on one side than the
+other. Reporting these numbers is reasonable; consumers of the plan
+deserve to know them. Second, the metrics' \emph{inference} is no
+longer available. A $\mathrm{PP}$ of 0.09 in an enacted plan invites
+the question ``who drew this oddly-shaped district and what were they
+trying to do?''. In a DualBalance plan there is no \emph{who} and no
+\emph{trying}: the district has $\mathrm{PP} = 0.09$ because radial
+slices through a population-weighted centroid have that compactness on
+the geometry of Minnesota, period. An Efficiency Gap of $+6.6\,\%$ in
+an enacted plan suggests packed and cracked Democratic voters; in a
+DualBalance plan it reports where Democratic voters \emph{actually
+live} relative to the radial geometry, with no human packing or
+cracking anywhere in the pipeline. Zero majority-minority districts
+in an enacted plan invites scrutiny about whether the line-drawers
+honored \textit{Allen v.~Milligan}~\cite{milligan2023}; in a
+DualBalance plan it reports the demographic geography of the state,
+unfiltered by any race-aware human intervention. The numbers continue
+to compute. What they license has changed.
+
+Three implications follow.
+
+\paragraph{Compactness as a constitutional threshold loses purchase.}
+\textit{Shaw v.~Reno}~\cite{shaw1993} and its progeny use the bizarre
+shape of a district as evidence that race predominated in its
+drawing. The evidentiary logic is straightforward: a normal
+line-drawing process tends to produce ordinarily-shaped districts;
+an unusual shape suggests an unusual process; an unusual process
+suggests that something other than ordinary criteria drove the
+drawing; race, where alleged, becomes the residual explanation. The
+chain breaks at the first link in our case. The unusual shape is a
+property of the rule, not of the process applied to this particular
+district by this particular line-drawer; every district produced by
+the rule on every state has the same shape character. There is no
+inference from shape back to motive because there is no motive
+in the chain.
+
+\paragraph{Partisan diagnostics measure geography, not intent.}
+\textit{Rucho v.~Common Cause}~\cite{rucho2019} foreclosed federal
+partisan-gerrymandering review on the ground that no judicially
+manageable standard exists for distinguishing constitutionally
+acceptable from unacceptable partisan motivation in line-drawing. The
+Court's reasoning supposes a line-drawer whose motivation is the
+analytic object. A DualBalance plan has no such object. State-court
+tests that rely on the Efficiency Gap or mean-median asymmetry
+typically interpret a non-zero value as \emph{prima facie} evidence
+of partisan intent; on a DualBalance plan the same value is evidence
+only of a particular voter-density distribution. The plan is in no
+useful sense ``partisan''; it is a function of geometry and
+population, evaluated against a layer of vote data the function never
+saw.
+
+\paragraph{Ensemble outlier tests lose their baseline.} The Duke and
+MGGG ensembles~\cite{mattinglyduke,recom2021} compare an enacted plan
+to a sample of legally compliant alternatives that a hypothetical
+neutral line-drawer might have produced. The ensemble is meaningful
+because it stands in for the absent neutral line-drawer; the enacted
+plan being an outlier suggests the actual line-drawer differed from
+the neutral one. DualBalance \emph{is} the neutral line-drawer, in a
+much stronger sense than the ensemble's sample mean. Asking whether
+the DualBalance plan is an outlier with respect to its own ensemble
+is not an obviously meaningful question; the ensemble has been
+collapsed to a single point.
+
+These observations do not amount to a claim that metrics should be
+ignored. They are useful as descriptive geometry, as inputs to a
+public discussion of what a plan looks like, and as comparison
+anchors when the same metrics are applied to several plans together.
+What they cannot do, on a deterministic generated plan, is what they
+were built to do on an enacted plan: tell us whether a person
+manipulated the lines and to what end.
+
 \subsection{What this paper claims, and what it does not}
 
-The paper claims that a knob-free, race-blind, partisan-blind,
-deterministic districting algorithm exists that produces output
-competitive with --- and on a single empirically tested state,
-superior to --- the corresponding hand-drawn enacted plan on a
-prespecified dual-population-area objective. It claims that the
-algorithm's output is byte-reproducible and updates only with the
-ten-year census. It claims that the post-\textit{Callais} legal
-landscape gives this kind of generator a narrower constitutional
-exposure than any race-conscious or partisan-conscious alternative.
+The paper makes four claims.
+
+First, that a knob-free, race-blind, partisan-blind, deterministic
+districting algorithm exists that produces output competitive with,
+and on a single empirically tested state superior to, the
+corresponding hand-drawn enacted plan on a prespecified
+population-and-area objective. The algorithm's output is
+byte-reproducible and updates only with the ten-year census.
+
+Second, that the algorithm's procedural neutrality is symmetric. By
+construction, the rule cannot be used to harm any group, party, or
+incumbent, and cannot be used to help any of them either. The
+same property that makes a partisan gerrymander impossible makes a
+race-conscious remedy impossible. Whether the symmetry is morally
+preferable to the status quo of partisan and remedial discretion is
+a question the algorithm itself cannot answer; it is a question for
+legislatures, courts, and voters. We claim only that the symmetry is
+the algorithm's defining property, not an incidental side-effect.
+
+Third, that the post-\textit{Callais} legal landscape gives a
+generator of this kind a narrower constitutional exposure than any
+race-conscious or partisan-conscious alternative. Federal partisan
+review is foreclosed under \textit{Rucho}; federal racial-gerrymander
+risk is contracting under \textit{Alexander} and \textit{Callais};
+state-court remedies for partisan claims depend on the politics of
+each state's supreme court. A rule whose inputs do not contain race
+or party is, in the strict sense, not subject to either body of
+doctrine.
+
+Fourth, that the conventional gerrymandering metrics (compactness
+scores, Efficiency Gap, mean-median, ensemble outliers,
+majority-minority counts) are forensic instruments for inferring
+intent in a line-drawing process that has none under this procedure.
+They continue to compute and are reported alongside the
+DualBalance metrics for transparency; they should not be taken to
+license, on this plan, the inferences they license on an enacted
+plan. This is the strongest framing claim of the paper, and the
+one most likely to draw resistance: it asks the redistricting
+literature to accept that an entire toolkit of normative measurement,
+developed over thirty years for very good reasons, is the wrong
+toolkit for the generative case.
 
 The paper does not claim that the DualBalance Score is universally
 the right objective for redistricting, that radial slicing dominates

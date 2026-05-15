@@ -14,8 +14,8 @@ problem in its strongest terms while declining to remedy it: in
 a 5--4 majority that partisan gerrymandering claims present nonjusticiable
 political questions, conceding that the practice is ``incompatible with
 democratic principles'' but holding that no manageable judicial standard
-exists. Justice Kagan's dissent --- joined by Ginsburg, Breyer, and
-Sotomayor --- argued the opposite: that lower courts had already converged on
+exists. Justice Kagan's dissent, joined by Ginsburg, Breyer, and
+Sotomayor, argued the opposite: that lower courts had already converged on
 workable tests, and that ``of all times to abandon the Court's duty to declare
 the law, this was not the one''~\cite{rucho2019}.
 
@@ -54,10 +54,11 @@ supreme court and the language of its state constitution. Roughly ten
 state supreme courts have so far recognized state-constitutional
 partisan-gerrymandering claims; the rest have not~\cite{stateline2025}.
 
-The practical consequence of this combined doctrine --- federal partisan
-review foreclosed by \emph{Rucho}, Section~2 narrowed by \emph{Alexander}
-and \emph{Callais}, state review uneven and politically contingent ---
-is that redistricting has shifted from a once-per-decade event into a
+The practical consequence of this combined doctrine, with federal
+partisan review foreclosed by \emph{Rucho}, Section~2 narrowed by
+\emph{Alexander} and \emph{Callais}, and state review uneven and
+politically contingent, is that redistricting has shifted from a
+once-per-decade event into a
 continuous partisan exercise. Several states have already redrawn maps
 mid-decade in response to electoral results rather than census revision,
 and analysts expect the practice to expand as legislative majorities
@@ -72,9 +73,9 @@ mathematical literature has produced quantitative tests for partisan
 gerrymandering. The Efficiency Gap of Stephanopoulos and
 McGhee~\cite{stephanopoulosmcghee2015} measures the disparity in
 ``wasted votes'' between parties and was central to the lower-court
-ruling in \emph{Whitford v.~Gill}. Wang's three tests~\cite{wang2016} ---
-mean--median difference, lopsided wins, and a $t$-test for partisan
-asymmetry --- played a similar role in \emph{LWV v.~Commonwealth} of
+ruling in \emph{Whitford v.~Gill}. Wang's three tests~\cite{wang2016},
+namely mean--median difference, lopsided wins, and a $t$-test for
+partisan asymmetry, played a similar role in \emph{LWV v.~Commonwealth} of
 Pennsylvania. Warrington's declination~\cite{warrington2018} measures the
 asymmetry of the seats--votes kink at 50\%. Most influentially, the
 Markov Chain Monte Carlo ensemble methods developed at Duke
@@ -103,9 +104,35 @@ that no scalar metric can collapse without bias~\cite{cain2014}.
 
 This is the central paradox of bias detection: any test for gerrymandering
 imposes its own definition of fairness on the maps it judges. The
-question is not whether the test is neutral --- it is not --- but whether
+question is not whether the test is neutral (it is not) but whether
 the normative commitments it encodes are made explicit and are defensible
 on their own terms.
+
+Step back from the technical details and a simpler observation
+emerges: every one of these tests was built to catch a human in the
+act. Polsby-Popper~\cite{polsbypopper1991} and Reock~\cite{reock1961}
+flag districts that look ``wrong,'' meaning shapes too contorted to
+have arisen by ordinary line-drawing, which suggests that someone
+drew them that way on purpose. The Efficiency Gap~\cite{stephanopoulosmcghee2015},
+mean-median asymmetry~\cite{wang2016},
+declination~\cite{warrington2018}, and the ensemble outlier tests of
+the Duke and MGGG groups~\cite{mattinglyduke,recom2021} do the same
+job at the level of partisan outcomes: they ask whether the partisan
+profile of the enacted plan is what a neutral line-drawer would
+plausibly have produced, and call out plans that look engineered.
+These are \emph{forensic} instruments. They infer an actor's motives
+from the traces the actor leaves. Their value depends on there being
+an actor to investigate.
+
+A district-drawing algorithm that admits no human input does not leave
+those traces, because there is no actor in the loop to leave them. A
+radial slice with $\mathrm{PP} = 0.09$ is not a covert favor to a
+party or a community; it is the shape the rule produces on this
+geometry. An Efficiency Gap of $+6.6\,\%$ on a deterministic plan is
+not the fingerprint of a partisan operator; it is a description of
+where the state's Democratic voters happen to live. The metrics still
+compute. What they are designed to point at, a person making choices
+in a process that gives them choices, is no longer in the picture.
 
 \subsection{Deterministic Districting: A Sixty-Year Tradition}
 
@@ -146,7 +173,7 @@ unique but lacks any global compactness or boundary-awareness criterion.
 
 Three observations link this tradition to the current work. First, all
 extant deterministic algorithms balance \emph{one} extensive quantity
-across districts --- population --- and treat geographic area, if at all,
+across districts, namely population, and treat geographic area, if at all,
 only indirectly through compactness shape metrics such as Polsby-Popper~\cite{polsbypopper1991}
 or Reock~\cite{reock1961}. Second, all are governed by tie-breaking rules
 that are either implicit (left to floating-point ordering) or only
@@ -163,15 +190,33 @@ representation: the House apportions seats by population (Art.~I, \S2),
 the Senate allocates them equally per state (Art.~I, \S3). The design,
 defended by Madison in \emph{Federalist} Nos.~54--58~\cite{federalist54},
 reflects the framers' judgment that representation should reflect both
-\emph{people} and \emph{place}. This balance operates between chambers;
-it has not, to our knowledge, been operationalized as a districting
-objective within a single chamber.
+\emph{people} and \emph{place}. This balance operates \emph{between}
+chambers; it has not, to our knowledge, been operationalized as a
+districting objective \emph{within} a single chamber. The proposal
+that follows is novel in exactly that sense: the framers' bicameral
+compromise applied as a single criterion at the level of one chamber's
+internal boundaries, so that each congressional district represents
+both roughly $1/N$ of a state's people and roughly $1/N$ of its
+territory.
 
-DualBalance Districting applies this structural balance at the
-district-drawing level. Given a state boundary, census-unit
-population and area data, and a target district count $N$, the
-algorithm produces a partition of the state into $N$ districts whose
-score
+The procedural commitment underneath that proposal is equally
+strong. The algorithm reads only the state's shape, its census-unit
+populations, and the seat count $N$. It cannot be used to harm any
+group, party, or incumbent, and, by the same token, cannot be
+used to help any of them. The deterministic-districting tradition
+surveyed above has often defended procedural neutrality as a guard
+against gerrymandering. We make the same commitment from the other
+side as well: the rule that forecloses partisan engineering also
+forecloses majority-minority remediation, incumbent protection, and
+community-of-interest preservation. There is no partisan knob the
+algorithm refuses to turn; there is no knob. Whether the symmetry is
+preferable to the status quo of partisan and remedial discretion is
+not a question the algorithm can answer; we argue only that the
+symmetry is the design's defining property, not an accident.
+
+Given a state boundary, census-unit population and area data, and a
+target district count $N$, the algorithm produces a partition of the
+state into $N$ districts whose score
 \begin{equation}
   \mathrm{DBS}
     = \frac{1}{1
@@ -192,8 +237,8 @@ the population center, each slice naturally spanning both dense
 
 Seats are apportioned among the states by the Method of Equal
 Proportions (Huntington--Hill), the standard since
-1941~\cite{balinskiyoung}. The core pipeline --- seed placement,
-assignment, contiguity repair --- is a pure function of $(\text{units},
+1941~\cite{balinskiyoung}. The core pipeline (seed placement,
+assignment, contiguity repair) is a pure function of $(\text{units},
 N)$. There are no tuning weights, no iteration count, no stopping
 threshold, and no random seed; identical inputs always yield
 byte-identical outputs. A single optional post-pass

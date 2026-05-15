@@ -6,9 +6,9 @@
 We evaluate the algorithm on Minnesota's congressional districting
 ($N = 8$ apportioned seats) using the 2020 PL 94-171 redistricting
 data file. The input is the TIGER/Line 2020 VTD (voting tabulation
-district) shapefile for Minnesota --- 4{,}110 atomic units, total
-population $P = 5{,}706{,}494$, total land area $A = 225{,}187$~km$^2$
---- joined to the Census Data API's \verb|P1_001N| total-population
+district) shapefile for Minnesota (4{,}110 atomic units, total
+population $P = 5{,}706{,}494$, total land area $A = 225{,}187$~km$^2$),
+joined to the Census Data API's \verb|P1_001N| total-population
 field, projected to EPSG:5070 (CONUS Albers, equal area) at load
 time. Per-district targets are
 $P^{*} = P/8 = 713{,}312$ and $A^{*} = A/8 = 28{,}148$~km$^2$. All
@@ -67,7 +67,7 @@ Three findings:
 
 \paragraph{Pure radial beats the enacted plan on the DualBalance Score.}
 The pure-radial pipeline scores 0.6472 against the enacted plan's
-0.6390 --- a margin of $+1.3$\,\% on the project's own metric ---
+0.6390, a margin of $+1.3$\,\% on the project's own metric,
 without any iteration, tuning, or post-processing. The advantage comes
 entirely from area balance ($\overline{\mathrm{area\_dev}}$ 103.9\,\%
 vs 112.6\,\%): radial slicing assigns each district a coherent slice of
@@ -84,7 +84,7 @@ $\mathrm{pop\_dev}_{\max}$ of 11.24\,\% is well above the
 plans~\cite{reynolds1964}. Running the optional L$^1$ pop-tightening
 pass (\S\ref{sec:methods-tighten}) executed 81 boundary-unit swaps in
 \textasciitilde{}18\,seconds of compute, driving
-$\mathrm{pop\_dev}_{\max}$ from 11.24\,\% to 0.21\,\% --- well inside
+$\mathrm{pop\_dev}_{\max}$ from 11.24\,\% to 0.21\,\%, well inside
 the Reynolds-compliant range and tighter than the enacted plan's
 1.32\,\%. $\overline{\mathrm{area\_dev}}$ rose by only 0.3 percentage
 points; the DualBalance Score \emph{improved} from 0.6472 to 0.6574,
@@ -100,8 +100,8 @@ the radial plan and 0.047 after pop-tightening, $\mathrm{PP}_{\mathrm{mean}}$
 0.361 / 0.342. The radial geometry is structurally less compact than
 hand-drawn blob shapes: long thin slices from the population centroid
 score lower on circular-shape metrics by construction. Pop-tightening
-makes this worse --- it moves units across slice boundaries, which
-inserts small indentations into otherwise smooth radial cuts ---
+makes this worse (it moves units across slice boundaries, which
+inserts small indentations into otherwise smooth radial cuts),
 pushing the smallest-PP slice from 0.094 (already at the
 ``0.10 raises eyebrows'' informal threshold) down to 0.047. Whether
 the trade is acceptable is a normative question we return to in
@@ -122,8 +122,8 @@ Twin Cities seats and four large rural seats.
 slices radiate from the population-weighted centroid (near
 Minneapolis-St.\ Paul), each spanning both dense and sparse
 territory. \textbf{Right:} radial $+$ \texttt{--tighten-pop 0.005}
-(score $0.6574$); the radial structure is preserved --- units have
-moved only at slice boundaries --- but per-district population is
+(score $0.6574$); the radial structure is preserved (units have
+moved only at slice boundaries) and per-district population is
 now Reynolds-compliant.}
 \label{fig:mn-comparison}
 \end{figure}
@@ -172,7 +172,7 @@ District 2 inherits Minnesota's northern panhandle and is the largest
 by area ($\sim$3.8$\times A^{*}$), while District 7 contains only the
 Twin Cities urban core ($\sim$0.02$\times A^{*}$). All eight districts
 are within 0.21\,\% of $P^{*}$. The largest single source of area
-imbalance --- District 2's 275\,\% over-target area --- is geometric:
+imbalance, District 2's 275\,\% over-target area, is geometric:
 the population density in the northern panhandle is roughly two orders
 of magnitude lower than in the Twin Cities, so any partition that
 holds each district to $P^{*}$ must give the rural districts
@@ -180,3 +180,79 @@ disproportionate area. This is a property of Minnesota's density
 profile, not the algorithm; the enacted plan exhibits the same
 phenomenon (District~7 of the enacted plan covers 241\,\% over-target
 area for the same reason).
+
+\subsection{Descriptive diagnostics: partisan, race, county}
+\label{sec:results-diagnostics}
+
+We report a second tier of numbers (partisan, racial, and
+county-split metrics) not because the algorithm uses them, but
+because readers will reasonably ask how a procedurally-neutral plan
+\emph{looks} on the diagnostics conventionally applied to enacted
+maps. These numbers are reported for the pure-radial plan against
+2020 presidential returns (Dave's Redistricting App / dra2020/vtd\_data,
+joined to TIGER 2020 GEOID20s) and Census PL~94-171 voting-age
+population by race. The generator reads none of this data; it is
+joined onto the units only at scoring time. We emphasize, in line
+with \S\ref{sec:discussion-forensic}, that these are descriptive
+statistics of the resulting partition, not evaluative scores of it.
+
+\paragraph{Partisan profile.} Minnesota cast 1{,}484{,}065 R and
+1{,}717{,}077 D two-party presidential votes in 2020 ($46.4\,\%$
+statewide R share, $53.6\,\%$ D). On the pure-radial plan the eight
+districts split 4--4 between R-winning and D-winning, against a
+seats-proportional expectation of $3.7$ R seats. The two D-leaning
+slices contain the Minneapolis-St.~Paul metro and run at 64--75\,\% D;
+the two R-leaning slices reaching into the western and southern parts
+of the state run at 55--65\,\% R; the four remaining slices are within
+$\pm 5$ points of even. The efficiency gap is $+6.6\,\%$ (positive =
+R-favorable) and the mean-median R difference is $+3.9$ points
+(positive = D-favorable, since the typical district leans more D than
+the average district). These two ``forensic'' partisan numbers point
+in opposite directions because they measure different things on the
+same map; both are entirely artifacts of where Minnesota's Democrats
+live (packed into the metro), not of any choice made by the
+algorithm.
+
+\paragraph{Race / VAP profile.} Minnesota's voting-age population is
+80.0\,\% non-Hispanic white, 5.9\,\% Black, 5.0\,\% Hispanic, 4.9\,\%
+Asian, and 1.1\,\% American Indian / Alaska Native. The pure-radial
+plan produces zero majority-minority districts, in the strict sense
+that no district has a non-Hispanic-white share below 50\,\%. The
+district containing the Minneapolis-St.~Paul urban core (District~7)
+has the lowest non-Hispanic-white share at 65.3\,\%, the highest
+Black VAP share at 15.7\,\%, and the highest Hispanic VAP share at
+6.7\,\%; the remaining seven districts run 73--90\,\% non-Hispanic
+white. The enacted 119\textsuperscript{th}-Congress Minnesota plan
+also has no majority-minority districts. Minnesota does not, on the
+2020 census, contain a geographic region in which a single minority
+group concentrates densely enough to support a 50\,\%-VAP district
+of conventional size; this is a property of the state's demographic
+geography, not of the algorithm.
+
+\paragraph{County splits.} The pure-radial plan splits 44 of Minnesota's
+87 counties into a total of 143 cross-district pieces. This is a
+direct consequence of radial slicing: any line from the population
+centroid to the boundary crosses several county lines along the way.
+The enacted plan splits fewer counties (it is drawn to follow them
+more closely), at the cost of the larger area imbalance that
+Table~\ref{tab:mn-results} reports. Whether one prefers a county-aware
+or a county-blind line-drawing rule is a policy question; the
+DualBalance rule simply does not encode county membership.
+
+\paragraph{What to read into these numbers.} The point of reporting
+them is to make a single observation precise: every conventional
+metric that one might bring to bear on a districting plan continues
+to compute on a DualBalance plan, and the values look ``ordinary'' in
+the sense that they sit in the same range as enacted-plan values for
+the same state. But the metrics' \emph{interpretation} differs by
+construction. On an enacted plan, an efficiency gap of $+6.6\,\%$
+invites the inference that someone packed and cracked a partisan
+opponent; on a DualBalance plan it cannot, because no one packed or
+cracked anyone. On an enacted plan, zero majority-minority districts
+invites the inference that the line-drawers either declined to honor
+\textit{Allen v.~Milligan}~\cite{milligan2023} or did honor it on a
+geography that could not support a majority-minority seat; on a
+DualBalance plan only the latter inference is available, because
+the algorithm has no way of seeing race. The numbers are the same;
+what they license is different. We return to this point in
+\S\ref{sec:discussion-forensic}.

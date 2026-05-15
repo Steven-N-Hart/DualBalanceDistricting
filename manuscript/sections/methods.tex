@@ -121,9 +121,9 @@ The $0.5/0.5$ weighting makes the error a convex combination of the
 two mean deviations: each district is judged on representing roughly
 $1/N$ of the people \emph{and} roughly $1/N$ of the state's geography.
 The score reaches $1.0$ for a perfectly balanced plan and approaches
-$0$ as deviations grow without bound. Secondary metrics ---
-Polsby-Popper compactness~\cite{polsbypopper1991} and
-Reock~\cite{reock1961} --- are computed alongside but not optimized
+$0$ as deviations grow without bound. Secondary metrics
+(Polsby-Popper compactness~\cite{polsbypopper1991} and
+Reock~\cite{reock1961}) are computed alongside but not optimized
 against; radial slices have lower compactness than blob-Voronoi or
 hand-drawn districts by construction, and this is a deliberate trade
 in service of the dual-balance objective.
@@ -163,7 +163,7 @@ boundary-unit swaps under an L$^1$ objective. Each pass:
 The L$^1$ objective is essential here. The radial seed placement puts
 the most over-target and most under-target districts on opposite sides
 of the population centroid, so no single adjacent-slice swap reduces
-the L$^\infty$ maximum --- but many such swaps reduce the sum. The
+the L$^\infty$ maximum, but many such swaps reduce the sum. The
 canonical Reynolds-tightening literature uses L$^\infty$ and bottoms
 out at \textasciitilde{}5\% on this geometry; the L$^1$ formulation
 runs to completion in \textasciitilde{}80 swaps on Minnesota,
@@ -180,9 +180,9 @@ concession to legal compliance.
 \subsection{Determinism and tie-breaking}
 
 The pipeline is deterministic at every step. The only sources of
-ambiguity --- equidistant seed-to-unit pairs in
+ambiguity (equidistant seed-to-unit pairs in
 \S\ref{sec:methods-assign}, equal-capacity fallbacks for unplaced
-units, and equal-cost candidates in \S\ref{sec:methods-repair} --- all
+units, and equal-cost candidates in \S\ref{sec:methods-repair}) all
 resolve to a fixed cascade with no remaining ambiguity:
 
 \begin{enumerate}
