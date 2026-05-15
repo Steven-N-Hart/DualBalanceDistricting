@@ -696,6 +696,95 @@ balance for fewer such crossings.
 survives on a PRISM plan; their intent-attribution role does not.
 §4.7 develops the distinction.
 
+### 3.7 Cross-state validation: Iowa, Massachusetts, Texas
+
+We replicated the Minnesota pipeline on three additional states
+chosen to span the density-profile space: Iowa (4 districts,
+near-uniform density, drawn by Iowa's nonpartisan Legislative
+Services Agency [[29]](#ref-29)), Massachusetts (9 districts,
+single-metro state dominated by Boston), and Texas (38 districts,
+polycentric: Houston, Dallas-Fort Worth, San Antonio, Austin). The
+data pipeline (TIGER 2020 VTDs, Census PL 94-171 demographics,
+dra2020/vtd_data 2020 presidential returns, TIGER 2024 cd119
+spatial join for the enacted plan) is automated in
+[`scripts/prep_state_units.py`](../scripts/prep_state_units.py);
+comparison driven by
+[`scripts/compare_state.py`](../scripts/compare_state.py).
+
+**Table 3.** Cross-state PRISM vs. enacted 119th-Congress
+results. "Wins" marks the higher DBS. EG positive = R-favorable;
+MMD = majority-minority district count (NH-white VAP < 50%).
+
+| State | N | DBS (PRISM) | DBS (Enacted) | Wins | EG (PRISM) | EG (Enacted) |
+|---|---:|---:|---:|:---:|---:|---:|
+| Iowa | 4 | 0.8132 | **0.8828** | Enacted | −0.173 | +0.416 |
+| Massachusetts | 9 | **0.7591** | 0.7246 | PRISM | −0.158 | −0.158 |
+| Minnesota | 8 | **0.6472** | 0.6391 | PRISM | +0.066 | +0.068 |
+| Texas | 38 | 0.6230 | **0.6658** | Enacted | +0.029 | +0.153 |
+
+| State | Counties split (PRISM) | Counties split (Enacted) | MMD (PRISM) | MMD (Enacted) |
+|---|---:|---:|---:|---:|
+| Iowa | 30 of 99 | 0 of 99 | 0 | 0 |
+| Massachusetts | 12 of 14 | 9 of 14 | 0 | 1 |
+| Minnesota | 44 of 87 | 9 of 87 | 0 | 0 |
+| Texas | 132 of 254 | 30 of 254 | 22 | 19 |
+
+PRISM beats the enacted plan on two of four states (Minnesota,
+Massachusetts) and loses on the other two (Iowa, Texas). The losses
+are informative.
+
+**Iowa.** The enacted Iowa plan is itself algorithm-flavored,
+drawn under the LSA's nonpartisan cascade that prioritizes equal
+population, contiguity, and county integrity. The result splits
+zero counties and lands $\mathrm{pop\_dev\_max}$ at $0.01\%$.
+PRISM splits 30 counties and pop-deviates 32% because radial
+slices from the centroid of a near-uniform-density state cross
+many county lines without recovering an area-balance advantage.
+Tightened PRISM closes part of the gap (DBS to 0.8438) but cannot
+beat a map drawn by a procedurally similar algorithm with an
+explicit county-integrity constraint. The partisan picture is
+the opposite story: under PRISM, Iowa's four seats split 2 R / 2
+D against 54% R statewide; the enacted plan returns 4 R / 0 D
+with EG +0.42.
+
+**Massachusetts.** PRISM wins on DBS because the enacted plan's
+area imbalance is large ($\overline{\mathrm{area\_dev}} = 0.76$
+vs. PRISM's $0.45$). Massachusetts is single-metro
+(Boston-dominated), so radial slicing through the population
+centroid produces slices that span both urban and rural territory
+in roughly the same way it does on Minnesota. Tightened PRISM
+reaches DBS 0.8002. The trade-off the manuscript predicted
+materializes: the enacted plan draws one majority-minority
+district (MA-7, the Boston seat anchored on Roxbury-Mattapan);
+PRISM draws zero.
+
+**Texas.** Texas is the polycentric stress test. With four major
+metropolitan centers, the population-weighted centroid sits in a
+low-density area between them, and radial slicing from that point
+produces districts that span density unevenly. PRISM's pop
+deviation reaches 54% pre-tighten; tightening brings it to 19%
+but cannot reach the $0.5\%$ Reynolds threshold within
+$O(|U|^2 N)$ swap budget. The enacted plan still wins on DBS
+(0.6658 vs. 0.6510 tightened). Two diagnostic findings cut the
+other way: PRISM produces a partisan split (21 R / 17 D) closer
+to proportional than the enacted (25 R / 13 D under 53% R
+statewide), and 22 majority-minority districts (vs. the enacted
+plan's 19) as a structural side-effect of Texas's
+minority-majority demographics.
+
+**What the four-state set demonstrates.** PRISM is a geometric
+construction tuned to a particular density profile. On the profile
+(one or two dense metros plus a large rural hinterland, like
+Minnesota or Massachusetts) it beats hand-drawn plans on the
+dual-balance objective without reading party or race. Outside the
+profile (uniform density like Iowa, polycentric like Texas) the
+enacted plan can outperform on DBS, though PRISM still produces
+partisan distributions closer to seats-proportional and, in
+minority-majority states, more majority-minority districts as a
+side-effect of demographic geography. The multi-state runtime
+(2k–9k VTDs) is dominated by file I/O and the contiguity check;
+Texas with 38 districts completed in under five minutes.
+
 ---
 
 ## 4. Discussion
@@ -840,17 +929,14 @@ Disabling iteration is what preserves the geometry.
 
 ### 4.5 Limitations
 
-**Single-state evidence.** Minnesota is one state, one seat count,
-one census. The result is an existence proof, not a claim of
-generality. States with very different density profiles should
-produce qualitatively different results: PRISM is likely to perform
-best on states with one or two dense metro centers and a large
-rural hinterland (the Minnesota profile), and worst on polycentric
-coastal states (Texas, California, Florida) where the
-single-centroid assumption breaks down. The natural next state is
-Iowa: four districts, near-uniform density, and a long-standing
-nonpartisan line-drawing tradition [[29]](#ref-29) that gives a
-clean comparison target. We have not yet run it.
+**Four-state evidence, not fifty-state generality.** PRISM has been
+run end-to-end on Minnesota, Iowa, Massachusetts, and Texas (§3.7).
+It beats the enacted plan on the DualBalance Score in MN and MA and
+loses in IA and TX. The two losses confirm distinct failure modes
+predicted by the design: against a competing algorithmic baseline
+(Iowa LSA), and against polycentric geometry (Texas's four metros).
+The remaining 46 states have not been run, and four states does not
+establish generality across the density-profile space.
 
 **Worst-district area outlier.** PRISM concentrates the area
 imbalance in a single rural district (here, District 2 at 275%
@@ -882,13 +968,12 @@ viability.
 
 ### 4.6 Future work
 
-**Multi-state validation.** Reproduce the Minnesota result on the
-other 49 states. PRISM should perform best on states with one or
-two dense metro centers and a large rural hinterland (the
-Minnesota profile), and worst on polycentric states (Texas,
-California, Florida) where the single-centroid assumption breaks
-down. Start with Iowa (four districts, near-uniform density,
-nonpartisan tradition [[29]](#ref-29)) as a low-noise test case.
+**Full-50-state validation.** Four states (MN, IA, MA, TX) have
+been run (§3.7). Extending to the remaining 46 requires no
+algorithmic change. California, Florida, and Pennsylvania are the
+highest-value next targets: California for its size and four-or-more
+metros, Florida for its peninsula geometry, Pennsylvania for its
+role as the canonical state-court partisan-gerrymandering test bed.
 
 **Multi-center radial seeding.** For polycentric states, place
 seeds on circles around *each* of $k$ population centers, with $k$

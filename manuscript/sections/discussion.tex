@@ -143,17 +143,15 @@ cluster. Disabling iteration is what preserves the geometry.
 
 \subsection{Limitations}
 
-\paragraph{Single-state evidence.} Minnesota is one state, one seat
-count, one census. The result is an existence proof, not a claim of
-generality. States with very different density profiles should produce
-qualitatively different results: PRISM is likely to perform best on
-states with one or two dense metro centers and a large rural
-hinterland (the Minnesota profile), and worst on polycentric coastal
-states (Texas, California, Florida) where the single-centroid
-assumption breaks down. The natural next state is Iowa: four
-districts, near-uniform density, and a long-standing nonpartisan
-line-drawing tradition~\cite{iowalsa} that gives a clean comparison
-target. We have not yet run it.
+\paragraph{Four-state evidence, not fifty-state generality.} PRISM
+has been run end-to-end on Minnesota, Iowa, Massachusetts, and Texas
+(\S\ref{sec:results-multistate}). It beats the enacted plan on the
+DualBalance Score in MN and MA and loses in IA and TX. The two
+losses confirm distinct failure modes predicted by the design:
+against a competing algorithmic baseline (Iowa LSA), and against
+polycentric geometry (Texas's four metros). The remaining 46 states
+have not been run, and four states does not establish generality
+across the density-profile space.
 
 \paragraph{Worst-district area outlier.} PRISM concentrates the
 area imbalance in a single rural district (here, District~2 at
@@ -186,13 +184,13 @@ regard the 0.047 figure as a hard ceiling on legal viability.
 \subsection{Future work}
 \label{sec:future-work}
 
-\paragraph{Multi-state validation.} Reproduce the Minnesota result on
-the other 49 states. PRISM should perform best on states with one or
-two dense metro centers and a large rural hinterland (the Minnesota
-profile), and worst on polycentric states (Texas, California, Florida)
-where the single-centroid assumption breaks down. Start with Iowa
-(four districts, near-uniform density, nonpartisan
-tradition~\cite{iowalsa}) as a low-noise test case.
+\paragraph{Full-50-state validation.} Four states (MN, IA, MA, TX)
+have been run (\S\ref{sec:results-multistate}). Extending to the
+remaining 46 requires no algorithmic change. California, Florida,
+and Pennsylvania are the highest-value next targets: California for
+its size and four-or-more metros, Florida for its peninsula
+geometry, Pennsylvania for its role as the canonical state-court
+partisan-gerrymandering test bed.
 
 \paragraph{Multi-center radial seeding.} For polycentric states, place
 seeds on circles around \emph{each} of $k$ population centers, with

@@ -16,9 +16,11 @@ src/dualbalance/   Python package — implementation of the algorithm + CLI
   config.py        YAML --config support (CLI > YAML > argparse-default)
   cli.py           argparse CLI: generate / apportion / score / compare
 tests/             pytest suite (75 tests, lint-clean)
-configs/           example YAML configs (mn_vtd.yaml, apportion_2020.yaml)
+configs/           per-state YAML configs (mn_vtd.yaml, ia_vtd.yaml, ma_vtd.yaml,
+                   tx_vtd.yaml, apportion_2020.yaml)
 data/              prepared input geojson + data/README.md (data files gitignored)
-scripts/           prep_mn_units.py — fetches TIGER + (optional) Census API
+scripts/           prep_state_units.py — per-state TIGER + Census + dra2020 + cd119 join
+                   compare_state.py — side-by-side PRISM vs enacted scoring
 docs/              Formalism.md (mathematical spec) + research notes
 manuscript/        LaTeX manuscript (main.tex + sections/ + references.bib + figures/)
 pyproject.toml     hatchling build; runtime deps: geopandas, shapely, gerrychain,
@@ -37,13 +39,13 @@ ruff check .                   # lint
 ruff format .                  # format
 dualbalance --help             # see subcommands
 
-# Minnesota PoC end-to-end
-python scripts/prep_mn_units.py --geography vtd          # writes data/mn_vtd.geojson
+# Per-state PoC end-to-end (MN, IA, MA, TX currently supported)
+python scripts/prep_state_units.py --state MN            # writes data/mn_vtd.geojson + data/mn_enacted.geojson
 dualbalance generate --config configs/mn_vtd.yaml        # writes out/mn_yaml/{map,metrics}.{geojson,json}
-dualbalance score --plan out/mn_yaml/map.geojson --units data/mn_vtd.geojson --geography vtd
+python scripts/compare_state.py --state MN               # side-by-side PRISM vs enacted comparison
 ```
 
-`prep_mn_units.py` optionally reads `CENSUS_API_KEY` from a `.env` file (gitignored) to join real 2020 PL 94-171 population; without a key (or if the API rejects the key) it falls back to synthesizing uniform population (1000 per unit) and prints a clear warning.
+`prep_state_units.py` (generalized from the earlier `prep_mn_units.py`) handles any state in `STATE_INFO`: downloads TIGER 2020 VTDs, fetches Census PL 94-171 demographics (using `CENSUS_API_KEY` from `.env` if present, else synthesized uniform 1000), joins dra2020/vtd_data 2020 presidential votes, and joins the enacted 119th-Congress plan via a TIGER 2024 cd119 spatial join (representative-point join with smallest-CD-number tiebreaker). Add a new state by extending `STATE_INFO` with its FIPS, TIGER state name, and apportioned seat count.
 
 ## What the project is
 

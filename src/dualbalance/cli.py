@@ -123,7 +123,14 @@ def _cmd_score(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
         geography=geography.cli_name if geography is not None else "unknown",
     )
     metrics = score_plan(plan, units)
-    print(json.dumps(metrics, indent=2, sort_keys=True))
+    if args.out:
+        write_metrics(metrics, args.out)
+        print(
+            f"scored {plan.n_districts} districts over {len(units)} unit(s); "
+            f"DualBalance Score = {metrics['dualbalance_score']:.4f}; wrote {args.out}"
+        )
+    else:
+        print(json.dumps(metrics, indent=2, sort_keys=True))
     return 0
 
 
@@ -256,6 +263,11 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
     )
     score.add_argument("--id-column", dest="id_column")
     score.add_argument("--pop-column", dest="pop_column")
+    score.add_argument(
+        "--out",
+        type=Path,
+        help="Optional path to write metrics JSON; prints to stdout if omitted.",
+    )
     score.add_argument(
         "--county-column",
         dest="county_column",

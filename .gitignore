@@ -32,7 +32,7 @@ manuscript/sections/*.aux
 !.env.example
 
 # Generated MN data + run outputs
-data/mn_*.geojson
+data/*.geojson
 data/*.zip
 data/*.shp*
 out/
