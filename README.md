@@ -91,8 +91,9 @@ for the precise mathematical statement.
 There is no Lloyd iteration, no recentering loop, no tightening pass
 in the core pipeline. The radial seed positions do not drift, so a
 single assignment pass suffices. The CLI exposes no algorithmic
-tuning flags for the core pipeline — only data-plumbing arguments
-(`--units`, `--districts`, `--geography`, `--out`, `--config`).
+tuning flags for the core pipeline, only data-plumbing arguments
+(`--units`, `--districts`, `--geography`, `--id-column`, `--pop-column`,
+`--county-column`, `--out`, `--config`).
 
 The MN PoC scores **0.6472** under DualBalance, beating the enacted
 119th-Congress plan's **0.6390** by 1.3%. See
@@ -101,18 +102,56 @@ worked example with reproduction commands.
 
 ### Optional: `--tighten-pop` for Reynolds compliance
 
-Pure radial leaves per-district `pop_deviation_max` around 5–15 % —
+Pure radial leaves per-district `pop_deviation_max` around 5 to 15 %,
 well above the ~0.5 % *Reynolds v. Sims* threshold required for U.S.
 congressional districts. An opt-in `--tighten-pop` flag (with
-`--pop-tolerance T`, default 0.5 %) runs a greedy boundary-unit swap
-pass that drives `pop_deviation_max` down to the target. On the MN
-PoC, this brings the max from 11.24 % to 0.21 %, raises the
-DualBalance score from 0.6472 to 0.6574, and preserves the radial
-structure (units move only at slice boundaries). The pass is off by
-default because it is the only piece of the pipeline that is not a
-pure function of `(units, n_districts)`; turning it on is a
-project-level choice about whether to trade a small degradation of
-the visible radial guarantee for legal compliance.
+`--pop-tolerance T`, default 0.5 %) runs a deterministic two-phase
+local search of boundary-unit moves:
+
+1. **Phase 1 (pop tightening).** Each accepted move either reduces the
+   L¹ sum of |pop_dev| or strictly reduces `pop_dev_max`. When single-move
+   greedy stalls but `pop_dev_max` is still above tolerance, a length-2 then
+   length-3 chain escape (the deterministic analogue of an ejection chain)
+   searches for an augmenting sequence on the district-adjacency graph.
+2. **Phase 2 (DBS hill-climb).** Once Phase 1 converges, picks the
+   boundary move that maximally improves the DualBalance Score,
+   subject to `pop_dev_max` not exceeding the value Phase 1 reached.
+
+Both phases are pure functions of `(units, n_districts, T)`; no RNG, no
+wall-clock, byte-identical reruns. On the MN PoC this brings
+`pop_dev_max` from 11.24 % to 0.21 %, raises the DualBalance Score from
+0.6472 to 0.6574, and preserves the radial structure (units move only
+at slice boundaries). A per-district articulation-point cache (Tarjan
+on CSR adjacency arrays, numba-accelerated when available) keeps the
+contiguity check `O(1)` per candidate; at block scale this is the
+difference between hours and minutes. The pass is off by default
+because turning it on is a project-level choice about whether to
+trade a small degradation of the visible radial guarantee for legal
+compliance.
+
+### Baselines for cross-algorithm comparison
+
+The repo ships two deterministic baselines so that PRISM can be scored
+against algorithmic alternatives (not just enacted plans) on the same
+geometry and metrics:
+
+- **Cascade** (`dualbalance generate-cascade`): an Iowa-LSA-flavored
+  deterministic baseline. Aggregates VTDs to counties, uses
+  farthest-point seeding to spread coverage, and lexicographically
+  prioritizes county integrity, population balance, then compactness.
+  Oversized counties are split via PRISM-style capacitated assignment
+  inside the county. This is the structural opposite of PRISM: instead
+  of spanning urban-rural by slicing radially, Cascade preserves
+  administrative units and produces compact county-bundled districts.
+- **BDistricting** (ingested via `scripts/prep_bdistricting.py`):
+  reference plans from the BDistricting project, joined to the same
+  atomic-unit basis as the enacted plan for direct head-to-head
+  scoring.
+
+Cross-state validation currently covers MN, IA, MA, TX, NC, and WI;
+`scripts/compare_state.py --state XX` produces the four-way comparison
+(PRISM, Cascade, BDistricting, enacted) on the DualBalance Score and
+supporting metrics.
 
 ## Apportionment
 

@@ -38,13 +38,16 @@ def test_cascade_is_deterministic(
 def test_cascade_splits_oversize_county(
     synthetic_grid_4x4_with_counties: gpd.GeoDataFrame,
 ) -> None:
-    # One mega-county = whole state. Cascade auto-splits it via PRISM into
-    # 4 pseudo-counties and records the split in metadata.
+    # One mega-county = whole state. Cascade auto-splits it via the
+    # internal radial sub-routine into ceil(pop/cap) = 4 pieces;
+    # each piece becomes its own district.
     gdf = synthetic_grid_4x4_with_counties.copy()
     gdf["county"] = "ONE"
     plan = generate_cascade_plan(gdf, n_districts=4)
-    assert set(plan.assignment.values()) <= {0, 1, 2, 3}
-    assert plan.metadata["counties_split_by_cap"] == {"ONE": 4}
+    assert set(plan.assignment.values()) == {0, 1, 2, 3}
+    splits = plan.metadata["counties_split_by_cap"]
+    assert splits == {"ONE": 4}
+    assert plan.metadata["n_oversize_pieces"] == 4
 
 
 def test_cascade_metadata_records_seeds(
@@ -52,8 +55,11 @@ def test_cascade_metadata_records_seeds(
 ) -> None:
     plan = generate_cascade_plan(synthetic_grid_4x4_with_counties, n_districts=4)
     assert plan.metadata["algorithm"] == "cascade"
-    assert len(plan.metadata["seed_counties"]) == 4
+    # 4 counties, 4 districts, none oversize, so all 4 districts come from
+    # non-oversize seed selection.
     assert plan.metadata["n_counties"] == 4
+    assert plan.metadata["n_oversize_pieces"] == 0
+    assert len(plan.metadata["non_oversize_seed_counties"]) == 4
 
 
 def test_cascade_plan_scores(

@@ -131,49 +131,84 @@ population-capacitated geographic assignment cost under radial
 seeding. On the Minnesota PoC this still beats the enacted plan on
 DBS ($0.6472$ vs $0.6390$) despite the lower compactness.
 
-\subsection{Optional: \texorpdfstring{L\textsuperscript{1}}{L1} pop-tightening}
+\subsection{Optional: \texorpdfstring{L\textsuperscript{1}}{L1} pop-tightening with DBS hill-climb}
 \label{sec:methods-tighten}
 
 The radial pipeline produces per-district pop deviation in the
 5--15\% range on real census geometry, well above the
 \textasciitilde{}0.5\% threshold required by \textit{Reynolds v.~Sims}
 for U.S.~congressional districts~\cite{reynolds1964}. An optional
-post-pass (\verb|--tighten-pop|) closes this gap via greedy
-boundary-unit swaps under an L$^1$ objective. Each pass:
+post-pass (\verb|--tighten-pop|) closes this gap via a deterministic
+two-phase local search of boundary-unit moves. Let
+$\delta_i = P(D_i) - P^{*}$ denote the signed population deviation of
+district $D_i$, let $T$ denote the user-supplied tolerance (default
+$0.005$), and call a move \emph{safe} if the source unit is not an
+articulation point of its district's induced subgraph (so that
+removing it preserves contiguity).
 
-\begin{enumerate}
-  \item Compute the signed deviations $\delta_i = P(D_i) - P^{*}$.
-  \item For every boundary unit $u$ in district $d_{\mathrm{src}}$ and
-        every neighboring district $d_{\mathrm{dest}}$, compute the
-        L$^1$ change after moving $u$:
-        \[
-          \Delta(u, d_{\mathrm{dest}}) =
-            |\delta_{d_{\mathrm{src}}} - p_u| - |\delta_{d_{\mathrm{src}}}|
-          + |\delta_{d_{\mathrm{dest}}} + p_u| - |\delta_{d_{\mathrm{dest}}}|.
-        \]
-  \item Sort candidates by ascending $\Delta$ and accept the most
-        negative one whose source district remains contiguous after
-        the move. Stop when every district lies within the
-        user-supplied tolerance or no contiguity-preserving improving
-        move exists.
-\end{enumerate}
+\paragraph{Phase 1: population tightening.}
+At each step, scan every boundary unit and every neighboring district
+and compute the L$^1$ change
+\[
+  \Delta_{L^1}(u, d_{\mathrm{dest}}) =
+    |\delta_{d_{\mathrm{src}}} - p_u| - |\delta_{d_{\mathrm{src}}}|
+  + |\delta_{d_{\mathrm{dest}}} + p_u| - |\delta_{d_{\mathrm{dest}}}|.
+\]
+Accept the safe move that most reduces $\Delta_{L^1}$ overall, or, if
+no such move exists, the safe move that strictly reduces the L$^\infty$
+maximum $\max_i |\delta_i|$. When neither 1-opt criterion finds an
+improving move but $\max_i |\delta_i|/P^{*} > T$, invoke a bounded
+\emph{chain escape}: search for an augmenting transport on the
+district-adjacency graph of the form
+\[
+  u_0 : D_0 \to D_1,\; u_1 : D_1 \to D_2,\; \ldots,\; u_{k-1} : D_{k-1} \to D_k,
+\]
+of length $k = 2$ then $k = 3$, in which each $u_j$ is a boundary unit
+between $D_j$ and $D_{j+1}$ and the chain as a whole strictly cuts
+$\max_i |\delta_i|$ even though no constituent single move does. This
+is the deterministic analogue of an ejection chain. Phase 1 terminates
+only when neither 1-opt nor bounded-chain escape finds an improving
+sequence.
 
 The L$^1$ objective is essential here. The radial seed placement puts
 the most over-target and most under-target districts on opposite sides
 of the population centroid, so no single adjacent-slice swap reduces
 the L$^\infty$ maximum, but many such swaps reduce the sum. The
 canonical Reynolds-tightening literature uses L$^\infty$ and bottoms
-out at \textasciitilde{}5\% on this geometry; the L$^1$ formulation
-runs to completion in \textasciitilde{}80 swaps on Minnesota,
-reducing $\mathrm{pop\_dev\_max}$ from $0.1124$ to $0.0021$ (i.e.~well
-inside the 0.5\% target) while leaving $\mathrm{area\_dev\_mean}$
-unchanged at $1.04$. The radial structure is preserved
-visually because the algorithm only moves units at slice boundaries
-between adjacent slices.
+out at \textasciitilde{}5\% on this geometry; the L$^1$ pass with
+chain escape runs to completion in \textasciitilde{}80 swaps on
+Minnesota, reducing $\mathrm{pop\_dev\_max}$ from $0.1124$ to $0.0021$
+(well inside the 0.5\% target) while leaving
+$\mathrm{area\_dev\_mean}$ unchanged. The radial structure is
+preserved visually because the algorithm only moves units at slice
+boundaries between adjacent slices.
+
+\paragraph{Phase 2: DBS hill-climb.}
+Once Phase 1 has converged, at each step pick the safe boundary move
+that maximally improves $\mathrm{DBS}$ (equation~\ref{eq:dbs}), subject
+to $\max_i |\delta_i|/P^{*}$ not exceeding the value Phase 1 reached
+(equivalently, never crossing back above $T$). Phase 2 runs until no
+improving safe move exists. Whereas the core PRISM pass does not
+directly minimize equation~\ref{eq:dbs}, this opt-in Phase 2 does, but
+only on the post-Phase-1 plan and only within the Reynolds-compliant
+feasible region.
+
+\paragraph{Determinism and engineering.}
+Both phases are pure functions of $(\mathrm{units},\,N,\,T)$. The only
+source of dependency beyond the core pipeline's $(\mathrm{units},\,N)$
+is the explicit tolerance $T$. The optimizer maintains a per-district
+articulation-point cache via Tarjan's algorithm on CSR adjacency
+arrays~\cite{tarjan1972}, reducing the per-candidate contiguity check
+from $O(V+E)$ to $O(1)$; an incrementally tracked boundary-unit set
+restricts each scan to units that have a different-district neighbor.
+At VTD scale the speedup is modest; at block scale (tens of thousands
+of units per district) it is the difference between hours and minutes.
 
 The pass is off by default and gated by an explicit flag. Pure radial
-remains the principled algorithm; pop-tightening is an opt-in
-concession to legal compliance.
+remains the principled algorithm; the two-phase optimizer is an opt-in
+concession to legal compliance, with Phase 2 providing the further
+courtesy of directly hill-climbing the project's stated objective once
+the Reynolds constraint is satisfied.
 
 \subsection{Determinism and tie-breaking}
 

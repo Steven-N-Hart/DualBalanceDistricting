@@ -8,23 +8,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 src/dualbalance/   Python package — implementation of the algorithm + CLI
   apportionment.py Method of Equal Proportions (2020 regression-tested)
   geography.py     Geography enum (VTD / BLOCK / BLOCK_GROUP) + TIGER URLs
+  states.py        STATE_INFO table (FIPS, TIGER name, apportioned seats)
+  types.py         shared dataclasses: Targets, Seed, Plan
   io.py            load_units, write_plan, load_plan, write_metrics, etc.
   seeds.py         deterministic radial seed placement
   districting.py   single-pass capacitated assignment + contiguity repair
   tighten.py       opt-in L¹ pop-balance tightening pass (--tighten-pop)
+  optimize.py      two-phase greedy local search with chain-escape (used by
+                   cascade and as the engine behind tighten's L¹ pass)
+  contiguity.py    Tarjan articulation-point cache for O(1) safe-removal checks
+  cascade.py       Iowa-LSA-flavored deterministic baseline (county-aggregated)
   scoring.py       pop/area deviation, DualBalance Score, Polsby-Popper, Reock
   config.py        YAML --config support (CLI > YAML > argparse-default)
-  cli.py           argparse CLI: generate / apportion / score / compare
-tests/             pytest suite (75 tests, lint-clean)
-configs/           per-state YAML configs (mn_vtd.yaml, ia_vtd.yaml, ma_vtd.yaml,
-                   tx_vtd.yaml, apportion_2020.yaml)
+  cli.py           argparse CLI: generate / generate-cascade / apportion / score / compare
+tests/             pytest suite (106 tests, lint-clean)
+configs/           per-state YAML configs (mn_vtd, ia_vtd, ma_vtd, tx_vtd,
+                   nc_vtd, wi_vtd, apportion_2020)
 data/              prepared input geojson + data/README.md (data files gitignored)
 scripts/           prep_state_units.py — per-state TIGER + Census + dra2020 + cd119 join
                    compare_state.py — side-by-side PRISM vs enacted scoring
-docs/              Formalism.md (mathematical spec) + research notes
+                   prep_bdistricting.py — ingest BDistricting reference plans for cross-algo comparison
+                   fetch_enacted_mn.py, plot_mn_poc.py, plot_mn_comparison.py — PoC helpers
+docs/              Formalism.md (mathematical spec), legal-standards.md,
+                   mn-poc-walkthrough.md, stuck-state-problem.md,
+                   gerrymandering-research.md
 manuscript/        LaTeX manuscript (main.tex + sections/ + references.bib + figures/)
 pyproject.toml     hatchling build; runtime deps: geopandas, shapely, gerrychain,
-                   numpy, pyyaml; dev extras: pytest, ruff
+                   numpy, pyyaml; dev extras: pytest, ruff; optional: numba (speeds
+                   up contiguity.py's articulation-point pass at block scale)
 .env / .env.example  Census API key (.env gitignored, .env.example committed)
 ```
 
@@ -39,13 +50,14 @@ ruff check .                   # lint
 ruff format .                  # format
 dualbalance --help             # see subcommands
 
-# Per-state PoC end-to-end (MN, IA, MA, TX currently supported)
+# Per-state PoC end-to-end (MN, IA, MA, TX, NC, WI currently supported)
 python scripts/prep_state_units.py --state MN            # writes data/mn_vtd.geojson + data/mn_enacted.geojson
 dualbalance generate --config configs/mn_vtd.yaml        # writes out/mn_yaml/{map,metrics}.{geojson,json}
-python scripts/compare_state.py --state MN               # side-by-side PRISM vs enacted comparison
+dualbalance generate-cascade --config configs/mn_vtd.yaml --out out/mn_cascade   # Cascade baseline
+python scripts/compare_state.py --state MN               # PRISM vs Cascade vs BDistricting vs enacted
 ```
 
-`prep_state_units.py` (generalized from the earlier `prep_mn_units.py`) handles any state in `STATE_INFO`: downloads TIGER 2020 VTDs, fetches Census PL 94-171 demographics (using `CENSUS_API_KEY` from `.env` if present, else synthesized uniform 1000), joins dra2020/vtd_data 2020 presidential votes, and joins the enacted 119th-Congress plan via a TIGER 2024 cd119 spatial join (representative-point join with smallest-CD-number tiebreaker). Add a new state by extending `STATE_INFO` with its FIPS, TIGER state name, and apportioned seat count.
+`prep_state_units.py` (generalized from the earlier `prep_mn_units.py`) handles any state in `dualbalance.states.STATE_INFO`: downloads TIGER 2020 VTDs, fetches Census PL 94-171 demographics (using `CENSUS_API_KEY` from `.env` if present, else synthesized uniform 1000), joins dra2020/vtd_data 2020 presidential votes, and joins the enacted 119th-Congress plan via a TIGER 2024 cd119 spatial join (representative-point join with smallest-CD-number tiebreaker). Add a new state by extending `STATE_INFO` (in [src/dualbalance/states.py](src/dualbalance/states.py)) with its FIPS, TIGER state name, and apportioned seat count.
 
 ## What the project is
 
@@ -62,17 +74,28 @@ The scoring harness is intentionally decoupled from the generator: it can score 
 
 ## The algorithm
 
-A deterministic, single-pass pipeline. No iteration, no tuning weights, no post-hoc tightening.
+PRISM's core is a deterministic, single-pass pipeline. No iteration, no tuning weights, no post-hoc tightening. An opt-in local-search refinement (`tighten.py` + `optimize.py`) is available separately; it is off by default and never modifies the core pass.
 
 1. **Radial seed placement.** Compute the population-weighted centroid of the state's atomic units. Place `N` seeds on a small circle around that centroid (radius = 0.1 % of the bounding-box diagonal) at equally-spaced angles `2π · d / N` for `d = 0, …, N-1`. Seed 0 points due east; seeds advance counter-clockwise.
 2. **Capacitated first-fit assignment.** Sort all `(unit, district)` pairs by normalized Euclidean distance ascending; assign each unit to its first district with remaining population capacity `P* = total_population / N`. Ties on distance break by `(unit_id asc, district_id asc)`. Leftover units from integer-rounding edge cases go to the district with the most remaining capacity (`np.argmax` tie-breaks to the lowest district id).
-3. **Contiguity repair.** For each district with more than one connected component, dissolve the smaller components into adjacent districts by lowest-cost transfer, where cost is `dist + pop_pen + area_pen` (normalized distance plus normalized pop and area deviations). Cascade tie-breaks: cost → pop_pen → area_pen → distance → district id.
+3. **Contiguity repair.** For each district with more than one connected component, dissolve the smaller components into adjacent districts by lowest-cost transfer, where cost is `dist + pop_pen + area_pen` (normalized distance plus normalized pop and area deviations). Tie-breaks: cost → pop_pen → area_pen → distance → district id.
 
 With seeds arranged on a small circle, the Voronoi cells degenerate to near-perfect radial slices through the population center. Each slice naturally spans both dense (near-center) and sparse (toward-the-boundary) territory, so each district holds roughly 1/N of the population *and* a coherent slice of the state's geography.
 
 ### Optional post-pass: `--tighten-pop`
 
-The radial pipeline's per-district `pop_deviation` typically sits in the 5–15 % range on real census geometry, well above the ~0.5 % *Reynolds v. Sims* threshold. The opt-in `--tighten-pop` flag runs an L¹-greedy boundary-unit swap pass (`src/dualbalance/tighten.py`) that closes this gap to the user-supplied `--pop-tolerance` (default 0.5 %). The L¹ objective `Σ_i |Pop(D_i) - P*|` is used rather than the L∞ `max_i |Pop(D_i) - P*|` because radial geometries place over-target and under-target districts on opposite sides of the population centroid: no single move between adjacent slices reduces the max, but many such moves reduce the sum. On the MN PoC the pass takes ~80 swaps and ~18 s to drive `pop_dev_max` from 11.24 % to 0.21 %, with `area_dev_mean` essentially unchanged and the visible radial structure preserved (units move only at slice boundaries).
+The radial pipeline's per-district `pop_deviation` typically sits in the 5–15 % range on real census geometry, well above the ~0.5 % *Reynolds v. Sims* threshold. The opt-in `--tighten-pop` flag runs an L¹-greedy boundary-unit swap pass (entry point in [tighten.py](src/dualbalance/tighten.py); the underlying engine lives in [optimize.py](src/dualbalance/optimize.py)) that closes this gap to the user-supplied `--pop-tolerance` (default 0.5 %).
+
+The optimizer is two-phase, both phases deterministic:
+
+- **Phase 1 (pop tightening).** Each step picks the boundary move that either reduces `Σ_d |pop_dev_d|` (L¹) or strictly reduces `max_d |pop_dev_d|` (L∞). The L¹ objective is used rather than L∞ alone because radial geometries place over-target and under-target districts on opposite sides of the population centroid: no single move between adjacent slices reduces the max, but many such moves reduce the sum. When 1-opt stalls but `pop_dev_max` is still above tolerance, a length-2 then length-3 **chain escape** (the deterministic analogue of an ejection chain) searches for an augmenting transport on the district-adjacency graph.
+- **Phase 2 (DBS hill-climb).** Once Phase 1 converges, picks the boundary move that maximally improves the DualBalance Score, subject to `pop_dev_max` not exceeding the value Phase 1 reached.
+
+Engineering: [contiguity.py](src/dualbalance/contiguity.py) maintains a per-district articulation-point cache via Tarjan on CSR adjacency arrays (numba-accelerated when available), reducing the per-candidate contiguity check from `O(V + E)` to `O(1)`. An incrementally-tracked boundary-unit set restricts each scan to units that actually have a different-district neighbor. On the MN PoC the full pass takes ~80 swaps and a few seconds to drive `pop_dev_max` from 11.24 % to 0.21 %, with `area_dev_mean` essentially unchanged and the visible radial structure preserved (units move only at slice boundaries). At block scale these caches are the difference between hours and minutes per state.
+
+### Cascade baseline (`dualbalance generate-cascade`)
+
+[cascade.py](src/dualbalance/cascade.py) is a separate, Iowa-LSA-flavored deterministic baseline (not a variant of PRISM). It aggregates VTDs to counties, uses farthest-point seeding for spread, and lexicographically prioritizes (1) county integrity (oversized counties are split via PRISM-style capacitated assignment inside the county), (2) population balance via capacitated first-fit, (3) compactness via distance-based ordering. The L¹ tightening pass from `optimize.py` runs by default after assignment (skip with `--no-tighten`). Cascade is the structural opposite of PRISM: instead of spanning urban-rural by slicing radially, it preserves administrative units and produces compact county-bundled districts. It is exposed primarily for cross-algorithm comparison; the project's primary method is PRISM.
 
 ## Core algorithm invariants
 
@@ -83,7 +106,7 @@ Non-negotiable. Check every design decision against them:
 - **Population balance is a hard cap.** Each district receives at most `P* = total_population / N` (a capacitated transportation step in the lineage of Hess-style models). Soft penalty forms destabilize on real census geometry; do not re-introduce them.
 - **Area balance is reported, not enforced.** The algorithm draws geometry that naturally trades pop-balance and area-balance equally via radial slicing; the score reports area deviation as a diagnostic.
 - **Contiguity, non-empty, full coverage.** Every unit belongs to exactly one district; the repair pass guarantees every district is contiguous.
-- **No tuning knobs on the core algorithm.** The CLI exposes only data-plumbing flags for the radial generator itself: `--districts`, `--units`, `--geography`, `--id-column`, `--pop-column`, `--out`, `--config`. There is no `--seed-method`, `--alpha`, `--max-iter`, `--reynolds-tighten`, `--enforce-area`, etc.: the core algorithm has no behavior to tune. One **opt-in** post-pass is available — `--tighten-pop` plus `--pop-tolerance T` — that performs L¹-greedy boundary-unit swaps to close the per-district pop_deviation gap to `T` (default 0.5 %). This is the only piece of the pipeline that is not a pure function of `(units, n_districts)`; it is off by default, and turning it on is a project-level decision about whether to trade a small degradation of the visible radial structure for *Reynolds v. Sims* compliance.
+- **No tuning knobs on the core algorithm.** The `generate` subcommand exposes only data-plumbing flags for the radial generator itself: `--districts`, `--units`, `--geography`, `--id-column`, `--pop-column`, `--county-column`, `--out`, `--config`. There is no `--seed-method`, `--alpha`, `--max-iter`, `--reynolds-tighten`, `--enforce-area`, etc.: the core algorithm has no behavior to tune. One **opt-in** post-pass is available — `--tighten-pop` plus `--pop-tolerance T` — that runs the two-phase deterministic optimizer to close the per-district pop_deviation gap to `T` (default 0.5 %) and then hill-climbs the DualBalance Score. This is the only piece of the PRISM pipeline that is not a pure function of `(units, n_districts)` (it depends additionally on `T`); it is off by default, and turning it on is a project-level decision about whether to trade a small degradation of the visible radial structure for *Reynolds v. Sims* compliance. The separate `generate-cascade` subcommand is a different algorithm exposed as a baseline, not a tuning of PRISM.
 - **Out-of-scope inputs.** Politics, race/demographics, communities of interest, competitiveness — the generator must not read these. Partisan metrics may be *reported* by the scoring harness but never fed back into the generator.
 
 ## Objective function

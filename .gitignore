@@ -24,7 +24,7 @@ manuscript/*.fdb_latexmk
 manuscript/sections/*.aux
 
 # Claude Code per-user settings
-.claude/settings.local.json
+.claude/
 
 # Secrets — Census Data API key etc.
 .env

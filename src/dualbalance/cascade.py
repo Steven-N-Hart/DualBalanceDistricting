@@ -36,23 +36,33 @@ from dualbalance.types import Plan
 
 
 def _split_oversize_county(
-    units: gpd.GeoDataFrame, county_id: str, n_pieces: int
-) -> dict[str, int]:
-    """Split a single county into ``n_pieces`` pseudo-counties via PRISM.
+    units: gpd.GeoDataFrame,
+    county_id: str,
+    cap: float,
+) -> tuple[dict[str, int], int]:
+    """Split a single county into ``ceil(pop/cap)`` pseudo-counties.
 
-    Returns a dict ``unit_id -> sub_index`` for the VTDs in this county.
-    Uses the existing radial-seed capacitated assignment on the county's
-    VTD subset.
+    Calls the radial-seed capacitated assignment on the county's VTD
+    subset. PRISM's internal capacitated rule guarantees each piece
+    holds at most ``county_pop / n_pieces`` people, which is at most
+    ``cap`` since ``n_pieces = ceil(pop/cap)``. Small integer-rounding
+    overflow at the splitter's fallback step is possible but bounded
+    by the largest single VTD's population.
+
+    Returns ``(assignment, n_pieces)``. ``assignment`` maps
+    ``unit_id -> piece_index``.
     """
     sub = units[units["county"].astype(str) == county_id].copy()
+    sub_pop = float(sub["population"].sum())
+    n_pieces = math.ceil(sub_pop / cap)
     if len(sub) < n_pieces:
         raise NotImplementedError(
-            f"county {county_id!r} has only {len(sub)} VTDs but needs to be split into "
-            f"{n_pieces} pieces; cascade cannot split this county"
+            f"county {county_id!r} has only {len(sub)} VTDs but needs to be split "
+            f"into {n_pieces} pieces; the county is too coarsely measured to split"
         )
-    # generate_plan needs the canonical schema (unit_id, population, area, geometry).
     sub_plan = generate_plan(sub, n_pieces, geography="cascade-split")
-    return dict(sub_plan.assignment)
+    assignment = {str(k): int(v) for k, v in sub_plan.assignment.items()}
+    return assignment, n_pieces
 
 
 def generate_cascade_plan(
@@ -85,17 +95,32 @@ def generate_cascade_plan(
     total_pop = float(units["population"].sum())
     cap = total_pop / n_districts
 
-    # 1. Detect oversize counties and split them in-place into pseudo-counties.
+    # 1. Detect oversize counties. Split each into pseudo-counties via the
+    # internal radial sub-routine. Crucially, each pseudo-county piece
+    # becomes its own district (no further bundling). This prevents the
+    # fallback-overflow problem where multiple pieces of a big county
+    # (e.g. Harris in TX) compete for the same neighboring district and
+    # the unassigned remainder gets dumped into a single over-cap bucket.
     raw_pop = units.groupby("county")["population"].sum()
     oversize = sorted(raw_pop[raw_pop > cap].index.tolist())
-    splits: dict[str, int] = {}  # original county_id -> number of pieces
+    splits: dict[str, int] = {}
+    oversize_piece_names: list[str] = []
     for c in oversize:
-        k = math.ceil(raw_pop[c] / cap)
-        sub_assign = _split_oversize_county(units, c, k)
+        sub_assign, n_used = _split_oversize_county(units, c, cap)
         for uid, sub_idx in sub_assign.items():
             mask = units["unit_id"].astype(str) == str(uid)
             units.loc[mask, "county"] = f"{c}__split{sub_idx}"
-        splits[c] = k
+        for sub_idx in sorted(set(sub_assign.values())):
+            oversize_piece_names.append(f"{c}__split{sub_idx}")
+        splits[c] = n_used
+
+    n_oversize_pieces = len(oversize_piece_names)
+    if n_oversize_pieces > n_districts:
+        raise NotImplementedError(
+            f"oversize counties require {n_oversize_pieces} dedicated districts "
+            f"but only {n_districts} are available; reduce splitter granularity "
+            "or relax the population cap"
+        )
 
     # 2. Aggregate VTDs to (possibly-split) counties.
     county_pops: dict[str, float] = {}
@@ -108,42 +133,52 @@ def generate_cascade_plan(
         county_areas[c] = float(row["area"])
         county_centroids[c] = row.geometry.centroid
 
-    n_counties = len(county_pops)
-    if n_districts > n_counties:
-        raise ValueError(
-            f"n_districts ({n_districts}) exceeds number of (possibly-split) counties "
-            f"({n_counties})"
-        )
-    # After splitting, no pseudo-county should exceed cap. If one still
-    # does, the radial split inside _split_oversize_county failed to
-    # respect the cap (rare; record and continue with best-fit assignment).
-    still_oversize = [c for c, p in county_pops.items() if p > cap]
-    if still_oversize:
-        print(f"  cascade NOTE: pseudo-counties still over cap after split: {still_oversize}")
+    # 3. Pre-assign each oversize-county piece to its own district.
+    county_to_dist: dict[str, int] = {}
+    rho = [cap] * n_districts
+    next_did = 0
+    # Sort piece names deterministically before assigning district ids.
+    for piece in sorted(oversize_piece_names):
+        county_to_dist[piece] = next_did
+        rho[next_did] -= county_pops[piece]
+        next_did += 1
 
-    # 3. Farthest-point seed selection.
-    # Start with the most populous county; subsequent seeds maximize min
-    # distance to chosen seeds. Tiebreaks: population (desc), county id (asc).
-    counties_sorted = sorted(county_pops.keys(), key=lambda c: (-county_pops[c], c))
-    seeds: list[str] = [counties_sorted[0]]
-    while len(seeds) < n_districts:
-        seed_pts = [county_centroids[s] for s in seeds]
-        best: tuple[float, float, str] | None = None  # (-min_dist, -pop, county_id)
-        for c in counties_sorted:
-            if c in seeds:
-                continue
-            min_dist = min(county_centroids[c].distance(p) for p in seed_pts)
-            # Larger min_dist is better; larger pop is better; smaller id is better.
-            key = (-min_dist, -county_pops[c], c)
-            if best is None or key < best:
-                best = key
-        assert best is not None
-        seeds.append(best[2])
+    # 4. Farthest-point seed selection on non-oversize counties for the
+    # remaining n_districts - n_oversize_pieces districts. If the oversize
+    # pieces already saturated all districts, skip seeding.
+    remaining_districts = n_districts - n_oversize_pieces
+    non_oversize = sorted(
+        (c for c in county_pops if c not in oversize_piece_names),
+        key=lambda c: (-county_pops[c], c),
+    )
+    seeds: list[str] = []
+    if remaining_districts > 0 and non_oversize:
+        seeds.append(non_oversize[0])
+        while len(seeds) < remaining_districts and len(seeds) < len(non_oversize):
+            seed_pts = [county_centroids[s] for s in seeds]
+            # Also keep oversize-piece centroids in mind so seeds spread
+            # away from already-claimed metros.
+            seed_pts += [county_centroids[p] for p in oversize_piece_names]
+            best: tuple[float, float, str] | None = None
+            for c in non_oversize:
+                if c in seeds:
+                    continue
+                min_dist = min(county_centroids[c].distance(p) for p in seed_pts)
+                key = (-min_dist, -county_pops[c], c)
+                if best is None or key < best:
+                    best = key
+            assert best is not None
+            seeds.append(best[2])
+        # Map each seed to a district id (continuing from next_did).
+        for i, s in enumerate(seeds):
+            county_to_dist[s] = next_did + i
 
-    seed_to_dist = {s: i for i, s in enumerate(seeds)}
-
-    # 4. Capacitated first-fit assignment of counties to districts.
-    # Sort all (county, seed) pairs by distance ascending.
+    # 5. Capacitated first-fit assignment of remaining (non-oversize,
+    # non-seed) counties to ALL districts, including the oversize-piece
+    # districts (which have some residual capacity since each piece is
+    # at most cap-sized). Each district has a centroid: for oversize
+    # pieces, the piece geometry's centroid; for non-oversize seeds, the
+    # seed county's centroid.
     diag = float(
         np.hypot(
             units.total_bounds[2] - units.total_bounds[0],
@@ -153,17 +188,22 @@ def generate_cascade_plan(
     if diag <= 0:
         diag = 1.0
 
+    district_seed_centroid: dict[int, Any] = {}
+    for piece in oversize_piece_names:
+        district_seed_centroid[county_to_dist[piece]] = county_centroids[piece]
+    for s in seeds:
+        district_seed_centroid[county_to_dist[s]] = county_centroids[s]
+
     pairs: list[tuple[float, str, int]] = []
-    for c in counties_sorted:
+    for c in non_oversize:
+        if c in county_to_dist:
+            continue
         cp = county_centroids[c]
-        for s in seeds:
-            d = cp.distance(county_centroids[s]) / diag
-            pairs.append((d, c, seed_to_dist[s]))
-    # Sort by (distance asc, county asc, district asc) for determinism.
+        for did, sc in district_seed_centroid.items():
+            d = cp.distance(sc) / diag
+            pairs.append((d, c, did))
     pairs.sort(key=lambda x: (x[0], x[1], x[2]))
 
-    rho = [cap] * n_districts
-    county_to_dist: dict[str, int] = {}
     for _d, c, i in pairs:
         if c in county_to_dist:
             continue
@@ -171,12 +211,13 @@ def generate_cascade_plan(
             county_to_dist[c] = i
             rho[i] -= county_pops[c]
 
-    # 5. Fallback: any unassigned county goes to the district with largest
-    # remaining capacity. argmax tiebreaks to smallest district id.
-    for c in counties_sorted:
+    # 6. Fallback: any still-unassigned non-oversize county goes to the
+    # district with the most remaining capacity (across all districts).
+    # argmax tiebreaks to smallest district id.
+    for c in non_oversize:
         if c in county_to_dist:
             continue
-        i = int(np.argmax(rho))
+        i = max(range(n_districts), key=lambda did: (rho[did], -did))
         county_to_dist[c] = i
         rho[i] -= county_pops[c]
 
@@ -198,8 +239,9 @@ def generate_cascade_plan(
                 "population": cap,
                 "area": float(units["area"].sum()) / n_districts,
             },
-            "n_counties": n_counties,
-            "seed_counties": seeds,
+            "n_counties": len(county_pops),
+            "n_oversize_pieces": n_oversize_pieces,
+            "non_oversize_seed_counties": seeds,
             "counties_split_by_cap": splits,
         },
     )

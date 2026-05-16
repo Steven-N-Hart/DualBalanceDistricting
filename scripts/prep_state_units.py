@@ -114,18 +114,16 @@ _PL_VARIABLES: dict[str, str] = {
 }
 
 
-def _fetch_pl_via_api(geography: Geography, state_fips: str, api_key: str) -> pd.DataFrame:
-    """Query the 2020 PL 94-171 dataset for total pop + race VAP per unit."""
-    level = _API_GEO_LEVEL[geography]
+def _fetch_pl_chunk(level: str, in_clause: str, api_key: str) -> list[list[str]]:
+    """Single Census-API call; returns raw rows (no header)."""
     params = {
         "get": ",".join(_PL_VARIABLES.values()),
         "for": f"{level}:*",
-        "in": f"state:{state_fips} county:*",
+        "in": in_clause,
         "key": api_key,
     }
     query = urllib.parse.urlencode(params).replace("+", "%20")
     url = f"https://api.census.gov/data/2020/dec/pl?{query}"
-    print(f"  fetching {len(_PL_VARIABLES)} PL 94-171 variables from Census Data API")
     with urllib.request.urlopen(url, timeout=180) as resp:
         body = resp.read()
     try:
@@ -133,16 +131,62 @@ def _fetch_pl_via_api(geography: Geography, state_fips: str, api_key: str) -> pd
     except json.JSONDecodeError as exc:
         snippet = body.decode("utf-8", errors="replace")[:300]
         raise RuntimeError(f"Census API returned non-JSON: {snippet}") from exc
+    return data
 
-    header = data[0]
+
+def _fetch_pl_via_api(
+    geography: Geography,
+    state_fips: str,
+    api_key: str,
+    counties: list[str] | None = None,
+) -> pd.DataFrame:
+    """Query the 2020 PL 94-171 dataset for total pop + race VAP per unit.
+
+    For block-level queries the Census API truncates ``county:*`` over a
+    state-wide request, so we iterate per-county instead.
+    """
+    level = _API_GEO_LEVEL[geography]
+    print(f"  fetching {len(_PL_VARIABLES)} PL 94-171 variables from Census Data API")
+
+    if geography == Geography.BLOCK and counties is not None:
+        chunks: list[list[list[str]]] = []
+        header: list[str] | None = None
+        for i, county_fips in enumerate(counties, 1):
+            data = _fetch_pl_chunk(
+                level=level,
+                in_clause=f"state:{state_fips} county:{county_fips}",
+                api_key=api_key,
+            )
+            if header is None:
+                header = data[0]
+            chunks.append(data[1:])
+            if i % 25 == 0 or i == len(counties):
+                print(f"    fetched {i}/{len(counties)} counties")
+        if header is None:
+            raise RuntimeError("Census API returned no data for any county")
+        all_rows = [row for chunk in chunks for row in chunk]
+    else:
+        data = _fetch_pl_chunk(
+            level=level,
+            in_clause=f"state:{state_fips} county:*",
+            api_key=api_key,
+        )
+        header = data[0]
+        all_rows = data[1:]
+
     state_idx = header.index("state")
     county_idx = header.index("county")
     unit_idx = header.index(level)
+    # Census-block GEOIDs include the tract; other geographies do not.
+    tract_idx = header.index("tract") if "tract" in header else None
     var_idx = {canonical: header.index(code) for canonical, code in _PL_VARIABLES.items()}
 
     rows = []
-    for row in data[1:]:
-        geoid = row[state_idx] + row[county_idx] + row[unit_idx]
+    for row in all_rows:
+        if tract_idx is not None:
+            geoid = row[state_idx] + row[county_idx] + row[tract_idx] + row[unit_idx]
+        else:
+            geoid = row[state_idx] + row[county_idx] + row[unit_idx]
         record: dict[str, Any] = {"GEOID": geoid}
         for canonical, idx in var_idx.items():
             record[canonical] = int(row[idx])
@@ -194,6 +238,7 @@ def _attach_demographics(
     id_column: str,
     csv_path: Path | None,
     api_key: str | None,
+    counties: list[str] | None = None,
 ) -> gpd.GeoDataFrame:
     """Join total population + race VAP onto ``gdf``."""
     if csv_path is not None:
@@ -209,7 +254,7 @@ def _attach_demographics(
 
     if api_key:
         try:
-            pl_df = _fetch_pl_via_api(geography, state_fips, api_key)
+            pl_df = _fetch_pl_via_api(geography, state_fips, api_key, counties=counties)
         except RuntimeError as exc:
             print(
                 f"  WARNING: Census API call failed ({exc}); "
@@ -466,6 +511,13 @@ def main(argv: list[str] | None = None) -> int:
             )
         gdf = gdf[[expected_id, "geometry"]].copy()
 
+        # For block-level queries the Census API truncates a wildcard
+        # `county:*` request; derive the county list from the shapefile
+        # and pass it through so we can iterate per county.
+        counties: list[str] | None = None
+        if geography == Geography.BLOCK:
+            counties = sorted({str(gid)[2:5] for gid in gdf[expected_id].astype(str)})
+
         gdf = _attach_demographics(
             gdf,
             geography=geography,
@@ -473,6 +525,7 @@ def main(argv: list[str] | None = None) -> int:
             id_column=expected_id,
             csv_path=args.population_csv,
             api_key=api_key,
+            counties=counties,
         )
 
         if not args.no_elections:

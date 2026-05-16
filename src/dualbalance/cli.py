@@ -105,6 +105,8 @@ def _cmd_generate_cascade(args: argparse.Namespace, defaults: dict[str, Any]) ->
             "Pass --county-column COL or set county_column in the YAML config."
         )
     plan = generate_cascade_plan(units, args.districts, geography=geography.cli_name)
+    if not args.no_tighten:
+        plan = tighten_population(plan, units, pop_tolerance=args.pop_tolerance)
     metrics = score_plan(plan, units)
 
     out_dir = Path(args.out)
@@ -293,6 +295,22 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         dest="extra_columns",
         default=None,
         help=argparse.SUPPRESS,
+    )
+    cascade.add_argument(
+        "--no-tighten",
+        dest="no_tighten",
+        action="store_true",
+        help="Skip the L^1 population-tightening pass that runs by default. "
+        "Without tightening, per-district population deviation may exceed "
+        "the Reynolds v. Sims threshold.",
+    )
+    cascade.add_argument(
+        "--pop-tolerance",
+        dest="pop_tolerance",
+        type=float,
+        default=0.005,
+        help="Target |pop - P*|/P* for the tightening pass (default 0.005 = "
+        "the typical Reynolds v. Sims threshold).",
     )
     cascade.add_argument("--out", type=Path, help="Output directory.")
 
