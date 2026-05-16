@@ -15,12 +15,12 @@ import numpy as np
 states = ["IA", "MA", "MN", "NC", "WI", "TX"]
 
 # DualBalance Score (higher is better).
-opt_dbs =     [0.9651, 0.8124, 0.6613, 0.7972, 0.6953, 0.7030]  # TX partial
+opt_dbs =     [0.9651, 0.8124, 0.6613, 0.7972, 0.6953, 0.7077]
 cascade_dbs = [0.8987, 0.7184, 0.6956, 0.8109, 0.8023, 0.6945]
 enacted_dbs = [0.8828, 0.7246, 0.6391, 0.7689, 0.7410, 0.6658]
 
 # pop_dev_max as percentage (lower is better; Karcher target = 0.05%).
-opt_popdev_pct =     [0.0499, 0.0988, 0.0599, 0.0794, 0.0383, 0.5186]
+opt_popdev_pct =     [0.0499, 0.0988, 0.0599, 0.0794, 0.0383, 0.5186]  # TX final
 cascade_popdev_pct = [0.2902, 41.5562, 76.1446, 10.2736, 0.4971, 24.5835]
 enacted_popdev_pct = [0.0066, 0.6184, 1.3212, 0.6630, 0.0803, 2.6098]
 
@@ -62,8 +62,7 @@ for i, (a, b, c) in enumerate(zip(opt_popdev_pct, cascade_popdev_pct, enacted_po
     ax_pop.text(i + width, c * 1.18, f"{c:.2f}", ha="center", fontsize=7)
 
 fig.suptitle(
-    "DualBalance Districting vs Cascade (Iowa-LSA style) vs Enacted (119th Congress)\n"
-    "(TX still running, value shown is current Phase 2 progress)",
+    "DualBalance Districting vs Cascade (Iowa-LSA style) vs Enacted (119th Congress)",
     fontsize=11,
 )
 fig.tight_layout()

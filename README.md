@@ -200,10 +200,9 @@ refinement from VTD-Karcher init at 0.05% tolerance:
 | MN | 8 | **0.6613** | 0.6391 | 0.06% | 1.32% |
 | NC | 14 | **0.7972** | 0.7689 | 0.08% | 0.66% |
 | WI | 8 | 0.6953 | 0.7410 | **0.04%** ✓ | 0.08% |
-| TX | 38 | **0.7030** | 0.6658 | 0.52% | 2.61% |
+| TX | 38 | **0.7077** | 0.6658 | 0.52% | 2.61% |
 
-(✓ = below 0.05% Karcher line. TX value is from a run still in
-progress at write time and may improve.)
+(✓ = below 0.05% Karcher line.)
 
 **Headline reads:**
 - **5 of 6 beat enacted on DBS.** WI is the one loss.
