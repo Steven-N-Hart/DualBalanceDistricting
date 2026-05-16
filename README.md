@@ -128,9 +128,15 @@ states needs a different structural commitment.
 
 ## The algorithm
 
-### PRISM: deterministic single-pass core
+DualBalance Districting is a three-stage deterministic pipeline.
+Each stage is a pure function of its inputs; the composition is
+therefore a pure function of `(state geometry, census populations,
+N, Karcher tolerance T)`.
 
-Three steps, no iteration:
+### Stage 1 — Radial seed (PRISM)
+
+The seed step is **PRISM** (Population-weighted Radial Impartial
+Slicing). Three sub-steps, no iteration:
 
 1. **Radial seed placement.** Compute the population-weighted
    centroid of the units. Place `N` seeds on a small circle around
@@ -148,45 +154,44 @@ Three steps, no iteration:
 
 The radial configuration is what carries the dual-balance property:
 each slice spans both dense (near-center) and sparse (boundary-side)
-territory.
+territory. PRISM alone leaves several percent per-district
+population deviation — radially well-spread but not yet legally
+viable. The next two stages close the gap.
 
-### Multi-resolution refinement (the path to Karcher)
+### Stage 2 — VTD-scale tightening (hybrid Phase 1 + Phase 2)
 
-Pure radial typically leaves a few percent per-district population
-deviation, well above the ~0.05% practical *Karcher v. Daggett*
-threshold for congressional districts. We close that gap
-deterministically.
-
-**Phase 1 (pop tightening).** Greedy local search of boundary-unit
+**Phase 1 — pop tightening.** Greedy local search of boundary-unit
 moves. Each accepted move either reduces the L¹ sum of |pop_dev| or
-strictly reduces `pop_dev_max`. When single-unit moves stall in a
-multi-tied-max local optimum, a length-2 then length-3
-**augmenting-chain escape** — the deterministic analogue of an
-ejection chain — searches for a transport sequence on the
-district-adjacency graph that the 1-opt neighborhood cannot express.
+strictly reduces `pop_dev_max` (max-reducing moves are preferred).
+When single-unit moves stall in a multi-tied-max local optimum, a
+length-2 then length-3 **augmenting-chain escape** — the
+deterministic analogue of an ejection chain — searches for a
+transport sequence on the district-adjacency graph that the 1-opt
+neighborhood cannot express.
 
-**Phase 2 (DBS hill-climb).** Once Phase 1 converges, picks the
+**Phase 2 — DBS hill-climb.** Once Phase 1 converges, picks the
 boundary move that maximally improves DBS, subject to `pop_dev_max`
 not exceeding the value Phase 1 reached.
 
-**Block-scale refinement.** Phase 1 at VTD scale can stall above
-Karcher because typical VTDs are too large (avg ~1000–3000 people)
-to make sub-Karcher pop adjustments. We re-initialize at Census
-block scale by inheriting each block's district from its containing
-VTD (a deterministic spatial join), then re-run the optimizer at
-block granularity. Block populations average ~20 people, so Phase 2
-has the room it needs to refine area balance under the same pop
-budget.
+### Stage 3 — Block-scale refinement
 
-To make block-scale tractable, the contiguity check is cached:
-[contiguity.py](src/dualbalance/contiguity.py) maintains per-district
-articulation points via Tarjan on CSR adjacency arrays
+Phase 1 at VTD scale can stall above Karcher because typical VTDs
+are too large (avg ~1000–3000 people) to make sub-Karcher pop
+adjustments. We re-initialize at Census block scale by inheriting
+each block's district from its containing VTD (a deterministic
+spatial join), then re-run Phases 1 and 2 at block granularity.
+Block populations average ~20 people, so the running-max envelope
+around the Karcher target admits many more candidate moves and
+Phase 2 has the room it needs to refine area balance.
+
+### Engineering: per-district articulation cache
+
+To make the block-scale stage tractable, contiguity checks are
+cached. [contiguity.py](src/dualbalance/contiguity.py) maintains
+per-district articulation points via Tarjan on CSR adjacency arrays
 (numba-accelerated when available), reducing each candidate
 contiguity check from `O(V + E)` to `O(1)` and giving a 28× speedup
 on the per-move cost compared to a networkx baseline.
-
-All phases are deterministic. The full pipeline is a pure function
-of `(state geometry, census populations, N, Karcher tolerance)`.
 
 ## Results
 

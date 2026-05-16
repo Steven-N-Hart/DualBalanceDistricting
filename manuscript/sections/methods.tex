@@ -8,18 +8,24 @@
 
 Given a state $S$ partitioned into atomic units
 $U = \{u_1, \ldots, u_M\}$ (census blocks, block groups, or VTDs) and
-a target district count $N$, PRISM produces a deterministic
-assignment $\pi : U \to \{1, \ldots, N\}$ such that each district
-$D_i = \pi^{-1}(i)$ is contiguous, non-empty, and as close as the
-geometry allows to representing both $1/N$ of the state's people and
-$1/N$ of its geography. Let $P = \sum_u \mathrm{pop}(u)$ and
-$A = \sum_u \mathrm{area}(u)$ with per-district targets $P^* = P/N$
-and $A^* = A/N$.
+a target district count $N$, DualBalance Districting produces a
+deterministic assignment $\pi : U \to \{1, \ldots, N\}$ such that
+each district $D_i = \pi^{-1}(i)$ is contiguous, non-empty, and as
+close as the geometry allows to representing both $1/N$ of the
+state's people and $1/N$ of its geography. Let
+$P = \sum_u \mathrm{pop}(u)$ and $A = \sum_u \mathrm{area}(u)$ with
+per-district targets $P^* = P/N$ and $A^* = A/N$.
 
-Three steps: radial seed placement (\S\ref{sec:methods-seeds}),
-capacitated first-fit assignment (\S\ref{sec:methods-assign}),
-contiguity repair (\S\ref{sec:methods-repair}). No iteration; no
-post-hoc tightening in the core pipeline.
+The full pipeline runs in three stages: a radial-seed stage,
+\emph{PRISM} (\S\S\ref{sec:methods-seeds}--\ref{sec:methods-repair}),
+which provides the deterministic starting configuration; a
+VTD-scale tightening stage (\S\ref{sec:methods-optimize}) which
+drives $\max_i |\delta_i|/P^{*}$ toward the user-supplied tolerance
+$\tau$ via a hybrid greedy local search with bounded-chain escape;
+and a block-scale refinement stage (\S\ref{sec:methods-block})
+which re-initializes at finer granularity to recover area balance
+within the achieved pop-deviation envelope. Each stage is a pure
+function of its inputs.
 
 \subsection{Radial seed placement}
 \label{sec:methods-seeds}
@@ -133,6 +139,7 @@ DBS ($0.6472$ vs $0.6390$) despite the lower compactness.
 
 \subsection{Optional: \texorpdfstring{L\textsuperscript{1}}{L1} pop-tightening with DBS hill-climb}
 \label{sec:methods-tighten}
+\label{sec:methods-optimize}
 
 The radial pipeline produces per-district pop deviation in the
 5--15\% range on real census geometry, well above the
@@ -146,42 +153,68 @@ $0.005$), and call a move \emph{safe} if the source unit is not an
 articulation point of its district's induced subgraph (so that
 removing it preserves contiguity).
 
-\paragraph{Phase 1: population tightening.}
+\paragraph{Phase 1: population tightening (hybrid L\textsuperscript{1} + max-norm).}
 At each step, scan every boundary unit and every neighboring district
-and compute the L$^1$ change
+and compute both the L$^1$ change
 \[
   \Delta_{L^1}(u, d_{\mathrm{dest}}) =
     |\delta_{d_{\mathrm{src}}} - p_u| - |\delta_{d_{\mathrm{src}}}|
-  + |\delta_{d_{\mathrm{dest}}} + p_u| - |\delta_{d_{\mathrm{dest}}}|.
+  + |\delta_{d_{\mathrm{dest}}} + p_u| - |\delta_{d_{\mathrm{dest}}}|
 \]
-Accept the safe move that most reduces $\Delta_{L^1}$ overall, or, if
-no such move exists, the safe move that strictly reduces the L$^\infty$
-maximum $\max_i |\delta_i|$. When neither 1-opt criterion finds an
-improving move but $\max_i |\delta_i|/P^{*} > T$, invoke a bounded
-\emph{chain escape}: search for an augmenting transport on the
-district-adjacency graph of the form
+and the max-norm effect: a move \emph{strictly reduces} the global
+maximum iff $|\delta_{d_{\mathrm{src}}} - p_u| < \max_i |\delta_i|$,
+$|\delta_{d_{\mathrm{dest}}} + p_u| < \max_i |\delta_i|$, and at least
+one of $\delta_{d_{\mathrm{src}}}, \delta_{d_{\mathrm{dest}}}$ is
+itself at the current maximum. Each scanned candidate is labeled with
+a priority key: priority $0$ if it strictly reduces the max,
+priority $1$ if it only reduces L$^1$. Candidates are ranked
+lexicographically by $(\text{priority}, \Delta_{L^1})$, and the safe
+top-ranked candidate is accepted.
+
+This hybrid is essential. Pure L$^1$-greedy leaves the worst district
+untouched when it sits between two other over-target districts:
+draining it requires L$^1$-neutral moves that the L$^1$ criterion
+rejects. Pure max-norm gets stuck symmetrically: when two districts
+are tied at the max, no single move strictly reduces the global
+maximum (draining one leaves the other at the same value). The
+hybrid takes any move that helps either norm, with max-reducing moves
+preferred so the worst district is targeted whenever possible.
+
+When neither 1-opt criterion finds an improving move but
+$\max_i |\delta_i|/P^{*} > T$, invoke a bounded \emph{chain escape}:
+search for an augmenting transport on the district-adjacency graph
+of the form
 \[
   u_0 : D_0 \to D_1,\; u_1 : D_1 \to D_2,\; \ldots,\; u_{k-1} : D_{k-1} \to D_k,
 \]
 of length $k = 2$ then $k = 3$, in which each $u_j$ is a boundary unit
-between $D_j$ and $D_{j+1}$ and the chain as a whole strictly cuts
-$\max_i |\delta_i|$ even though no constituent single move does. This
-is the deterministic analogue of an ejection chain. Phase 1 terminates
-only when neither 1-opt nor bounded-chain escape finds an improving
-sequence.
+between $D_j$ and $D_{j+1}$. The chain is accepted if it strictly
+cuts the global maximum, or if it holds the maximum flat while
+strictly reducing the L$^1$ sum (which is what happens when several
+districts are tied at the max: each chain drains one of them, the
+global maximum stays at the same value until the last tied district
+is drained, but the L$^1$ sum drops monotonically). The unit-level
+search inside each district triple sorts the arc lists $B_{i \to j}$
+by population value; matching pairs $(u, v)$ are found via binary
+search around a target population value rather than by Cartesian
+enumeration, bounding the per-triple cost by
+$O(|B_{i \to j}| \log |B_{j \to k}|)$. Application is in
+\emph{reverse} order ($u_{k-1}$ first, then $u_{k-2}$, etc.) so the
+intermediate districts never temporarily overload during the chain.
+This is the deterministic analogue of an ejection chain. Phase 1
+terminates only when neither 1-opt nor bounded-chain escape finds an
+improving sequence.
 
-The L$^1$ objective is essential here. The radial seed placement puts
-the most over-target and most under-target districts on opposite sides
-of the population centroid, so no single adjacent-slice swap reduces
-the L$^\infty$ maximum, but many such swaps reduce the sum. The
-canonical Reynolds-tightening literature uses L$^\infty$ and bottoms
-out at \textasciitilde{}5\% on this geometry; the L$^1$ pass with
-chain escape runs to completion in \textasciitilde{}80 swaps on
-Minnesota, reducing $\mathrm{pop\_dev\_max}$ from $0.1124$ to $0.0021$
-(well inside the 0.5\% target) while leaving
-$\mathrm{area\_dev\_mean}$ unchanged. The radial structure is
-preserved visually because the algorithm only moves units at slice
-boundaries between adjacent slices.
+The L$^1$ objective is essential to the radial geometry. Seed
+placement puts the most over-target and most under-target districts
+on opposite sides of the population centroid, so no single
+adjacent-slice swap reduces the L$^\infty$ maximum, but many such
+swaps reduce the sum. The canonical Reynolds-tightening literature
+uses L$^\infty$ and bottoms out at \textasciitilde{}5\% on this
+geometry; the hybrid pass with chain escape runs to completion in
+\textasciitilde{}80 swaps on Minnesota, reducing
+$\mathrm{pop\_dev\_max}$ from $0.1124$ to $0.0021$ while leaving
+$\mathrm{area\_dev\_mean}$ essentially unchanged.
 
 \paragraph{Phase 2: DBS hill-climb.}
 Once Phase 1 has converged, at each step pick the safe boundary move
@@ -209,6 +242,108 @@ remains the principled algorithm; the two-phase optimizer is an opt-in
 concession to legal compliance, with Phase 2 providing the further
 courtesy of directly hill-climbing the project's stated objective once
 the Reynolds constraint is satisfied.
+
+\subsection{Multi-resolution refinement: VTD to Census block}
+\label{sec:methods-block}
+
+The hybrid Phase 1 + chain escape closes most of the Reynolds gap
+at VTD scale, but not all of it. Modern U.S. congressional plans
+must clear the much tighter \emph{Karcher v.~Daggett}~\cite{karcher1983}
+practical threshold of $\sim 0.05\%$ total deviation, and at VTD
+granularity the residual gap is structural rather than
+algorithmic. The smallest single-unit move has the size of the
+smallest VTD's population. On real states the median VTD population
+is on the order of $10^3$, while the Karcher budget on a $\sim 800$k
+ideal district is $\sim 400$ people. Most candidate moves overshoot
+the budget on at least one endpoint, and Phase 2 starves: the
+running-max constraint admits few moves, and the algorithm settles
+above Karcher with most of the residual area-balance gain
+unrealized.
+
+The fix is to refine at finer granularity. We re-run the optimizer
+on Census tabulation blocks (median population $\sim 20$ rather
+than $\sim 10^3$), initializing from the VTD-Karcher plan rather
+than re-seeding from scratch. The pipeline is:
+
+\begin{enumerate}
+  \item Compute the VTD-level plan
+        $\pi_{\mathrm{VTD}}: V_{\mathrm{VTD}} \to \{1, \ldots, N\}$
+        via PRISM + Phase 1 + Phase 2 at VTD scale with tolerance $T$.
+  \item Load the block-level units $V_{\mathrm{block}}$ and project
+        both layers to the same equal-area CRS.
+  \item For each block $u \in V_{\mathrm{block}}$, find the VTD
+        polygon $v(u) \in V_{\mathrm{VTD}}$ containing its
+        representative point, and set
+        $\pi_0(u) := \pi_{\mathrm{VTD}}(v(u))$. Blocks whose
+        representative point lies outside every VTD polygon (rare,
+        only on coastal/water boundary cases) fall back to the
+        nearest VTD by centroid distance. The spatial join is
+        deterministic given a fixed tie-breaking order on
+        $\mathrm{unit\_id}$.
+  \item Run Phase 1 + Phase 2 again at block scale starting from
+        $\pi_0$, with the same tolerance $T$.
+\end{enumerate}
+
+Because VTDs are unions of whole blocks, $\pi_0$ inherits the
+VTD-level plan's pop totals and contiguity exactly: the block-level
+plan is identical to the VTD-level plan re-described at finer
+granularity. Phase 1 at block scale therefore has nothing to do on
+states where the VTD-level pass reached $T$. Phase 2 has substantial
+freedom: block populations are two orders of magnitude smaller than
+VTD populations, so the running-max envelope around $T$ admits many
+candidate moves and the DBS hill-climb runs until saturation.
+
+Because PRISM-style seeding at block scale starts from a much worse
+initial configuration than the VTD seed (the population-weighted
+centroid is the same but the much higher density of degenerate
+articulation-point boundaries traps the optimizer), the refinement
+strategy is the path that works in practice: VTD as a coarse
+solver, blocks for the precise area-balance recovery.
+
+\subsection{Engineering: per-district articulation-point cache}
+\label{sec:methods-contig}
+
+The hot loop of the optimizer asks repeatedly whether a candidate
+boundary unit $u$ can be safely removed from its district $d$ -- in
+other words, whether $u$ is an articulation point of the subgraph
+$G[V_d]$. A naive implementation runs $\mathcal{O}(|V_d| + |E_d|)$
+per query via \verb|networkx.is_connected| on the post-removal
+subgraph, which dominates runtime at block scale.
+
+We maintain a per-district cache. For each district $d$, the set
+$A_d \subseteq V_d$ of articulation points is precomputed by Tarjan's
+algorithm~\cite{tarjan1972} on CSR (compressed sparse row) integer
+adjacency arrays. The per-query \verb|can_remove(u)| reduces to the
+set membership $u \notin A_{\pi(u)}$, returned in $\mathcal{O}(1)$
+amortized. After each accepted move $u: d_{\mathrm{src}} \to d_{\mathrm{dest}}$
+the two affected articulation sets $A_{d_{\mathrm{src}}}$,
+$A_{d_{\mathrm{dest}}}$ are recomputed; districts not touched by the
+move keep their cached set unchanged.
+
+Each Tarjan recompute is $\mathcal{O}(|V_d| + |E_d|)$ rather than
+the global $\mathcal{O}(|V| + |E|)$ of the naive check
+($|V_d| \approx |V|/N$ for $N$ districts). The recompute itself is
+\verb|@njit|-compiled via numba when available, operating on
+preallocated workspace buffers (a single integer DFS stack, two
+boolean masks, and three integer arrays sized to $|V|$). On a
+typical block-scale district subgraph of $\sim 44{,}000$ nodes the
+JIT'd recompute completes in $\sim 20$~ms, compared to $\sim 560$~ms
+for the same query through \verb|networkx.articulation_points|: a
+$28\times$ speedup. Across a full block-scale optimizer run
+(thousands of accepted moves and tens of thousands of candidates per
+move), this is the difference between a 20-hour run and a 30-minute
+run.
+
+A boundary-unit set $\partial = \{u : \exists v \in N(u), \pi(v) \neq \pi(u)\}$
+is also maintained incrementally and updated after each move (only
+$u$ and its graph neighbors need to be re-checked). The inner scan
+iterates $\partial$ rather than $V$, dropping per-pass work from
+$|V|$ to $O(|\partial|)$, which on real states is roughly the
+square root of $|V|$.
+
+Neither caching layer changes the algorithm's output. They preserve
+determinism exactly and make the block-scale pipeline tractable on
+commodity hardware.
 
 \subsection{Determinism and tie-breaking}
 
