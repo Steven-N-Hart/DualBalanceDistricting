@@ -1,275 +1,231 @@
 \section{Introduction}
 
-This paper is principally about how districting metrics should be
-read once line-drawing becomes a deterministic function rather than
-a discretionary act. The algorithm we propose, PRISM, is the
-construction that makes the question concrete; the legal-doctrinal
-and metric-interpretation arguments that follow are where the
-paper's main weight sits.
+\subsection{The Problem Is Getting Worse}
 
-\subsection{The Instability of Human-Drawn Districts}
+U.S. legislative districts are drawn by human beings under nominal
+constraints, and the structure invites gerrymandering. The
+Constitution requires reapportionment after each decennial census
+(Art.~I, \S2) but specifies neither a method for allocating seats
+among the states nor a procedure for drawing district boundaries
+within them. Both decisions have, by default, been delegated to
+political actors. The result is what the design predicts: maps drawn
+to advantage whichever party controls the pen at the moment of
+redistricting.
 
-Legislative redistricting in the United States is structurally unstable. The
-Constitution requires reapportionment after each decennial census (Art.~I, \S2)
-but specifies neither a method for allocating seats among the states nor a
-procedure for drawing district boundaries within them. Both decisions have
-been delegated, by default, to political actors. The result, predictable from
-the design, is that maps are routinely drawn to favor whichever group controls
-the pen at the moment of redistricting. The Supreme Court has acknowledged the
-problem in its strongest terms while declining to remedy it: in
-\emph{Rucho v.~Common Cause}~\cite{rucho2019}, Chief Justice Roberts wrote for
-a 5--4 majority that partisan gerrymandering claims present nonjusticiable
-political questions, conceding that the practice is ``incompatible with
-democratic principles'' but holding that no manageable judicial standard
-exists. Justice Kagan's dissent, joined by Ginsburg, Breyer, and
-Sotomayor, argued the opposite: that lower courts had already converged on
-workable tests, and that ``of all times to abandon the Court's duty to declare
-the law, this was not the one''~\cite{rucho2019}.
+The federal courts have largely stepped back from the problem. In
+\emph{Rucho v.~Common Cause}~\cite{rucho2019}, the Supreme Court held
+5--4 that partisan-gerrymandering claims present nonjusticiable
+political questions; the Court conceded the practice is
+``incompatible with democratic principles'' but found no manageable
+judicial standard. After \emph{Rucho}, the only federal channel for
+gerrymandering review is racial. That channel has now narrowed as
+well. Section~2 of the Voting Rights Act, as construed in
+\emph{Thornburg v.~Gingles}~\cite{gingles1986}, requires
+majority-minority districts where the three Gingles preconditions are
+met. The Court reaffirmed this in \emph{Allen v.~Milligan}~\cite{milligan2023}.
+One year later, \emph{Alexander v.~South Carolina Conf.~of the
+NAACP}~\cite{alexander2024} raised plaintiffs' evidentiary burden;
+\emph{Louisiana v.~Callais}~\cite{callais2026} held in April 2026
+that even a plan drawn to comply with a prior Section~2 order may
+violate the Equal Protection Clause if Section~2 did not in fact
+compel a race-based remedy. The combined effect of \emph{Alexander}
+and \emph{Callais} is that race-conscious line-drawing now faces a
+narrower window of constitutional safety than at any point since the
+VRA's adoption.
 
-Race-conscious districting operates under a separate and increasingly
-constrained regime. Section~2 of the Voting Rights Act, as construed in
-\emph{Thornburg v.~Gingles}~\cite{gingles1986}, requires majority-minority
-districts where the three Gingles preconditions are met; the Fourteenth
-Amendment, as construed in \emph{Shaw v.~Reno}~\cite{shaw1993} and its
-progeny, subjects to strict scrutiny any map in which race ``predominates''
-in the line-drawing. The two doctrines pull in opposite directions. The
-Supreme Court reaffirmed Section~2 in \emph{Allen v.~Milligan}~\cite{milligan2023},
-requiring Alabama to draw a second majority-Black district. One year later,
-in \emph{Alexander v.~South Carolina Conf.~of the NAACP}~\cite{alexander2024},
-the Court reversed a district court's racial-gerrymander finding and raised
-the plaintiff's evidentiary burden, holding that challengers must
-``disentangle race from politics'' and produce illustrative alternative maps
-that satisfy all of the state's legitimate goals. In April 2026, in
-\emph{Louisiana v.~Callais}~\cite{callais2026}, the Court further held that
-even a map drawn to comply with a prior \emph{Section~2} order may itself
-violate the Equal Protection Clause if the VRA did not in fact compel the
-race-based remedy. The combined effect of \emph{Alexander} and
-\emph{Callais} is that race-conscious line-drawing now faces a narrower
-window of constitutional safety than at any point since the VRA's adoption.
+Federal partisan review is foreclosed. Section~2 has been
+narrowed. State review under \emph{Moore v.~Harper}~\cite{moore2023}
+remains, but is uneven and politically contingent: roughly ten state
+supreme courts have so far recognized state-constitutional
+partisan-gerrymandering claims~\cite{stateline2025}; the rest have
+not. Several states have already redrawn maps mid-decade in response
+to electoral results rather than census revision. Redistricting is
+shifting from a once-per-decade event into a continuous partisan
+exercise. The trend line is bad and accelerating.
 
-Two structural consequences follow. First, the only federal channel for
-gerrymandering review is racial; partisan claims are foreclosed under
-\emph{Rucho}. Second, because Black voters in the United States vote
-roughly nine-to-one Democratic, race and partisanship are statistically
-entangled~\cite{hasen2018,coluraceparty}. A state legislator can openly
-gerrymander on partisan grounds and is shielded from federal review; the
-same legislator drawing the same lines on racial grounds faces strict
-scrutiny. After \emph{Rucho}, state constitutional review under
-\emph{Moore v.~Harper}~\cite{moore2023} remains the only judicial avenue
-for partisan claims, but it depends on the politics of each state's
-supreme court and the language of its state constitution. Roughly ten
-state supreme courts have so far recognized state-constitutional
-partisan-gerrymandering claims; the rest have not~\cite{stateline2025}.
-
-Federal partisan review is foreclosed. Section~2 has been narrowed.
-State review is uneven and politically contingent. Redistricting has
-shifted from a once-per-decade event into a continuous partisan
-exercise: several states have already redrawn maps mid-decade in
-response to electoral results rather than census revision, and the
-practice is expected to expand. A regime that redraws lines
-whenever the pen changes hands provides neither stable
-representation nor predictable constituencies.
-
-\subsection{The Normative Paradox of ``Bias Detection''}
-
-In response to \emph{Rucho}'s manageability concern, a substantial
-mathematical literature has produced quantitative tests for partisan
-gerrymandering. The Efficiency Gap of Stephanopoulos and
-McGhee~\cite{stephanopoulosmcghee2015} measures the disparity in
-``wasted votes'' between parties and was central to the lower-court
-ruling in \emph{Whitford v.~Gill}. Wang's three tests~\cite{wang2016},
-namely mean--median difference, lopsided wins, and a $t$-test for
-partisan asymmetry, played a similar role in \emph{LWV v.~Commonwealth} of
-Pennsylvania. Warrington's declination~\cite{warrington2018} measures the
-asymmetry of the seats--votes kink at 50\%. Most influentially, the
-Markov Chain Monte Carlo ensemble methods developed at Duke
-University~\cite{mattinglyduke} and the MGGG Redistricting
-Lab~\cite{recom2021} construct large samples of legally compliant
-neutral maps and ask whether an enacted plan is an outlier with respect
-to that distribution. Ensemble methods have been admitted as evidence
-in \emph{Common Cause v.~Lewis}~(N.C.~2019), \emph{LWV v.~Commonwealth}
-(Pa.~2018), and as plaintiff support in \emph{Allen v.~Milligan}.
-
-Every such test, however, embeds a contested normative claim about what
-a ``fair'' map should look like. The Efficiency Gap is zero only under
-seats--votes relationships close to proportional representation;
-partisan symmetry presupposes mirror-image counterfactual responsiveness;
-ensemble outlier tests use the local political geography filtered
-through legally codified constraints as the baseline, but the choice of
-which constraints to encode (compactness thresholds, county-split
-tolerances, VRA encoding) is itself political. Chen and
-Rodden~\cite{chenrodden2013} demonstrated that in many states even
-content-neutral automated maps produce systematic seat bias against
-Democrats because of residential clustering, so a nonzero Efficiency Gap
-or mean--median value may reflect geography rather than intent. Pildes
-has long argued that no neutral baseline exists~\cite{pildes2004}, and
-Cain has framed districting as a tradeoff among incommensurable goods
-that no scalar metric can collapse without bias~\cite{cain2014}.
-
-Beneath the surveyed objections sits a sharper one about what these
-metrics are \emph{for}. Each plays two roles in the literature:
-a descriptive role (the metric measures an actual property of the
-plan: shape, wasted votes, partisan-share distribution) and an
-inferential role (the metric serves as evidence of the line-drawer's
-intent). The two roles are usually entangled in practice because
-the literature was built around enacted plans, where intent is
-always at issue.
-
-Polsby-Popper~\cite{polsbypopper1991} and Reock~\cite{reock1961}
-flag shapes too contorted to have arisen by ordinary line-drawing;
-the Efficiency Gap~\cite{stephanopoulosmcghee2015}, mean-median
-asymmetry~\cite{wang2016}, declination~\cite{warrington2018}, and
-the Duke and MGGG ensemble outlier
-tests~\cite{mattinglyduke,recom2021} flag partisan profiles that
-look engineered. The inferential power of all of these depends on
-there being a line-drawer to investigate.
-
-Remove the line-drawer and the descriptive role survives intact. A
-radial slice with $\mathrm{PP} = 0.09$ is still geometrically
-non-compact, with all the administrative and legitimacy implications
-that follow. An Efficiency Gap of $+6.6\,\%$ on a deterministic plan
-still describes a real asymmetry in wasted votes, with real
-representational consequences. What the metrics no longer do, on a
-plan with no line-drawer, is support the inference back to motive.
-Section~2 of the Voting Rights Act, which asks about
-\emph{effects}, still applies. \emph{Shaw}-style intent inference,
-which asks who drew the line and why, does not.
-
-\subsection{Deterministic Districting: A Sixty-Year Tradition}
-
-The alternative to detection is generation: produce a single map from
-inputs (state boundary, population, district count) by a fully
-specified, reproducible procedure that admits no human discretion. The
-intellectual line begins with Vickrey~\cite{vickrey1961}, who proposed
-in 1961 that boundary line-drawing be done by ``an automated and
-impersonal procedure'' to remove the discretion gerrymandering
-exploits. Hess et~al.~\cite{hess1965} formalized the idea four years
-later as a capacitated transportation problem, alternating between an
-assignment step (minimize the population-weighted sum of squared
-distances from each unit to a district center subject to equal
-population) and an update step (recompute each center as the
-population-weighted centroid of its assigned units). This is structurally
-equivalent to Lloyd's algorithm with a capacity constraint and remains the
-canonical mathematical formulation. Mehrotra, Johnson, and
-Nemhauser~\cite{mjn1998} subsequently cast the problem as a column-generation
-set partitioning program admitting exact optimization at moderate
-scales.
-
-Two contemporary lines extend this work. Brian Olson's
-BDistricting~\cite{olsonbd} is a publicly available implementation
-that minimizes population-weighted distance to district centers with
-equal-population constraints, applied at census-block resolution; maps
-have been generated for every state and updated each decennial census.
-Cohen-Addad, Klein, and Young~\cite{cohenaddad2018} provide the
-rigorous reformulation as balanced \emph{centroidal power diagrams},
-generalizing the Voronoi tessellation by assigning each seed an
-additive weight (the Aurenhammer~\cite{aurenhammer1987} construction)
-and solving for weights that enforce equal mass per cell.
-Levin and Friedler~\cite{levinfriedler2019} independently rediscovered
-the capacitated $k$-means formulation and applied it to all fifty states.
-A parallel branch, Warren Smith's Shortest Splitline
-algorithm~\cite{smithsplit}, recursively bisects the state with the
-shortest population-balancing line; it is fully deterministic and
-unique but lacks any global compactness or boundary-awareness criterion.
-
-Three observations link this tradition to the current work. First, all
-extant deterministic algorithms balance \emph{one} extensive quantity
-across districts, namely population, and treat geographic area, if at all,
-only indirectly through compactness shape metrics such as Polsby-Popper~\cite{polsbypopper1991}
-or Reock~\cite{reock1961}. Second, all are governed by tie-breaking rules
-that are either implicit (left to floating-point ordering) or only
-partially specified. Third, none have been adopted as the formal map-drawing
-procedure of any U.S.~jurisdiction, though Iowa's Legislative Services
-Agency~\cite{iowalsa} operates under a strict criteria cascade that has
-produced widely accepted maps since 1980.
-
-\subsection{Contribution: DualBalance Districting and the PRISM algorithm}
+\subsection{The Founders' Refusal to Reduce Representation to a Single Axis}
 
 The U.S. Constitution divides representation along two axes: the
 House apportions seats by population (Art.~I, \S2), the Senate by
 sovereign state regardless of population (Art.~I, \S3). Madison's
-defense in \emph{Federalist} Nos.~54--58~\cite{federalist54}
-treats this as a principled refusal to make representation reduce
-to a single dimension. We do not claim that the Senate represents
-land area; it represents states. We take the framers' refusal as
-motivating intuition: within a single chamber, district lines
-should not collapse representation to population alone.
+defense in \emph{Federalist} Nos.~54--58~\cite{federalist54} treats
+this as a principled refusal to collapse representation onto a single
+dimension. We do not claim the Senate represents land area; it
+represents states. What we take from the bicameral compromise is a
+weaker but still useful intuition: \emph{within a chamber}, the
+choice to make districts equal in only one extensive quantity --
+population -- is a choice, not a necessity. A second extensive
+quantity, geographic area, is available, well-defined, and
+computable from the same census data. A district that spans both
+metropolitan and rural territory forces each elected representative
+to answer to constituents across the state's density range, rather
+than to a single dense metro or a single rural hinterland.
 
-\emph{DualBalance Districting} operationalizes that intuition with
-two coequal targets. Each district should carry roughly $1/N$ of a
-state's people \emph{and} roughly $1/N$ of its land:
+This is a mathematical challenge, not a free choice. Real states are
+not uniform in population density: a typical state varies by two to
+three orders of magnitude between its densest urban tract and its
+sparsest rural one. Equal population, equal area, contiguity, and
+shape compactness are not simultaneously achievable in general. Some
+trade-off is unavoidable. The question, then, is which trade-off to
+make, how transparently to make it, and whether the resulting
+procedure can be defended as impartial.
+
+\subsection{Existing Metrics Are Forensic, Not Generative}
+
+A substantial mathematical literature has developed quantitative
+tests for gerrymandering: Polsby-Popper~\cite{polsbypopper1991} and
+Reock~\cite{reock1961} compactness; the Efficiency
+Gap~\cite{stephanopoulosmcghee2015}; mean--median, lopsided wins,
+and partisan-asymmetry $t$-tests~\cite{wang2016};
+declination~\cite{warrington2018}; ensemble outlier methods from
+Duke~\cite{mattinglyduke} and the MGGG Redistricting
+Lab~\cite{recom2021}. All of these are \emph{forensic} instruments:
+they take an enacted map as input and ask whether its observed
+properties (shape, vote efficiency, partisan asymmetry, the location
+of its seat--vote curve) are consistent with maps that some
+reference process -- random redistricting, ensemble sampling under
+legal constraints -- would have produced absent partisan
+intent. They are differential, comparing the enacted plan against a
+counterfactual distribution to infer the line-drawer's motive. They
+were built for an adversarial context in which the question is
+``did somebody do something here that they should not have done?''
+
+A generative metric is a different object. It states, directly,
+what a district \emph{should} look like, and is used as the
+objective of the line-drawing procedure rather than as evidence
+about the procedure. Population balance is the only generative
+metric U.S. redistricting law currently uses: \emph{Wesberry
+v.~Sanders}~\cite{wesberry1964} and \emph{Reynolds
+v.~Sims}~\cite{reynolds1964} require that each district hold
+roughly $1/N$ of the relevant population. Every other criterion
+(compactness, communities of interest, partisan fairness) enters
+the law as a forensic instrument or a discretionary guideline.
+
+This matters for two reasons. First, forensic metrics depend on a
+line-drawer to investigate. Removing the line-drawer -- replacing
+it with a deterministic generator -- preserves the descriptive role
+of these metrics (the shape is still non-compact; the seat--vote
+curve is still asymmetric) but evacuates their inferential
+content. There is no intent to infer~\cite{pildes2004}. Second,
+when forensic metrics are used as design objectives, the rule that
+emerges is often unstable: optimizing for ``looks like a fair plan
+would have looked'' is a moving target that depends on which
+ensemble distribution one chooses and which legal constraints one
+chooses to encode. Chen and Rodden~\cite{chenrodden2013} showed
+that even fully content-neutral automated maps systematically
+disadvantage Democrats in many states because of residential
+clustering; a nonzero Efficiency Gap on such a map reflects
+geography, not intent. The choice of constraint set is itself
+political~\cite{cain2014}.
+
+The DualBalance Score we propose,
 \begin{equation}
   \mathrm{DBS}
-    = \frac{1}{1
-       + \tfrac{1}{2}\,\overline{\mathrm{pop\_dev}}
-       + \tfrac{1}{2}\,\overline{\mathrm{area\_dev}}},
+    = \frac{1}{1 + \tfrac{1}{2}\overline{\mathrm{pop\_dev}}
+                 + \tfrac{1}{2}\overline{\mathrm{area\_dev}}},
 \end{equation}
-with $\mathrm{pop\_dev}_i = |P(D_i) - P^{*}|/P^{*}$ and
-$\mathrm{area\_dev}_i = |A(D_i) - A^{*}|/A^{*}$,
-$P^{*} = P/N$, $A^{*} = A/N$, overlines denoting means. The area
-term is not Senate-style sovereignty; it is the
-operationalization of a simpler claim: districts that span both
-metropolitan and rural territory force each elected representative
-to answer to constituents across the state's density range, rather
-than to a single dense metro or a single rural hinterland. Its
-discussion of trade-offs against compactness and minority
-representation appears in \S\ref{sec:discussion-compactness} and
-\S\ref{sec:discussion-forensic}.
+is a \emph{generative} criterion: it states what a district should
+be (carries roughly $1/N$ of the people and roughly $1/N$ of the
+land) and is the objective the algorithm minimizes against,
+rather than a test it must pass.
 
-\emph{PRISM} (Population-weighted Radial Impartial Slicing Method)
-is the algorithm that pursues this objective. PRISM places $N$ seeds
-in a small circle around the state's population-weighted centroid and
-assigns each census unit to the nearest seed with capacity remaining.
-The districts come out as radial slices through the population center.
-Each slice spans both dense (near-center) and sparse
-(boundary-side) territory, so the area each slice inherits trends
-toward $A^{*}$ by geometry rather than by penalty. The pipeline (seed
-placement, capacitated assignment, contiguity repair) is a pure
-function of $(\text{units}, N)$: no random seed, no iteration, no
-tunable weight. Identical inputs always yield byte-identical outputs.
-A single optional post-pass (\verb|--tighten-pop|) closes the residual
-per-district population gap to a user-supplied \emph{Reynolds
-v.~Sims} tolerance via greedy $L^{1}$ boundary swaps. Apportionment
-across states uses the Method of Equal Proportions, the standard since
-1941~\cite{balinskiyoung}. Updates occur only with the decennial
-census.
+\subsection{Does the Iowa Model Generalize?}
 
-The procedural neutrality is symmetric. PRISM cannot harm any group,
-party, or incumbent; it equally cannot help any of them. The same
-property that forecloses a partisan gerrymander forecloses a
-race-conscious remedy.
+Iowa's Legislative Services Agency~\cite{iowalsa} operates under a
+written procedure that has been described to us as a counterexample
+to the partisan-redistricting norm: aggregate whole counties,
+prioritize county integrity lexicographically, balance population by
+capacity, use distance-based assignment for compactness. The
+procedure has been in continuous use since 1980. If it works in
+Iowa, why not elsewhere?
 
-The legal exposure is correspondingly narrow. After
-\emph{Rucho}~\cite{rucho2019}, federal partisan review is foreclosed.
-After \emph{Alexander}~\cite{alexander2024} and
-\emph{Callais}~\cite{callais2026}, a generator that does not consider
-race cannot be a racial gerrymander under \emph{Shaw}~\cite{shaw1993}.
-State-court partisan tests rely on outcome metrics (Efficiency Gap,
-mean--median, ensemble outliers) that a geography-only generator
-should pass routinely, with the caveat that those metrics already
-measure geography on enacted plans
-too~\cite{chenrodden2013}. A residual risk is Section~2: in
-jurisdictions where the Gingles preconditions are met, a race-blind
-plan may not satisfy Section~2 where a race-conscious plan would.
+The answer, which we document quantitatively in
+\S\ref{sec:results}, is that the algorithm's behavior is sensitive
+to the input geography. Iowa is unusually homogeneous: 99 counties,
+no county exceeding the per-district population cap, no
+metropolitan area large enough to dominate state politics. We
+re-implemented the procedure (we call it \emph{Cascade} in this
+paper to avoid confusion with the agency that designed it) and ran
+it on six states. On Iowa, the resulting plan has a per-district
+population deviation of $0.29\%$; on Wisconsin, $0.50\%$. On the
+remaining four states the same algorithm produces deviations that
+are not legally usable: $10.27\%$ on North Carolina, $24.58\%$ on
+Texas, $41.56\%$ on Massachusetts, $76.14\%$ on Minnesota. The
+county-integrity priority that produces clean maps in Iowa --
+where no county is too large -- produces unconstitutional maps in
+any state with a county large enough to swallow a district. The
+Iowa procedure is exemplary for the geographic conditions in which
+it was designed; on these results, it is not a transplantable
+template.
 
-\paragraph{Contributions.}
-\begin{enumerate}
-  \item PRISM: a deterministic, knob-free districting algorithm
-        producing radially-sliced districts that balance population
-        and area equally. Pure function of $(\text{units}, N)$.
-  \item A fully specified tie-breaking cascade guaranteeing
-        byte-identical output, plus a proof that the cascade resolves
-        every comparison the algorithm makes.
-  \item A scoring harness decoupled from the generator, applying the
-        same metrics to PRISM, enacted plans, and alternatives.
-        Empirical results on Minnesota show PRISM beating the enacted
-        119\textsuperscript{th}-Congress map on the DualBalance Score.
-  \item An argument that the standard gerrymandering metrics
-        (compactness, Efficiency Gap, mean--median, ensemble outliers,
-        majority-minority counts) are forensic instruments built to
-        infer human intent, and so do not license, on a PRISM plan,
-        the inferences they license on an enacted plan.
-\end{enumerate}
+A deterministic procedure that hopes to scale to the full set of
+states needs a different structural commitment. We propose one
+below.
 
-Section~2 formalizes PRISM. Section~3 reports the Minnesota result.
-Section~4 discusses limitations and legal considerations.
+\subsection{Contribution}
+
+We propose \emph{DualBalance Districting}: a deterministic
+multi-resolution pipeline whose output is a pure function of
+$(\text{state geometry}, \text{census populations}, N)$, with no
+random seed, no tuning weight, no iteration count, and no
+human-in-the-loop adjustments.
+
+\paragraph{Algorithm (PRISM).} Population-weighted Radial Impartial
+Slicing places $N$ seeds in a small circle around the
+population-weighted centroid of the state and assigns each census
+unit to the nearest seed with capacity remaining (\S\ref{sec:methods-seeds}).
+The districts come out as radial slices through the population
+center; each slice naturally spans both dense and sparse territory,
+so the area each slice inherits trends toward $A^{*}$ by geometry
+rather than by penalty. The single pass (seed placement,
+capacitated assignment, contiguity repair) is a pure function of
+$(\text{units}, N)$.
+
+\paragraph{Multi-resolution refinement.} Pure radial leaves a few
+percent population deviation -- well above the \emph{Karcher
+v.~Daggett}~\cite{karcher1983} threshold ($\sim 0.05\%$) for U.S.
+congressional districts. We close that gap deterministically with a
+two-phase greedy local search of boundary-unit moves
+(\S\ref{sec:methods-optimize}). When single-unit moves stall in a
+multi-tied-max local optimum, a length-2 then length-3
+augmenting-chain escape -- the deterministic analogue of an ejection
+chain -- searches for a transport sequence on the district-adjacency
+graph that the 1-opt neighborhood cannot express. Phase~2 then
+hill-climbs DBS subject to the achieved population budget. To handle
+Census-block-granularity refinement, we cache per-district
+articulation points (Tarjan on CSR adjacency arrays, JIT-compiled),
+making each contiguity check $\mathcal{O}(1)$. All phases are
+deterministic.
+
+\paragraph{Empirical validation.} We run the full pipeline on six
+states selected to cover the geographic range that breaks Cascade:
+IA, MA, MN, NC, TX, WI. Five of six achieve a DualBalance Score
+above the enacted 119th-Congress plan. Two (IA, WI) reach the
+$0.05\%$ Karcher threshold exactly; three more (MN, NC, MA) sit
+within a factor of two of it; TX, the hardest case, sits at $0.52\%$
+-- five times tighter than the same state's enacted plan. On
+partisan fairness, DualBalance's Efficiency Gap is smaller in
+magnitude than the enacted plan's in four of six states, with the
+largest improvements on the three most heavily-litigated maps (NC,
+WI, TX). On minority-majority district counts, DualBalance produces
+more such districts than the enacted plan on NC (2 vs.~1) and TX
+(22 vs.~19).
+
+\paragraph{What we claim and what we do not.} We claim that
+DualBalance produces a deterministic alternative whose structural
+neutrality is symmetric: it cannot be tuned to advantage any party,
+incumbent, racial group, or community of interest, and equally
+cannot be tuned to help any of them. We do not claim it is the only
+defensible deterministic procedure, or that its specific 0.5/0.5
+weighting of population against area is uniquely correct. We do
+claim that the choice to use a \emph{generative} criterion as the
+design objective, rather than a forensic instrument, is the
+structurally correct response to a regime in which line-drawer
+intent has become both legally unreviewable (post-\emph{Rucho}) and
+practically unverifiable (forensic metrics presuppose the very
+thing the algorithm removes).
+
+\paragraph{Roadmap.} Section~\ref{sec:methods} formalizes the
+algorithm. Section~\ref{sec:results} reports the six-state empirical
+validation. Section~\ref{sec:discussion} discusses limits,
+trade-offs, and legal exposure.

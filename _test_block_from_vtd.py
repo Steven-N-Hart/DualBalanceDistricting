@@ -154,6 +154,17 @@ def main(state: str, n_districts: int) -> int:
         progress_every=100,
     )
     log(f"OPT(block): in {time.time() - t:.1f}s")
+
+    # Persist the final block plan so we can re-score later (e.g. against
+    # units with race + partisan columns) without re-running the optimizer.
+    from dualbalance.io import write_plan
+    import os as _os
+
+    out_dir = f"out/{state_lc}_block_refined"
+    _os.makedirs(out_dir, exist_ok=True)
+    write_plan(block_opt, block_units, f"{out_dir}/map.geojson")
+    log(f"saved block plan to {out_dir}/map.geojson")
+
     block_metrics = score_plan(block_opt, block_units)
     mt = block_opt.metadata.get("optimize_dbs_tighten_moves", 0)
     mc = block_opt.metadata.get("optimize_dbs_chain_moves", 0)
