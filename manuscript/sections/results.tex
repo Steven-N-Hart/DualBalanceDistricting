@@ -51,161 +51,176 @@ Cascade maximizes county integrity and area balance but fails the
 population-balance legal threshold on most states.
 
 % -----------------------------------------------------------------------
-% TABLE 1: Per-state DualBalance results (50 rows)
-% -----------------------------------------------------------------------
-\begin{table}[htbp]
-\centering
-\framebox[\textwidth]{\parbox[c][5cm]{0.9\textwidth}{\centering
-\textbf{[PLACEHOLDER --- Table~\ref{tab:multistate-dbs}]}\\[6pt]
-One row per state (50 rows). Columns: State, $N$, DualBalance Score
-(DualBalance / Cascade / BDistricting / Enacted), $\mathrm{pop\_dev\_max}$
-(DualBalance / Cascade). Bold marks the DBS winner per row.
-Cascade rows flagged $\ddagger$ where $\mathrm{pop\_dev\_max} > 0.5\,\%$
-(legally non-viable). States marked $\dagger$ excluded (no TIGER VTD data).\\[4pt]
-Source: \texttt{out/compare\_all\_summary.json}.
-}}
-\caption{Per-state DualBalance results for all 50 states.
-$\dagger$~State excluded (TIGER 2020PL VTD data not available).
-$\ddagger$~$\mathrm{pop\_dev\_max} > 0.5\,\%$; plan does not satisfy
-\emph{Reynolds v.~Sims} and is legally non-viable regardless of DBS.
-\textbf{Bold} marks the highest DBS on each row.}
-\label{tab:multistate-dbs}
-\end{table}
+\begin{longtable}{l r cccc rr}
+\caption{Per-state DualBalance Score and maximum population
+deviation for all 41 states with TIGER 2020PL VTD data.
+\textbf{Bold} marks the highest DBS per row.
+$\ddagger$ marks Cascade plans where $\mathrm{pop\_dev\_max} > 0.5\,\%$
+(\emph{Reynolds v.~Sims} non-compliant; legally non-viable).}
+\label{tab:multistate-dbs}\\
+\toprule
+State & $N$ & \multicolumn{4}{c}{DualBalance Score} & \multicolumn{2}{c}{$\mathrm{pop\_dev\_max}$} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-8}
+ & & DB & Cascade & BDist & Enacted & DB & Cascade \\
+\midrule
+\endfirsthead
+\multicolumn{8}{c}{\small\textit{(continued from previous page)}}\\[2pt]
+\toprule
+State & $N$ & \multicolumn{4}{c}{DualBalance Score} & \multicolumn{2}{c}{$\mathrm{pop\_dev\_max}$} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-8}
+ & & DB & Cascade & BDist & Enacted & DB & Cascade \\
+\midrule
+\endhead
+\midrule\multicolumn{8}{r}{\small\textit{(continued on next page)}}\\\endfoot
+\bottomrule\endlastfoot
+Alabama & 7 & 0.828 & 0.741$^{\ddagger}$ & 0.816 & \textbf{0.880} & 0.04\% & \textit{93.73\%}$^{\ddagger}$ \\
+Arkansas & 4 & \textbf{0.890} & 0.799$^{\ddagger}$ & 0.755 & 0.759 & 0.05\% & \textit{55.50\%}$^{\ddagger}$ \\
+Arizona & 9 & \textbf{0.678} & 0.637$^{\ddagger}$ & 0.628 & 0.651 & 0.07\% & \textit{50.08\%}$^{\ddagger}$ \\
+Colorado & 8 & 0.624 & \textbf{0.791}$^{\ddagger}$ & 0.634 & 0.648 & 0.05\% & \textit{98.50\%}$^{\ddagger}$ \\
+Connecticut & 5 & 0.799 & --- & 0.784 & \textbf{0.806} & 0.14\% & --- \\
+Florida & 28 & \textbf{0.734} & 0.675$^{\ddagger}$ & 0.689 & 0.716 & 44.20\% & \textit{88.06\%}$^{\ddagger}$ \\
+Georgia & 14 & 0.700 & 0.703$^{\ddagger}$ & 0.715 & \textbf{0.717} & 0.13\% & \textit{99.09\%}$^{\ddagger}$ \\
+Iowa & 4 & 0.858 & \textbf{0.899} & 0.788 & 0.883 & 0.05\% & 0.29\% \\
+Idaho & 2 & 0.866 & 0.638$^{\ddagger}$ & 0.804 & \textbf{0.977} & 0.04\% & \textit{48.77\%}$^{\ddagger}$ \\
+Illinois & 17 & \textbf{0.664} & 0.642$^{\ddagger}$ & 0.636 & 0.645 & 0.05\% & \textit{74.52\%}$^{\ddagger}$ \\
+Indiana & 9 & \textbf{0.807} & 0.786$^{\ddagger}$ & 0.785 & 0.801 & 0.04\% & \textit{64.45\%}$^{\ddagger}$ \\
+Kansas & 4 & 0.708 & 0.679$^{\ddagger}$ & 0.695 & \textbf{0.737} & 0.05\% & \textit{82.83\%}$^{\ddagger}$ \\
+Kentucky & 6 & \textbf{0.806} & 0.789$^{\ddagger}$ & 0.760 & 0.784 & 0.03\% & \textit{42.54\%}$^{\ddagger}$ \\
+Louisiana & 6 & \textbf{0.838} & 0.822$^{\ddagger}$ & 0.817 & 0.836 & 0.05\% & \textit{54.67\%}$^{\ddagger}$ \\
+Massachusetts & 9 & \textbf{0.790} & 0.718$^{\ddagger}$ & 0.716 & 0.725 & 0.12\% & \textit{41.56\%}$^{\ddagger}$ \\
+Maryland & 8 & 0.697 & \textbf{0.762}$^{\ddagger}$ & 0.664 & 0.688 & 0.05\% & \textit{71.88\%}$^{\ddagger}$ \\
+Maine & 2 & \textbf{0.932} & 0.688$^{\ddagger}$ & 0.721 & 0.731 & 0.10\% & \textit{60.48\%}$^{\ddagger}$ \\
+Michigan & 13 & 0.646 & \textbf{0.677}$^{\ddagger}$ & 0.630 & 0.636 & 0.04\% & \textit{84.22\%}$^{\ddagger}$ \\
+Minnesota & 8 & 0.661 & \textbf{0.696}$^{\ddagger}$ & 0.649 & 0.639 & 0.06\% & \textit{76.14\%}$^{\ddagger}$ \\
+Missouri & 8 & \textbf{0.771} & 0.734$^{\ddagger}$ & 0.724 & 0.716 & 0.04\% & \textit{92.35\%}$^{\ddagger}$ \\
+Mississippi & 4 & 0.884 & 0.822$^{\ddagger}$ & \textbf{0.910} & 0.884 & 0.04\% & \textit{31.40\%}$^{\ddagger}$ \\
+Montana & 2 & \textbf{0.861} & 0.759$^{\ddagger}$ & 0.820 & 0.819 & 0.02\% & \textit{15.57\%}$^{\ddagger}$ \\
+North Carolina & 14 & 0.753 & \textbf{0.811}$^{\ddagger}$ & 0.760 & 0.769 & 0.11\% & \textit{10.27\%}$^{\ddagger}$ \\
+Nebraska & 3 & \textbf{0.776} & 0.616$^{\ddagger}$ & 0.646 & 0.634 & 0.00\% & \textit{89.37\%}$^{\ddagger}$ \\
+New Hampshire & 2 & 0.747 & 0.763$^{\ddagger}$ & 0.731 & \textbf{0.803} & 0.01\% & \textit{55.95\%}$^{\ddagger}$ \\
+New Jersey & 12 & \textbf{0.732} & 0.643$^{\ddagger}$ & 0.693 & 0.725 & 0.04\% & \textit{67.97\%}$^{\ddagger}$ \\
+New Mexico & 3 & 0.762 & 0.654$^{\ddagger}$ & 0.754 & \textbf{0.840} & 0.03\% & \textit{92.55\%}$^{\ddagger}$ \\
+Nevada & 4 & \textbf{0.711} & 0.674$^{\ddagger}$ & 0.671 & 0.678 & 0.05\% & \textit{6.27\%}$^{\ddagger}$ \\
+New York & 26 & \textbf{0.630} & 0.586$^{\ddagger}$ & 0.626 & 0.611 & 13.25\% & \textit{74.03\%}$^{\ddagger}$ \\
+Ohio & 15 & \textbf{0.766} & 0.754$^{\ddagger}$ & 0.716 & 0.744 & 0.05\% & \textit{63.52\%}$^{\ddagger}$ \\
+Oklahoma & 5 & \textbf{0.748} & 0.726$^{\ddagger}$ & 0.745 & 0.717 & 0.05\% & \textit{84.51\%}$^{\ddagger}$ \\
+Pennsylvania & 17 & \textbf{0.728} & 0.681$^{\ddagger}$ & 0.687 & 0.680 & 0.05\% & \textit{74.42\%}$^{\ddagger}$ \\
+Rhode Island & 2 & \textbf{0.958} & 0.849$^{\ddagger}$ & 0.712 & 0.853 & 0.01\% & \textit{10.66\%}$^{\ddagger}$ \\
+South Carolina & 7 & \textbf{0.902} & 0.768$^{\ddagger}$ & 0.819 & 0.848 & 0.04\% & \textit{71.80\%}$^{\ddagger}$ \\
+Tennessee & 9 & 0.815 & 0.759$^{\ddagger}$ & 0.761 & \textbf{0.816} & 0.55\% & \textit{92.20\%}$^{\ddagger}$ \\
+Texas & 38 & 0.692 & \textbf{0.694}$^{\ddagger}$ & 0.635 & 0.666 & 0.90\% & \textit{24.58\%}$^{\ddagger}$ \\
+Utah & 4 & 0.742 & 0.694$^{\ddagger}$ & 0.658 & \textbf{0.761} & 0.05\% & \textit{79.77\%}$^{\ddagger}$ \\
+Virginia & 11 & 0.741 & 0.741$^{\ddagger}$ & 0.704 & \textbf{0.746} & 0.19\% & \textit{61.26\%}$^{\ddagger}$ \\
+Washington & 10 & 0.697 & 0.702$^{\ddagger}$ & 0.698 & \textbf{0.716} & 0.02\% & \textit{54.03\%}$^{\ddagger}$ \\
+Wisconsin & 8 & 0.695 & \textbf{0.802} & 0.742 & 0.741 & 0.04\% & 0.50\% \\
+West Virginia & 2 & \textbf{0.904} & 0.827$^{\ddagger}$ & 0.867 & 0.880 & 10.44\% & \textit{6.48\%}$^{\ddagger}$ \\
+\end{longtable}
+
 
 % -----------------------------------------------------------------------
-% TABLE 2: Aggregate algorithm comparison
-% -----------------------------------------------------------------------
 \begin{table}[htbp]
 \centering
-\framebox[\textwidth]{\parbox[c][5cm]{0.9\textwidth}{\centering
-\textbf{[PLACEHOLDER --- Table~\ref{tab:aggregate-comparison}]}\\[6pt]
-One row per metric, one column per algorithm (DualBalance / Cascade /
-BDistricting / Enacted). Rows: DBS median, $\mathrm{pop\_dev\_max}$
-median, states at \emph{Karcher} ($\leq 0.05\,\%$), states beating
-enacted DBS, $|\mathrm{EG}|$ median, Polsby-Popper median. Bold marks
-the best value per row.\\[4pt]
-Source: \texttt{out/compare\_all\_summary.json}.
-}}
-\caption{Aggregate algorithm comparison across all available states.
-\textbf{Bold} marks the best value in each row. ``At \emph{Karcher}''
-counts states where $\mathrm{pop\_dev\_max} \leq 0.05\,\%$.
-``Beats enacted DBS'' counts states where the algorithm's DualBalance
-Score exceeds the enacted plan's.}
+\caption{Aggregate algorithm comparison across all 41 available states. \textbf{Bold} marks the best value in each row.
+``At \emph{Karcher}'' counts states where $\mathrm{pop\_dev\_max} \leq 0.05\,\%$.
+``Beats enacted DBS'' counts states where the algorithm's DualBalance Score
+exceeds the enacted plan's. Enacted plan cannot beat itself.}
 \label{tab:aggregate-comparison}
+\small
+\begin{tabular}{l rrrr}
+\toprule
+Metric & DualBalance & Cascade & BDistricting & Enacted \\
+\midrule
+DBS (median) & \textbf{0.753} & 0.730 & 0.716 & 0.741 \\
+$\mathrm{pop\_dev\_max}$ (median) & \textbf{0.0\%} & 64.0\% & 1.2\% & 0.7\% \\
+At \emph{Karcher} ($\leq 0.05\,\%$) & \textbf{26/41} & 0/41 & 0/41 & 3/41 \\
+Beats enacted DBS & \textbf{26/41} & 14/41 & 9/41 & --- \\
+$|\mathrm{EG}|$ (median) & 0.107 & 0.136 & \textbf{0.080} & 0.154 \\
+Polsby-Popper mean (median) & 0.115 & 0.275 & \textbf{0.315} & 0.281 \\
+\bottomrule
+\end{tabular}
 \end{table}
 
+
 % -----------------------------------------------------------------------
-% FIGURE 1: Headline EG comparison (all states, sorted by enacted |EG|)
-% -----------------------------------------------------------------------
+% Figure 1: Headline EG
 \begin{figure}[htbp]
 \centering
-\framebox[\textwidth]{\parbox[c][6cm]{0.9\textwidth}{\centering
-\textbf{[PLACEHOLDER --- Figure~\ref{fig:headline-eg}]}\\[6pt]
-Ranked bar chart: $|\mathrm{EG}|$ for DualBalance vs.\ enacted 119th-Congress plan,
-one bar pair per state, sorted left-to-right by enacted $|\mathrm{EG}|$
-(worst-gerrymandered on the left).
-Red dashed line at $|\mathrm{EG}|=0.07$ (Stephanopoulos-McGhee threshold).
-Source: \texttt{out/story\_headline\_eg.png}.
-States without TIGER 2020PL VTD data excluded ($\dagger$).
-}}
-\caption{Partisan fairness across all available states, sorted by enacted
-$|\mathrm{EG}|$ (worst-gerrymandered on the left). DualBalance (blue) vs.\
+\includegraphics[width=\textwidth]{headline_eg.png}
+\caption{Partisan fairness across all 41 available states, sorted by enacted
+$|\mathrm{EG}|$ (worst-gerrymandered on the left). DualBalance (blue) vs.\\
 enacted 119th-Congress plan (gray). Red dashed line: $|\mathrm{EG}|=0.07$
-gerrymander threshold~\cite{stephanopoulosmcghee2015}. States marked
-$\dagger$ lacked TIGER 2020PL VTD boundaries and are excluded.}
+gerrymander threshold~\cite{stephanopoulosmcghee2015}. States CA, HI, OR
+lacked TIGER 2020PL VTD boundaries and are excluded ($\dagger$).}
 \label{fig:headline-eg}
 \end{figure}
 
+
 % -----------------------------------------------------------------------
-% FIGURE 2: Four-panel boxplots (DBS, pop_dev_max, |EG|, Polsby-Popper)
-% -----------------------------------------------------------------------
+% Figure 2: Boxplot panel
 \begin{figure}[htbp]
 \centering
-\framebox[\textwidth]{\parbox[c][8cm]{0.9\textwidth}{\centering
-\textbf{[PLACEHOLDER --- Figure~\ref{fig:boxplots}]}\\[6pt]
-$2\times2$ boxplot figure. Each panel: one box per algorithm
-(DualBalance, Cascade, BDistricting, Enacted), one dot per state.\\[4pt]
-\textbf{Panel A:} DualBalance Score (higher = better).\\
-\textbf{Panel B:} $\mathrm{pop\_dev\_max}$, log scale; red dashed line at \emph{Karcher} 0.05\,\%.\\
-\textbf{Panel C:} $|\mathrm{EG}|$ (lower = fairer); red dashed line at 0.07.\\
-\textbf{Panel D:} Polsby-Popper mean (the honest compactness admission).\\[4pt]
-Source: \texttt{out/story\_box\_*.png}.
-}}
-\caption{Cross-state comparison of four algorithms on key metrics.
-Each box spans the interquartile range across all available states; dots are
-individual states. \textbf{Panel A}: DualBalance Score (higher = better).
+\includegraphics[width=\textwidth]{boxplots_panel.png}
+\caption{Cross-state comparison of four algorithms on key metrics (41 states).
+Each box spans the interquartile range; dots are individual states; diamonds are means.
+\textbf{Panel A}: DualBalance Score (higher = better).
 \textbf{Panel B}: maximum per-district population deviation, log scale;
 dashed line at the \emph{Karcher} threshold (0.05\,\%).
-\textbf{Panel C}: $|\mathrm{EG}|$ (lower = fairer); dashed line at the
-0.07 gerrymander threshold~\cite{stephanopoulosmcghee2015}.
+\textbf{Panel C}: $|\mathrm{EG}|$ (lower = fairer); dashed line at 0.07.
 \textbf{Panel D}: Polsby-Popper compactness (mean per state); DualBalance
 is structurally less compact than enacted plans because radial slices are
 not blob-shaped.}
 \label{fig:boxplots}
 \end{figure}
 
+
 % -----------------------------------------------------------------------
-% FIGURE 3: Minority-majority district scatter
-% -----------------------------------------------------------------------
+% Figure 3: Minority-majority district scatter
 \begin{figure}[htbp]
 \centering
-\framebox[\textwidth]{\parbox[c][6cm]{0.9\textwidth}{\centering
-\textbf{[PLACEHOLDER --- Figure~\ref{fig:race-scatter}]}\\[6pt]
-Scatter plot: minority-majority district count under DualBalance ($y$-axis)
-vs.\ enacted plan ($x$-axis), one point per state, diagonal reference line
-$y = x$. Points above the diagonal: DualBalance creates more MMDs than
-enacted; below: fewer; on the line: tied.
-Notable labeled points: NC (1$\to$2), TX (19$\to$22) above the diagonal;
-MA (1$\to$0), WI (1$\to$0) below. Most states cluster at $(0,0)$.\\[4pt]
-Source: computed from \texttt{out/compare\_all\_summary.json}.
-}}
+\includegraphics[width=0.75\textwidth]{race_scatter.png}
 \caption{Minority-majority district count: DualBalance vs.\ enacted
 119th-Congress plan. Each point is one state; the diagonal is $y = x$.
 Points above the line indicate DualBalance produces more majority-minority
-districts than the enacted map; points below indicate fewer. Most states
-cluster at $(0,0)$ because no single minority group concentrates densely
-enough to support a majority-minority district of standard size. DualBalance
-is race-blind; where it produces more majority-minority districts than the
-enacted plan, the effect is geographic, not by design. Where it produces
-fewer (notably MA and WI), the enacted plan constructed a majority-minority
-district that radial slicing breaks up.}
+districts than the enacted map; points below indicate fewer. Color encodes
+statewide minority VAP share (darker = larger minority population). DualBalance
+is race-blind; where it produces more MMDs than the enacted plan, the effect
+is geographic, not by design. States with large differences are labeled.}
 \label{fig:race-scatter}
 \end{figure}
 
+
 % -----------------------------------------------------------------------
-% FIGURE 4: NC three-panel map
-% -----------------------------------------------------------------------
+% Figure 4: NC three-panel map
 \begin{figure}[htbp]
 \centering
-\framebox[\textwidth]{\parbox[c][6cm]{0.9\textwidth}{\centering
-\textbf{[PLACEHOLDER --- Figure~\ref{fig:nc-maps}]}\\[6pt]
-Three-panel side-by-side map: North Carolina (14 districts).\\
-\textbf{Left:} Enacted 119th-Congress plan (EG $+0.20$, $\mathrm{pop\_dev\_max}$ 0.04\,\%).\\
-\textbf{Center:} Cascade (EG $+0.03$, $\mathrm{pop\_dev\_max}$ 10.27\,\%, legally non-viable).\\
-\textbf{Right:} DualBalance (EG $+0.09$, $\mathrm{pop\_dev\_max}$ 0.11\,\%).\\
-Source: \texttt{out/maps\_NC.png}.
-}}
+\includegraphics[width=\textwidth]{nc_comparison.png}
 \caption{North Carolina congressional districts under three plans (14 seats,
 2020 PL 94-171). \textbf{Left:} enacted 119th-Congress plan, with the
 Efficiency Gap of $+0.20$ that gave rise to \textit{Rucho v.~Common Cause}~\cite{rucho2019}.
-\textbf{Center:} Cascade plan, which scores better on DBS ($0.82$ vs.\ $0.77$
-enacted) but violates \emph{Karcher} at 10.27\,\% maximum population deviation
-and cannot legally be enacted.
-\textbf{Right:} DualBalance plan, \emph{Karcher}-compliant (0.11\,\%) and
-reducing EG to $+0.09$ with no political input.}
+\textbf{Center:} Cascade plan, which scores better on DBS ($0.811$ vs.\ $0.769$ enacted)
+but violates \emph{Karcher} at $\mathrm{pop\_dev\_max}=10.27\,\%$ and cannot legally be enacted.
+\textbf{Right:} DualBalance plan, \emph{Karcher}-compliant ($0.11\,\%$) and
+reducing EG to $+0.063$ with no political input.}
 \label{fig:nc-maps}
 \end{figure}
+
 
 \subsection{What would Congress look like?}
 \label{sec:results-congress}
 
-\textbf{[PLACEHOLDER, $\sim$150 words.]} Aggregate seats\_R / seats\_D
-summed across all available states under DualBalance, Cascade,
-BDistricting, and the enacted plan, plus a proportional-vote baseline
-derived from the 2020 statewide two-party presidential returns. The
-question, ``if every state used DualBalance, what is the partisan
-composition of the House?'', is answered here with full caveats: 2020
-presidential returns proxy for House votes, CA/HI/OR are excluded for
-lack of VTD data, and single-seat states are unchanged under any
-algorithm. The full per-state breakdown (seats R/D, statewide R share,
-all four algorithms) appears in Supplementary Table~S1.
+Across the 41 states for which TIGER 2020PL VTD data are available,
+totalling 369 of the 435 House seats (California, Hawaii, and Oregon
+are excluded; see \S\ref{sec:discussion}), DualBalance produces
+190~R seats and 177~D seats. The enacted 119\textsuperscript{th}-Congress
+plan produces 196~R and 171~D across the same states. A proportional
+baseline derived from the 2020 statewide two-party presidential returns
+implies approximately 182~R seats; DualBalance sits
+8~seats above that
+baseline, the enacted plan 14~seats above it. The
+six-seat difference between DualBalance and enacted ($196-190=6$~R)
+is a description of the partition, not a design choice: DualBalance reads
+no partisan data. The full per-state breakdown (seats R/D, statewide R share,
+all four algorithms) appears in Supplementary Table~S1. Caveats: 2020
+presidential returns proxy for House votes, state-level ticket-splitting is
+ignored, and results for the excluded states would require block-group-level
+inputs.
