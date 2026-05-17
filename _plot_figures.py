@@ -25,6 +25,11 @@ with open(REPO / "out" / "compare_all_summary.json") as f:
     DATA = json.load(f)
 
 STATES = sorted(DATA.keys())
+# Two-tier: EG figures use only states with composite or CONG22 election data.
+EG_STATES = sorted(
+    s for s in STATES
+    if DATA[s].get("votes_source", "pres_20") in ("comp_16_22", "cong_22")
+)
 PLANS = ["dualbalance", "cascade", "bdistricting", "enacted"]
 COLORS = {
     "dualbalance":  "#1f77b4",
@@ -40,9 +45,11 @@ LABELS = {
 }
 
 
-def collect(metric: str, plan: str, absolute: bool = False) -> dict[str, float]:
+def collect(metric: str, plan: str, absolute: bool = False,
+            state_set: list[str] | None = None) -> dict[str, float]:
+    ss = state_set if state_set is not None else STATES
     out: dict[str, float] = {}
-    for s in STATES:
+    for s in ss:
         v = DATA.get(s, {}).get(plan, {}).get(metric)
         if v is not None:
             out[s] = abs(float(v)) if absolute else float(v)
@@ -50,10 +57,12 @@ def collect(metric: str, plan: str, absolute: bool = False) -> dict[str, float]:
 
 
 # ---------------------------------------------------------------------------
-# Figure 1: Headline EG ranked bar chart
+# Figure 1: Headline EG ranked bar chart — EG tier only (composite/CONG states)
 # ---------------------------------------------------------------------------
-enacted_eg = {s: abs(v) for s, v in collect("efficiency_gap", "enacted").items()}
-db_eg = {s: abs(v) for s, v in collect("efficiency_gap", "dualbalance").items()}
+enacted_eg = {s: abs(v) for s, v in collect("efficiency_gap", "enacted",
+                                              state_set=EG_STATES).items()}
+db_eg = {s: abs(v) for s, v in collect("efficiency_gap", "dualbalance",
+                                        state_set=EG_STATES).items()}
 both = sorted(enacted_eg.keys() & db_eg.keys(), key=lambda s: -enacted_eg[s])
 
 fig, ax = plt.subplots(figsize=(max(12, 0.42 * len(both)), 5.5))
@@ -68,9 +77,11 @@ ax.axhline(0.07, color="red", linestyle="--", linewidth=1.2, alpha=0.7,
 ax.set_xticks(x)
 ax.set_xticklabels(both, rotation=0 if len(both) <= 15 else 90, fontsize=8)
 ax.set_ylabel("|Efficiency Gap|  (lower = fairer)", fontsize=11)
-ax.set_title(f"Partisan fairness: DualBalance vs enacted plan across {len(both)} states\n"
-             "(sorted by enacted |EG|, worst-gerrymandered on left)",
-             fontsize=11)
+ax.set_title(
+    f"Partisan fairness: DualBalance vs enacted plan\n"
+    f"{len(both)} states with composite or congressional election data "
+    f"(21 states using presidential proxy excluded; sorted by enacted |EG|)",
+    fontsize=10)
 ax.legend(loc="upper right", fontsize=9)
 ax.set_ylim(bottom=0)
 fig.tight_layout()
@@ -96,9 +107,11 @@ panel_labels = ["A", "B", "C", "D"]
 
 for idx, (metric, ylabel, absolute, hline) in enumerate(PANEL_SPECS):
     ax = fig.add_subplot(gs[idx // 2, idx % 2])
+    # Panel C (|EG|) uses only composite/CONG states; all others use all states.
+    ss = EG_STATES if metric == "efficiency_gap" else None
     series = {}
     for plan in PLANS:
-        vals = list(collect(metric, plan, absolute=absolute).values())
+        vals = list(collect(metric, plan, absolute=absolute, state_set=ss).values())
         series[plan] = vals
 
     box_data = [series[p] for p in PLANS]
@@ -123,9 +136,12 @@ for idx, (metric, ylabel, absolute, hline) in enumerate(PANEL_SPECS):
     ax.text(0.02, 0.97, panel_labels[idx], transform=ax.transAxes,
             fontsize=13, fontweight="bold", va="top")
 
-fig.suptitle(f"Cross-state metric distributions across {len(STATES)} states\n"
-             "(boxes = IQR, diamonds = mean, dots = individual states)",
-             fontsize=11)
+fig.suptitle(
+    f"Cross-state metric distributions "
+    f"(Panels A, B, D: all {len(STATES)} states; Panel C: {len(EG_STATES)} states "
+    f"with composite/CONG election data)\n"
+    "(boxes = IQR, diamonds = mean, dots = individual states)",
+    fontsize=10)
 out = FIG_DIR / "boxplots_panel.png"
 fig.savefig(out, dpi=150, bbox_inches="tight")
 plt.close(fig)

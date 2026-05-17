@@ -5,6 +5,8 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{longtable}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{hyperref}
 \usepackage{cite}
 
@@ -33,15 +35,15 @@ Validated on all 41 multi-seat states for which TIGER 2020PL voting
 tabulation district boundaries are available, DualBalance achieves
 \emph{Karcher}-compliant population balance ($\mathrm{pop\_dev\_max}
 \leq 0.05\,\%$) on 26 states and beats the enacted 119th-Congress
-plan on DBS on 26 states. Two deterministic baselines --- Cascade
-(Iowa-LSA county aggregation) and BDistricting (capacitated power
-diagrams) --- achieve \emph{Karcher} compliance on zero states and
-zero states, respectively. On every state with a nonzero enacted
-Efficiency Gap, all three deterministic algorithms reduce
-$|\mathrm{EG}|$ relative to the enacted plan; the largest reductions
-are on the most-litigated maps. A House-wide projection across the
-41 scored states (369 seats) gives DualBalance R\,190~/~D\,177
-versus enacted R\,196~/~D\,171.
+plan on the DualBalance Score on 26 states. Two deterministic baselines
+--- Cascade (Iowa-LSA county aggregation) and BDistricting (capacitated
+power diagrams) --- achieve \emph{Karcher} compliance on zero states.
+On partisan fairness, we restrict analysis to the 20 states for which
+precinct-level composite or congressional election returns are available;
+on this subset DualBalance reduces $|\mathrm{EG}|$ relative to the
+enacted plan on 14 of 20 states (median $|\mathrm{EG}|$ 0.085 vs.\
+enacted 0.133). A House-wide projection across the 41 scored states
+(369 seats) gives DualBalance R\,190~/~D\,177 versus enacted R\,196~/~D\,171.
 
 The conventional gerrymandering metrics --- compactness, Efficiency
 Gap, ensemble outlier tests, majority-minority counts --- play two

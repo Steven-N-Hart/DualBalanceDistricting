@@ -112,12 +112,10 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     for name, metrics in results.items():
         write_metrics(metrics, out_dir / f"{name}_metrics.json")
-    # Determine the election source used for this state's units.
+    # Determine the election source used for this state's units (majority value).
     votes_source = "pres_20"
     if "votes_source" in units.columns:
-        src_vals = units["votes_source"].dropna().unique()
-        if len(src_vals) == 1:
-            votes_source = src_vals[0]
+        votes_source = units["votes_source"].fillna("pres_20").mode().iloc[0]
 
     comparison = {
         "state": state.upper(),

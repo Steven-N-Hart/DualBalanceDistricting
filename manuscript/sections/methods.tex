@@ -119,6 +119,60 @@ district has more than one connected component, capped at ten sweeps;
 in practice it converges in zero or one sweep on real census
 geometries.
 
+Algorithm~\ref{alg:dualbalance} summarizes the full core pipeline.
+
+\begin{algorithm}[htbp]
+\caption{DualBalance Districting}
+\label{alg:dualbalance}
+\begin{algorithmic}[1]
+\Require Atomic units $\mathcal{U}=\{u_1,\dots,u_M\}$ with populations
+         $\{p_u\}$, centroids $\{x_u\}$, and areas $\{a_u\}$;
+         district count $N$
+\Ensure  Assignment $\pi:\mathcal{U}\to\{1,\dots,N\}$;
+         every district contiguous and non-empty
+\vspace{4pt}
+\State $c \leftarrow \bigl(\sum_u p_u\,x_u\bigr)\big/\bigl(\sum_u p_u\bigr)$
+       \Comment{population-weighted centroid}
+\State $P^* \leftarrow \bigl(\sum_u p_u\bigr)/N$;\enspace
+       $A^* \leftarrow \bigl(\sum_u a_u\bigr)/N$
+       \Comment{per-district targets}
+\State $\Delta \leftarrow \mathrm{diag}\bigl(\mathrm{bbox}(\mathcal{U})\bigr)$;\enspace
+       $r \leftarrow 0.001\,\Delta$
+       \Comment{bounding-box diagonal; seed radius}
+\vspace{4pt}
+\Statex \hspace{-\algorithmicindent}\textbf{Phase 1\enspace Radial seed placement}
+\For{$d = 0, \dots, N-1$}
+    \State $s_d \leftarrow c + r\,\bigl(\cos(2\pi d/N),\;\sin(2\pi d/N)\bigr)$
+\EndFor
+\vspace{4pt}
+\Statex \hspace{-\algorithmicindent}\textbf{Phase 2\enspace Capacitated first-fit assignment}
+\State $\rho_i \leftarrow P^*$ for all $i$;\enspace
+       $\pi(u) \leftarrow \varnothing$ for all $u$
+\State Sort pairs $(u,\,i)$ by $\|x_u - s_i\|/\Delta$ ascending
+       \Comment{ties: unit id, then district id}
+\For{each pair $(u,\,i)$ in sorted order}
+    \If{$\pi(u) = \varnothing$ \textbf{and} $\rho_i \geq p_u$}
+        \State $\pi(u) \leftarrow i$;\enspace $\rho_i \leftarrow \rho_i - p_u$
+    \EndIf
+\EndFor
+\State Assign each unassigned $u$ to $\arg\max_i\,\rho_i$
+       \Comment{ties: lowest district id}
+\vspace{4pt}
+\Statex \hspace{-\algorithmicindent}\textbf{Phase 3\enspace Contiguity repair}
+\While{$\exists\;i$ with more than one connected component}
+    \State Let $C$ be the smallest component of district $i$
+    \For{each $u \in C$, each district $j \neq i$ adjacent to $u$}
+        \State $\mathrm{cost}(u,\,j) \leftarrow
+               \dfrac{\|x_u - s_j\|}{\Delta}
+               + \dfrac{|P(D_j)+p_u-P^*|}{P^*}
+               + \dfrac{|A(D_j)+a_u-A^*|}{A^*}$
+    \EndFor
+    \State $\pi(u) \leftarrow \arg\min_j\;\mathrm{cost}(u,j)$ for each $u \in C$
+           \Comment{ties: pop pen, area pen, dist, district id}
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
+
 \subsection{Scoring}
 
 Define per-district relative deviations

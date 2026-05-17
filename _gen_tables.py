@@ -16,6 +16,9 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent
 DATA = json.load(open(REPO / "out" / "compare_all_summary.json"))
 STATES = sorted(DATA.keys())
+# EG-tier states: those with composite or 2022 congressional election data.
+EG_STATES = {s for s in STATES
+             if DATA[s].get("votes_source", "pres_20") in ("comp_16_22", "cong_22")}
 PLANS = ["dualbalance", "cascade", "bdistricting", "enacted"]
 KARCHER = 0.0005  # 0.05%
 REYNOLDS = 0.005  # 0.5% -- legally non-viable threshold
@@ -49,8 +52,9 @@ lines.append(r"\begin{longtable}{l r cccc rr}")
 lines.append(r"\caption{Per-state DualBalance Score and maximum population")
 lines.append(r"deviation for all " + str(len(STATES)) + r" states with TIGER 2020PL VTD data.")
 lines.append(r"\textbf{Bold} marks the highest DBS per row.")
-lines.append(r"$\ddagger$ marks Cascade plans where $\mathrm{pop\_dev\_max} > 0.5\,\%$")
-lines.append(r"(\emph{Reynolds v.~Sims} non-compliant; legally non-viable).}")
+lines.append(r"$\ddagger$: Cascade $\mathrm{pop\_dev\_max} > 0.5\,\%$ (\emph{Reynolds} non-compliant).")
+lines.append(r"$\star$: Efficiency Gap for this state computed from 2020 presidential")
+lines.append(r"returns (composite/congressional data unavailable); EG not shown.}")
 lines.append(r"\label{tab:multistate-dbs}\\")
 lines.append(r"\toprule")
 lines.append(r"State & $N$ & \multicolumn{4}{c}{DualBalance Score} & \multicolumn{2}{c}{$\mathrm{pop\_dev\_max}$} \\")
@@ -72,6 +76,7 @@ for s in STATES:
     n = STATE_INFO[s]["n_seats"]
     dbs = {p: get(s, p, "dualbalance_score") for p in PLANS}
     pop = {p: get(s, p, "pop_deviation_max") for p in PLANS}
+    eg_marker = "" if s in EG_STATES else r"$^{\star}$"
 
     valid = [v for v in dbs.values() if v is not None]
     best = max(valid) if valid else None
@@ -96,7 +101,7 @@ for s in STATES:
         return txt
 
     row = (
-        STATE_NAMES.get(s, s),
+        STATE_NAMES.get(s, s) + eg_marker,
         str(n),
         fmt_dbs(dbs["dualbalance"], "dualbalance"),
         fmt_dbs(dbs["cascade"], "cascade"),
@@ -115,35 +120,45 @@ TABLE1 = "\n".join(lines)
 # ---------------------------------------------------------------------------
 # Table 2: aggregate comparison
 # ---------------------------------------------------------------------------
-def med(metric, plan, absolute=False):
+def med(metric, plan, absolute=False, state_set=None):
+    ss = state_set if state_set is not None else STATES
     vals = []
-    for s in STATES:
+    for s in ss:
         v = get(s, plan, metric)
         if v is not None:
             vals.append(abs(v) if absolute else v)
     return np.median(vals) if vals else float("nan")
 
 
+EG_LIST = sorted(EG_STATES)
+N = len(STATES)
+NEG = len(EG_LIST)
+
 # Counts
 karcher_count = {p: sum(1 for s in STATES if (get(s, p, "pop_deviation_max") or 1) <= KARCHER)
                  for p in PLANS}
-beats_enacted = {p: sum(1 for s in STATES
-                        if (get(s, p, "dualbalance_score") or 0) >
-                           (get(s, "enacted", "dualbalance_score") or 0))
-                 for p in PLANS}
-
-N = len(STATES)
+beats_enacted_dbs = {p: sum(1 for s in STATES
+                             if (get(s, p, "dualbalance_score") or 0) >
+                                (get(s, "enacted", "dualbalance_score") or 0))
+                     for p in PLANS}
+beats_enacted_eg = {p: sum(1 for s in EG_LIST
+                            if abs(get(s, p, "efficiency_gap") or 1) <
+                               abs(get(s, "enacted", "efficiency_gap") or 1))
+                    for p in PLANS}
 
 rows_agg = [
-    ("DBS (median)",            [f"{med('dualbalance_score', p):.3f}" for p in PLANS], None),
+    (f"DBS (median, {N} states)",
+     [f"{med('dualbalance_score', p):.3f}" for p in PLANS], None),
     (r"$\mathrm{pop\_dev\_max}$ (median)",
      [f"{med('pop_deviation_max', p)*100:.1f}\\%" for p in PLANS], 1),
-    (r"At \emph{Karcher} ($\leq 0.05\,\%$)",
+    (f"At \\emph{{Karcher}} ($\\leq 0.05\\,\\%$)",
      [f"{karcher_count[p]}/{N}" for p in PLANS], None),
-    ("Beats enacted DBS",
-     [f"{beats_enacted[p]}/{N}" if p != 'enacted' else '---' for p in PLANS], None),
-    (r"$|\mathrm{EG}|$ (median)",
-     [f"{med('efficiency_gap', p, absolute=True):.3f}" for p in PLANS], None),
+    (f"Beats enacted DBS",
+     [f"{beats_enacted_dbs[p]}/{N}" if p != 'enacted' else '---' for p in PLANS], None),
+    (f"$|\\mathrm{{EG}}|$ median ({NEG} states$^\\star$)",
+     [f"{med('efficiency_gap', p, absolute=True, state_set=EG_LIST):.3f}" for p in PLANS], None),
+    (f"Beats enacted $|\\mathrm{{EG}}|$ ({NEG} states$^\\star$)",
+     [f"{beats_enacted_eg[p]}/{NEG}" if p != 'enacted' else '---' for p in PLANS], None),
     (r"Polsby-Popper mean (median)",
      [f"{med('polsby_popper_mean', p):.3f}" for p in PLANS], None),
 ]
@@ -169,8 +184,9 @@ def best_idx(row_vals, row_idx):
                 parsed.append(float(v))
         if row_idx == 1:  # pop_dev: lower is better
             parsed = [-x for x in parsed]
-        if row_idx == 4:  # |EG|: lower is better
-            parsed = [-x for x in parsed]
+        if row_idx in (4, 5):  # |EG| median and beats-enacted EG: lower/higher depends
+            if row_idx == 4:  # |EG| median: lower is better
+                parsed = [-x for x in parsed]
         best = max(parsed)
         return [i for i, x in enumerate(parsed) if abs(x - best) < 1e-9]
     except Exception:
@@ -179,11 +195,12 @@ def best_idx(row_vals, row_idx):
 agg_lines = []
 agg_lines.append(r"\begin{table}[htbp]")
 agg_lines.append(r"\centering")
-agg_lines.append(r"\caption{Aggregate algorithm comparison across all " + str(N) +
-                 r" available states. \textbf{Bold} marks the best value in each row.")
-agg_lines.append(r"``At \emph{Karcher}'' counts states where $\mathrm{pop\_dev\_max} \leq 0.05\,\%$.")
-agg_lines.append(r"``Beats enacted DBS'' counts states where the algorithm's DualBalance Score")
-agg_lines.append(r"exceeds the enacted plan's. Enacted plan cannot beat itself.}")
+agg_lines.append(r"\caption{Aggregate algorithm comparison. \textbf{Bold} marks the best value per row.")
+agg_lines.append(r"Non-partisan rows use all " + str(N) + r" available states.")
+agg_lines.append(r"$\star$ Efficiency Gap rows restricted to " + str(NEG) +
+                 r" states with composite or congressional election data;")
+agg_lines.append(r"the remaining " + str(N - NEG) + r" states use 2020 presidential")
+agg_lines.append(r"returns as a proxy (see \S\ref{sec:methods-tighten}).}")
 agg_lines.append(r"\label{tab:aggregate-comparison}")
 agg_lines.append(r"\small")
 agg_lines.append(r"\begin{tabular}{l rrrr}")
@@ -214,7 +231,7 @@ print(f"wrote {out}")
 
 # Print quick summary
 print(f"\n41-state summary:")
-print(f"  DualBalance beats enacted DBS: {beats_enacted['dualbalance']}/41")
+print(f"  DualBalance beats enacted DBS: {beats_enacted_dbs['dualbalance']}/41")
 print(f"  DualBalance at Karcher:        {karcher_count['dualbalance']}/41")
 print(f"  Cascade at Karcher:            {karcher_count['cascade']}/41")
 print(f"  BDistricting at Karcher:       {karcher_count['bdistricting']}/41")

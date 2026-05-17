@@ -36,19 +36,28 @@ plan_colors = {
     "enacted":      "#888888",
 }
 
+# Two-tier: EG plots use only composite/CONG states; all other metrics use all states.
+eg_states = sorted(
+    s for s in states
+    if data[s].get("votes_source", "pres_20") in ("comp_16_22", "cong_22")
+)
+print(f"EG tier: {len(eg_states)} states with composite/CONG data: {eg_states}")
+print(f"Full tier: {len(states)} states for non-partisan metrics")
 
-def collect(metric: str, plan: str) -> dict[str, float]:
+
+def collect(metric: str, plan: str, state_set: list[str] | None = None) -> dict[str, float]:
+    ss = state_set if state_set is not None else states
     out: dict[str, float] = {}
-    for s in states:
+    for s in ss:
         v = data.get(s, {}).get(plan, {}).get(metric)
         if v is not None:
             out[s] = float(v)
     return out
 
 
-# --- HEADLINE: ranked |EG| comparison, DualBalance vs Enacted ----------
-enacted_eg_abs = {s: abs(v) for s, v in collect("efficiency_gap", "enacted").items()}
-db_eg_abs = {s: abs(v) for s, v in collect("efficiency_gap", "dualbalance").items()}
+# --- HEADLINE: ranked |EG| comparison — EG tier only --------------------
+enacted_eg_abs = {s: abs(v) for s, v in collect("efficiency_gap", "enacted", eg_states).items()}
+db_eg_abs = {s: abs(v) for s, v in collect("efficiency_gap", "dualbalance", eg_states).items()}
 both = sorted(enacted_eg_abs.keys() & db_eg_abs.keys(),
               key=lambda s: -enacted_eg_abs[s])
 fig, ax = plt.subplots(figsize=(max(11, 0.45 * len(both)), 5.5))
@@ -63,8 +72,11 @@ ax.axhline(0.07, color="red", linestyle="--", linewidth=1, alpha=0.6,
 ax.set_xticks(x)
 ax.set_xticklabels(both, rotation=0 if len(both) <= 12 else 90, fontsize=8)
 ax.set_ylabel("|efficiency gap|  (lower is fairer)")
-ax.set_title(f"Partisan fairness across {len(both)} states "
-             "(sorted by enacted |EG|, worst-gerrymandered on the left)")
+ax.set_title(
+    f"Partisan fairness across {len(both)} states with composite/congressional election data\n"
+    "(sorted by enacted |EG|, worst-gerrymandered on left; "
+    "21 states using presidential proxy excluded)"
+)
 ax.legend(loc="upper right", fontsize=9)
 fig.tight_layout()
 out = REPO / "out" / "story_headline_eg.png"
@@ -77,10 +89,12 @@ print(f"wrote {out}")
 def box(metric: str, title: str, ylabel: str, fmt: str = "{:.3f}",
         yscale: str = "linear",
         hline: tuple[float, str] | None = None,
-        absolute: bool = False) -> None:
+        absolute: bool = False,
+        state_set: list[str] | None = None) -> None:
+    ss = state_set if state_set is not None else states
     series = {}
     for plan in plans:
-        vals = list(collect(metric, plan).values())
+        vals = list(collect(metric, plan, ss).values())
         if absolute:
             vals = [abs(v) for v in vals]
         series[plan] = vals
@@ -132,12 +146,14 @@ box("reock_mean",
     title=f"Reock compactness across {len(states)} states (higher = more compact)",
     ylabel="Reock_mean")
 box("efficiency_gap",
-    title=f"|Efficiency gap| across {len(states)} states (lower = fairer)",
+    title=f"|Efficiency gap| across {len(eg_states)} states (composite/CONG data; lower = fairer)",
     ylabel="|EG|", absolute=True,
-    hline=(0.07, "Gerrymander threshold 0.07"))
+    hline=(0.07, "Gerrymander threshold 0.07"),
+    state_set=eg_states)
 box("mean_median_R",
-    title=f"|mean-median R asymmetry| across {len(states)} states (lower = fairer)",
-    ylabel="|mean_median_R|", absolute=True)
+    title=f"|mean-median R asymmetry| across {len(eg_states)} states (composite/CONG data)",
+    ylabel="|mean_median_R|", absolute=True,
+    state_set=eg_states)
 box("minority_majority_districts",
     title=f"Minority-majority district count across {len(states)} states",
     ylabel="count")
