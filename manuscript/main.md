@@ -271,7 +271,7 @@ data-reference="sec:discussion">4</a>.
 Section <a href="#sec:methods" data-reference-type="ref"
 data-reference="sec:methods">2</a> formalizes the algorithm.
 Section <a href="#sec:results" data-reference-type="ref"
-data-reference="sec:results">3</a> reports the six-state empirical
+data-reference="sec:results">3</a> reports the 41-state empirical
 validation. Section <a href="#sec:discussion" data-reference-type="ref"
 data-reference="sec:discussion">4</a> discusses limits, trade-offs, and
 legal exposure.
@@ -1625,7 +1625,7 @@ data-reference="fig:headline-eg">1</a>).
 
 A note on the DualBalance Score comparison: Phase 2 of the optimizer
 directly hill-climbs DBS, so the observation that DualBalance scores
-above enacted plans on 25 of 41 states is structurally expected. The
+above enacted plans on 26 of 41 states is structurally expected. The
 more probative comparisons are on metrics the algorithm does not
 optimize: $`|\mathrm{EG}|`$ (wins 14/20 states) and majority-minority
 district counts (meets or exceeds enacted on most states). These carry
