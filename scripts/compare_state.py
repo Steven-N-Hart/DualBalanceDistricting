@@ -3,7 +3,7 @@
 Loads the units geojson once (with the full set of diagnostic columns
 that scoring expects), then scores four plans against the same harness:
 
-- **PRISM**       (out/<state>_yaml/map.geojson)
+- **DualBalance**       (out/<state>_yaml/map.geojson)
 - **Cascade**     (out/<state>_cascade/map.geojson)
 - **BDistricting** (data/<state>_bdistricting.geojson)
 - **Enacted**     (data/<state>_enacted.geojson)
@@ -58,7 +58,7 @@ HEADLINE_KEYS = [
 
 
 PLAN_SOURCES = [
-    ("prism", "out/{state}_yaml/map.geojson"),
+    ("dualbalance", "out/{state}_dualbalance/map.geojson"),
     ("cascade", "out/{state}_cascade/map.geojson"),
     ("bdistricting", "data/{state}_bdistricting.geojson"),
     ("enacted", "data/{state}_enacted.geojson"),

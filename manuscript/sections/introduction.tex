@@ -79,7 +79,27 @@ Gap~\cite{stephanopoulosmcghee2015}; mean--median, lopsided wins,
 and partisan-asymmetry $t$-tests~\cite{wang2016};
 declination~\cite{warrington2018}; ensemble outlier methods from
 Duke~\cite{mattinglyduke} and the MGGG Redistricting
-Lab~\cite{recom2021}. All of these are \emph{forensic} instruments:
+Lab~\cite{recom2021}. The Efficiency Gap (EG) in particular is the
+metric we use as our headline forensic check below, so its
+construction matters. EG counts ``wasted'' votes -- votes for a
+losing candidate (all of them) and the surplus above the
+bare-majority threshold for a winning candidate -- and reports the
+difference between the two parties' wasted-vote totals as a
+fraction of the statewide turnout:
+\begin{equation}
+  \mathrm{EG}
+    = \frac{\sum_d \mathrm{wasted}_R(d) - \sum_d \mathrm{wasted}_D(d)}
+           {\sum_d \mathrm{total}(d)}.
+  \label{eq:eg}
+\end{equation}
+$\mathrm{EG} = 0$ corresponds to equal vote-wasting; positive favors
+R, negative favors D. Stephanopoulos and McGhee proposed
+$|\mathrm{EG}| > 0.07$ as the threshold above which a plan may
+plausibly be challenged as a partisan
+gerrymander~\cite{stephanopoulosmcghee2015}, and this threshold has
+since been cited in federal litigation
+(e.g.~\emph{Whitford v.~Gill}). All of these metrics are
+\emph{forensic} instruments:
 they take an enacted map as input and ask whether its observed
 properties (shape, vote efficiency, partisan asymmetry, the location
 of its seat--vote curve) are consistent with maps that some
@@ -176,16 +196,19 @@ the composition is therefore also a pure function of
 $(\text{state geometry}, \text{census populations}, N, \text{Karcher tolerance } \tau)$.
 
 \begin{description}
-  \item[Stage 1 -- radial seed (PRISM).] Population-weighted Radial
-    Impartial Slicing places $N$ seeds in a small circle around the
-    population-weighted centroid, assigns each census unit to the
-    nearest seed with capacity remaining, and repairs contiguity
-    (\S\ref{sec:methods-seeds}). The districts come out as radial
+  \item[Stage 1 -- radial seed.] DualBalance places $N$ seeds in a
+    small circle around the population-weighted centroid, assigns
+    each census unit to the nearest seed with capacity remaining,
+    and repairs contiguity (\S\ref{sec:methods-seeds}). The districts come out as radial
     slices through the population center; each slice naturally spans
     both dense and sparse territory, so the area each slice inherits
     trends toward $A^{*}$ by geometry rather than by penalty.
-  \item[Stage 2 -- VTD-scale tightening.] A two-phase greedy local
-    search of boundary-unit moves closes the gap from
+  \item[Stage 2 -- VTD-scale tightening.] \emph{Voting tabulation
+    districts} (VTDs) are the precinct-scale geographic units the
+    Census Bureau publishes alongside the decennial PL 94-171 release;
+    a U.S.\ state typically has a few thousand, each holding on the
+    order of $10^3$ people. A two-phase greedy local search of
+    boundary-unit moves between adjacent VTDs closes the gap from
     several-percent radial pop deviation toward Karcher's
     $\sim 0.05\%$~\cite{karcher1983} threshold
     (\S\ref{sec:methods-optimize}). Phase~1 accepts any move that
@@ -197,15 +220,17 @@ $(\text{state geometry}, \text{census populations}, N, \text{Karcher tolerance }
     the district-adjacency graph that the 1-opt neighborhood cannot
     express. Phase~2 then hill-climbs DBS subject to the running
     pop-deviation envelope.
-  \item[Stage 3 -- block-scale refinement.] The VTD-level plan is
-    projected onto Census tabulation blocks via a deterministic
-    spatial join (each block inherits its containing VTD's district),
-    and Phases~1 and~2 are re-run at block granularity
-    (\S\ref{sec:methods-block}). Block populations are
-    \textasciitilde{}50$\times$ smaller than VTD populations, which
-    is the granularity needed for the running-max envelope around
-    $\tau$ to admit area-improving moves; this is where DBS makes
-    its biggest gains.
+  \item[Stage 3 -- block-scale refinement.] \emph{Census tabulation
+    blocks} are the smallest geographic units the Census Bureau
+    publishes population for; each VTD is composed of whole blocks,
+    and block populations are \textasciitilde{}50$\times$ smaller
+    than VTD populations (a typical block holds on the order of
+    $20$ people). The VTD-level plan is projected onto blocks via
+    a deterministic spatial join (each block inherits its containing
+    VTD's district), and Phases~1 and~2 are re-run at block
+    granularity (\S\ref{sec:methods-block}). The finer granularity
+    is what lets the running-max envelope around $\tau$ admit
+    area-improving moves; this is where DBS makes its biggest gains.
 \end{description}
 
 A per-district articulation-point cache (Tarjan on CSR adjacency
