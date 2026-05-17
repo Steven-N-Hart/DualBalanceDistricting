@@ -15,13 +15,15 @@ as detailed in \S\ref{sec:intro-legal} below. This paper proposes
 and validates \emph{DualBalance Districting}: a deterministic
 algorithm that computes congressional district maps as a pure
 function of state geometry, census populations, and district count
-$N$, with no free parameters, no randomness, and no human
+$N$, with no discretionary parameters, no randomness, and no human
 intervention at any stage. Each district is designed to carry
 approximately $1/N$ of the state's population and approximately
 $1/N$ of its land area, weighted equally in a single objective we
-call the DualBalance Score. A deterministic algorithm with no free
-parameters provides, by construction, a mathematical barrier against
-intentional map manipulation.
+call the DualBalance Score. A deterministic algorithm with
+pre-committed, publicly documented rules provides, by construction,
+a mathematical barrier against ad hoc map manipulation: every design
+choice is fixed before any specific state's data are examined, so no
+choice can be made after the fact to favor a party or candidate.
 
 \subsection{Redistricting Without a Neutral Standard}
 \label{sec:intro-legal}
@@ -72,15 +74,17 @@ density. Balancing area alongside population discourages concentration
 of districts exclusively within either dense metropolitan cores or
 sparse rural regions.
 
-The Electoral College makes the same dual logic operative at the
-executive level. Each state's electoral vote total equals its House
-seats plus its two Senate seats (Art.~II, \S1), explicitly combining
-a population-proportional component with a geographic floor.
-Presidential candidates must assemble coalitions distributed across
-states, not merely population-weighted majorities. Congressional
-districts calibrated on population alone are, in this respect, the
-exception in the broader constitutional framework rather than the
-rule.
+The Electoral College illustrates how the founders embedded both
+principles within a single institution. Each state's electoral vote
+total equals its House seats plus its two Senate seats
+(Art.~II, \S1), blending a population-proportional component with
+a geographic floor. The analogy operates at the level of
+constitutional design philosophy, not mechanical equivalence: the
+Electoral College combines the two principles \emph{across} states,
+allocating a fixed geographic bonus between them, while DualBalance
+applies them \emph{within} a single state's districts. The design
+logic is the same regardless, a constitutional order that declines
+to collapse representation onto a single extensive quantity.
 
 This is a mathematical challenge, not a free choice. A typical U.S.\
 state varies by two to three orders of magnitude between its densest
@@ -147,7 +151,14 @@ conditions constitutes a legally defensible, impartial template for
 states with substantially different population distributions and
 geographic structure. We re-implement it as a structured baseline
 (referred to here as \emph{Cascade} to avoid confusion with the
-agency) and use it as a point of comparison throughout.
+agency) and use it as a point of comparison throughout. Cascade
+captures the geographic-prioritization logic of the Iowa formula
+(county integrity first, then population balance, then compactness)
+but omits the institutional framework (the bipartisan advisory
+commission, multiple plan submissions, and legislative up-or-down
+vote) that is integral to Iowa's actual redistricting process. The
+comparison therefore isolates the algorithmic contribution of
+county-preservation, not the process surrounding it.
 
 \subsection{Contribution}
 
@@ -181,8 +192,11 @@ districts than the enacted plan on NC (2 vs.~1) and TX (22 vs.~19).
 \paragraph{Claims.} The procedure contains no explicit partisan,
 racial, or incumbent-aware optimization criteria: its inputs are
 census geometry and population totals, and its output is a pure
-function of those inputs with no tunable parameters affecting
-electoral or demographic outcomes. Adopting a generative criterion
+function of those inputs. Every design choice, including seed
+geometry, objective weighting, tolerance, and tie-breaking, is
+pre-committed and fixed before any specific state is examined.
+There are no in-session discretionary parameters that a line-drawer
+could adjust to affect electoral or demographic outcomes. Adopting a generative criterion
 as the design objective, rather than a forensic instrument, is a
 natural response to a setting in which no line-drawer is present
 to investigate. Scope limits and further qualifications appear in

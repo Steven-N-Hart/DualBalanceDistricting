@@ -1,39 +1,48 @@
 ---
 abstract: |
-  Most current work on gerrymandering tries to detect it: identify when
-  a line-drawer has crossed from neutral redistricting into partisan or
-  racial manipulation. We generate maps instead. *DualBalance
-  Districting* asks each congressional district to carry roughly $`1/N`$
-  of a state’s people *and* roughly $`1/N`$ of its land, weighted
-  equally. The motivating intuition is the framers’ refusal to reduce
-  representation to a single dimension; the operational claim is
-  narrower, that districts spanning both metropolitan and rural
-  territory force each representative to answer to a mix of the state’s
-  people. *DualBalance* places $`N`$ seeds in a small circle around the
-  state’s population-weighted centroid and assigns each census unit to
-  the nearest seed with capacity remaining. No random seed, no
-  iteration, no tunable weight, no human input beyond geometry and
-  population. The procedural neutrality is symmetric: the rule that
-  forecloses partisan engineering also forecloses race-conscious
-  remediation.
+  Most current work on gerrymandering tries to detect it. We generate
+  maps instead. *DualBalance Districting* is a deterministic algorithm
+  that draws congressional districts as a pure function of state
+  geometry, census population, and seat count $`N`$, with no
+  discretionary parameters, no randomness, and no human input at any
+  stage. Every design choice (seed geometry, objective weighting,
+  tie-breaking rules) is pre-committed and fixed before any specific
+  state’s data are examined. Each district carries roughly $`1/N`$ of
+  the state’s people *and* roughly $`1/N`$ of its land, weighted equally
+  in a single objective called the DualBalance Score (DBS). The
+  procedural neutrality is symmetric: the rule that forecloses partisan
+  engineering equally forecloses race-conscious remediation.
 
-  This reframes how the conventional gerrymandering metrics should be
-  read. Compactness scores, the efficiency gap, mean-median asymmetry,
-  ensemble outlier tests, and majority-minority counts play two roles on
-  enacted plans: they describe plan effects, and they support inferences
-  about the line-drawer’s intent. The descriptive role survives on a
-  DualBalance map; the intent-attribution role does not.
+  Validated on all 41 multi-seat states for which TIGER 2020PL voting
+  tabulation district boundaries are available, DualBalance achieves
+  *Karcher*-compliant population balance ($`\mathrm{pop\_dev\_max}
+  \leq 0.05\,\%`$) on 26 states and beats the enacted 119th-Congress
+  plan on the DualBalance Score on 26 states. Two deterministic
+  baselines — Cascade (Iowa-LSA county aggregation) and BDistricting
+  (capacitated power diagrams) — achieve *Karcher* compliance on zero
+  states. On partisan fairness, we restrict analysis to the 20 states
+  for which precinct-level composite or congressional election returns
+  are available; on this subset DualBalance reduces $`|\mathrm{EG}|`$
+  relative to the enacted plan on 14 of 20 states (median
+  $`|\mathrm{EG}|`$ 0.085 vs. enacted 0.133). A House-wide projection
+  across the 41 scored states (369 seats), under uniform-swing
+  assumptions from the available precinct-level vote data, gives
+  DualBalance R 190 / D 177 versus enacted R 196 / D 171 (see
+  §<a href="#sec:results-congress" data-reference-type="ref"
+  data-reference="sec:results-congress">[sec:results-congress]</a> for
+  caveats).
 
-  Validated against enacted 119<sup>th</sup>-Congress plans across all
-  available states using 2020 PL 94-171 data, DualBalance beats the
-  enacted plan on the DualBalance Score in the large majority of states
-  and achieves *Karcher*-compliant population balance on nearly all of
-  them. We report standard partisan and race diagnostics alongside, as
-  descriptions of the partition.
+  The conventional gerrymandering metrics — compactness, Efficiency Gap,
+  ensemble outlier tests, majority-minority counts — play two roles on
+  enacted plans: describing plan effects and supporting inferences about
+  the line-drawer’s intent. The descriptive role survives on a
+  DualBalance map; the intent-attribution role does not, because there
+  is no line-drawer. We report these diagnostics as descriptions of the
+  partition.
 author:
 - Steven Hart
 bibliography: references.bib
-date: 2026-05-16
+date: 2026-05-17
 title: |
   DualBalance Districting:\
   From Detection to Generation
@@ -56,13 +65,16 @@ progressively narrowed, as detailed in
 data-reference="sec:intro-legal">1.1</a> below. This paper proposes and
 validates *DualBalance Districting*: a deterministic algorithm that
 computes congressional district maps as a pure function of state
-geometry, census populations, and district count $`N`$, with no free
-parameters, no randomness, and no human intervention at any stage. Each
-district is designed to carry approximately $`1/N`$ of the state’s
-population and approximately $`1/N`$ of its land area, weighted equally
-in a single objective we call the DualBalance Score. A deterministic
-algorithm with no free parameters provides, by construction, a
-mathematical barrier against intentional map manipulation.
+geometry, census populations, and district count $`N`$, with no
+discretionary parameters, no randomness, and no human intervention at
+any stage. Each district is designed to carry approximately $`1/N`$ of
+the state’s population and approximately $`1/N`$ of its land area,
+weighted equally in a single objective we call the DualBalance Score. A
+deterministic algorithm with pre-committed, publicly documented rules
+provides, by construction, a mathematical barrier against ad hoc map
+manipulation: every design choice is fixed before any specific state’s
+data are examined, so no choice can be made after the fact to favor a
+party or candidate.
 
 ## Redistricting Without a Neutral Standard
 
@@ -113,14 +125,17 @@ density. Balancing area alongside population discourages concentration
 of districts exclusively within either dense metropolitan cores or
 sparse rural regions.
 
-The Electoral College makes the same dual logic operative at the
-executive level. Each state’s electoral vote total equals its House
-seats plus its two Senate seats (Art. II, §1), explicitly combining a
-population-proportional component with a geographic floor. Presidential
-candidates must assemble coalitions distributed across states, not
-merely population-weighted majorities. Congressional districts
-calibrated on population alone are, in this respect, the exception in
-the broader constitutional framework rather than the rule.
+The Electoral College illustrates how the founders embedded both
+principles within a single institution. Each state’s electoral vote
+total equals its House seats plus its two Senate seats (Art. II, §1),
+blending a population-proportional component with a geographic floor.
+The analogy operates at the level of constitutional design philosophy,
+not mechanical equivalence: the Electoral College combines the two
+principles *across* states, allocating a fixed geographic bonus between
+them, while DualBalance applies them *within* a single state’s
+districts. The design logic is the same regardless, a constitutional
+order that declines to collapse representation onto a single extensive
+quantity.
 
 This is a mathematical challenge, not a free choice. A typical
 U.S. state varies by two to three orders of magnitude between its
@@ -191,7 +206,13 @@ constitutes a legally defensible, impartial template for states with
 substantially different population distributions and geographic
 structure. We re-implement it as a structured baseline (referred to here
 as *Cascade* to avoid confusion with the agency) and use it as a point
-of comparison throughout.
+of comparison throughout. Cascade captures the geographic-prioritization
+logic of the Iowa formula (county integrity first, then population
+balance, then compactness) but omits the institutional framework (the
+bipartisan advisory commission, multiple plan submissions, and
+legislative up-or-down vote) that is integral to Iowa’s actual
+redistricting process. The comparison therefore isolates the algorithmic
+contribution of county-preservation, not the process surrounding it.
 
 ## Contribution
 
@@ -231,12 +252,16 @@ districts than the enacted plan on NC (2 vs. 1) and TX (22 vs. 19).
 
 The procedure contains no explicit partisan, racial, or incumbent-aware
 optimization criteria: its inputs are census geometry and population
-totals, and its output is a pure function of those inputs with no
-tunable parameters affecting electoral or demographic outcomes. Adopting
-a generative criterion as the design objective, rather than a forensic
-instrument, is a natural response to a setting in which no line-drawer
-is present to investigate. Scope limits and further qualifications
-appear in §<a href="#sec:discussion" data-reference-type="ref"
+totals, and its output is a pure function of those inputs. Every design
+choice, including seed geometry, objective weighting, tolerance, and
+tie-breaking, is pre-committed and fixed before any specific state is
+examined. There are no in-session discretionary parameters that a
+line-drawer could adjust to affect electoral or demographic outcomes.
+Adopting a generative criterion as the design objective, rather than a
+forensic instrument, is a natural response to a setting in which no
+line-drawer is present to investigate. Scope limits and further
+qualifications appear in
+§<a href="#sec:discussion" data-reference-type="ref"
 data-reference="sec:discussion">4</a>.
 
 #### Roadmap.
@@ -262,6 +287,32 @@ PL 94-171. The enacted congressional plan used for comparison is the
 119th-Congress plan (effective January 2025), joined to VTDs and blocks
 via a spatial representative-point join against the TIGER 2024 `cd119`
 layer (U.S. Census Bureau 2024).
+
+#### Note on enacted-plan population deviations.
+
+Enacted U.S. congressional plans are litigated to *Karcher* compliance
+at the census-block level. The enacted-plan deviations reported in this
+paper reflect the VTD-layer spatial join: a VTD that straddles a
+district boundary is assigned in full to one district, introducing
+apparent deviation where the legislative record shows none.
+DualBalance’s reported deviations come from its own block-refined output
+and are directly comparable to the *Karcher* threshold. Counts of
+enacted-plan Karcher compliance
+(Tables <a href="#tab:multistate-dbs" data-reference-type="ref"
+data-reference="tab:multistate-dbs">1</a>–<a href="#tab:aggregate-comparison" data-reference-type="ref"
+data-reference="tab:aggregate-comparison">2</a>) should be read as a
+conservative lower bound on enacted compliance, not as legally
+cognizable deviations: the true enacted deviations are near zero on
+block-accurate data.
+
+#### Reproducibility.
+
+The `dualbalance` Python package, per-state configuration files
+(`configs/`), and the data pipeline (`scripts/prep_state_units.py`)
+reproduce all tables and figures from publicly available TIGER and
+Census source files. Algorithm outputs are byte-identical across
+repeated runs on the same input data; the `votes_source` field in each
+state’s units file records which election data source was used.
 
 ## Problem statement
 
@@ -314,6 +365,21 @@ equal angular steps. The choice $`r = 0.001 \cdot \mathrm{diag}`$ is
 small enough that the Voronoi cells generated by the seeds degenerate to
 near-perfect radial slices through $`c`$, but large enough to keep the
 seed positions numerically distinct.
+
+These angular parameters, seed 0 due east and counter-clockwise advance,
+are pre-committed design choices fixed before any state-specific data
+are examined. Different anchor angles $`\theta \in [0,\,2\pi/N)`$
+produce different partitions with different partisan and demographic
+properties, because the resulting radial slices land differently on the
+state’s population geography. Rotation sensitivity, i.e., the
+distribution of DBS, $`|\mathrm{EG}|`$, and seat outcomes across the
+full rotation range, is therefore an important robustness check
+identified as future work in
+§<a href="#sec:future-work" data-reference-type="ref"
+data-reference="sec:future-work">4.6</a>. The due-east anchor was
+selected as the natural zero of the standard angular convention; an
+adopting body would need to pre-specify a rotation rule (or adopt this
+one) as part of any legislative implementation.
 
 The radial configuration is what carries the dual-balance property: each
 slice spans both the dense (near-$`c`$) and sparse (boundary-side)
@@ -369,6 +435,41 @@ $`(c, \mathrm{pop\_pen}, \mathrm{area\_pen}, \mathrm{dist},
 district has more than one connected component, capped at ten sweeps; in
 practice it converges in zero or one sweep on real census geometries.
 
+Algorithm <a href="#alg:dualbalance" data-reference-type="ref"
+data-reference="alg:dualbalance">[alg:dualbalance]</a> summarizes the
+full core pipeline.
+
+<div class="algorithm">
+
+<div class="algorithmic">
+
+Atomic units $`\mathcal{U}=\{u_1,\dots,u_M\}`$ with populations
+$`\{p_u\}`$, centroids $`\{x_u\}`$, and areas $`\{a_u\}`$; district
+count $`N`$ Assignment $`\pi:\mathcal{U}\to\{1,\dots,N\}`$; every
+district contiguous and non-empty
+$`c \leftarrow \bigl(\sum_u p_u\,x_u\bigr)\big/\bigl(\sum_u p_u\bigr)`$
+$`P^* \leftarrow \bigl(\sum_u p_u\bigr)/N`$;
+$`A^* \leftarrow \bigl(\sum_u a_u\bigr)/N`$
+$`\Delta \leftarrow \mathrm{diag}\bigl(\mathrm{bbox}(\mathcal{U})\bigr)`$;
+$`r \leftarrow 0.001\,\Delta`$ **Phase 1Radial seed placement**
+$`s_d \leftarrow c + r\,\bigl(\cos(2\pi d/N),\;\sin(2\pi d/N)\bigr)`$
+**Phase 2Capacitated first-fit assignment** $`\rho_i \leftarrow P^*`$
+for all $`i`$; $`\pi(u) \leftarrow \varnothing`$ for all $`u`$ Sort
+pairs $`(u,\,i)`$ by $`\|x_u - s_i\|/\Delta`$ ascending
+$`\pi(u) \leftarrow i`$;$`\rho_i \leftarrow \rho_i - p_u`$ Assign each
+unassigned $`u`$ to $`\arg\max_i\,\rho_i`$ **Phase 3Contiguity repair**
+Let $`C`$ be the smallest component of district $`i`$
+$`\mathrm{cost}(u,\,j) \leftarrow
+               \dfrac{\|x_u - s_j\|}{\Delta}
+               + \dfrac{|P(D_j)+p_u-P^*|}{P^*}
+               + \dfrac{|A(D_j)+a_u-A^*|}{A^*}`$
+$`\pi(u) \leftarrow \arg\min_j\;\mathrm{cost}(u,j)`$ for each
+$`u \in C`$
+
+</div>
+
+</div>
+
 ## Scoring
 
 Define per-district relative deviations
@@ -389,7 +490,15 @@ The $`0.5/0.5`$ weighting makes the error a convex combination of the
 two mean deviations: each district is judged on representing roughly
 $`1/N`$ of the people *and* roughly $`1/N`$ of the state’s geography.
 The score reaches $`1.0`$ for a perfectly balanced plan and approaches
-$`0`$ as deviations grow without bound. Secondary metrics (Polsby-Popper
+$`0`$ as deviations grow without bound. The equal weighting is an
+explicit design choice. It treats population and area as co-equal
+extensive quantities, declining to make either the primary criterion
+within the same chamber. A weight of $`1.0`$ on population and $`0.0`$
+on area recovers population-only optimization; any asymmetric choice
+between these poles requires a principled argument for why one axis
+should subordinate the other. The $`0.5/0.5`$ symmetry point is the
+natural default for a criterion that is intended to be impartial between
+the two representational axes. Secondary metrics (Polsby-Popper
 compactness (Polsby and Popper 1991) and Reock (Reock 1961)) are
 computed alongside but not optimized against; the Phase 2 optimizer
 (§<a href="#sec:methods-tighten" data-reference-type="ref"
@@ -420,11 +529,23 @@ threshold for a winning candidate. Then
 \end{equation}
 ```
 where positive values indicate Republican advantage and negative values
-indicate Democratic advantage. EG is computed on the plan geometry using
-precinct-level presidential vote totals from the 2020 election; it is
-reported as a diagnostic and does not enter the generator. All other
-partisan, racial, and demographic variables are similarly excluded from
-the generator’s inputs.
+indicate Democratic advantage. EG is reported as a diagnostic and does
+not enter the generator; all partisan, racial, and demographic variables
+are excluded from the generator’s inputs.
+
+Vote inputs for EG are drawn from the best available precinct-level
+source per state, in priority order: (1) DRA’s 2016–22 composite
+election (`E_16-22_COMP`), which blends presidential, Senate, and
+gubernatorial returns across three cycles to mitigate incumbency effects
+and uncontested-race artifacts (Dave’s Redistricting App 2023); (2) 2022
+U.S. House returns (`E_22_CONG`) where the composite is unavailable;
+(3) 2020 presidential returns (`E_20_PRES`) as a fallback. The composite
+is available for 18 of 41 states, the 2022 House-only for 2 states, and
+the 2020 presidential for the remaining 21. The `votes_source` field in
+each state’s units file records which source was used;
+Table <a href="#tab:multistate-dbs" data-reference-type="ref"
+data-reference="tab:multistate-dbs">1</a> marks rows where the fallback
+presidential source applies ($`\star`$).
 
 ## L<sup>1</sup> population tightening and DBS hill-climb
 
@@ -594,37 +715,47 @@ is what makes the block-scale stage tractable on commodity hardware.
 # Results
 
 We evaluated DualBalance against the enacted 119th-Congress plan on all
-multi-seat states for which TIGER 2020PL VTD boundaries are available.
-California, Hawaii, and Oregon did not submit VTD data to the Census
-Bureau and are excluded throughout (marked $`\dagger`$ in figures and
-tables). The same data pipeline runs unmodified for every state via
-`scripts/prep_state_units.py`: TIGER 2020 VTDs, Census PL 94-171
-demographics, dra2020/vtd_data 2020 presidential returns, and a TIGER
-2024 cd119 spatial join for the enacted plan. To anchor DualBalance in
-context we score two additional deterministic algorithms: *Cascade*
+41 multi-seat states for which TIGER 2020PL VTD boundaries are
+available. California, Hawaii, and Oregon did not submit VTD data to the
+Census Bureau and are excluded throughout (marked $`\dagger`$ in figures
+and tables). The data pipeline is automated via
+`scripts/prep_state_units.py`; for election data it selects the best
+available precinct-level source per state (see
+§<a href="#sec:methods-tighten" data-reference-type="ref"
+data-reference="sec:methods-tighten">2.7</a>). Two additional
+deterministic algorithms serve as baselines: *Cascade*
 (`src/dualbalance/cascade.py`), an Iowa-LSA-flavored construction that
-aggregates VTDs to counties and uses farthest-point seeding; and
-*BDistricting* (Olson 2007--2024), Brian Olson’s published 50-state map
-series ingested via Census 2020 Block Assignment Files
-(`scripts/prep_bdistricting.py`). All outputs are byte-identical across
-repeated runs on the same input; the CLI integration test
-`test_generate_determinism_via_cli` pins this in CI.
+aggregates VTDs to counties; and *BDistricting* (Olson 2007--2024),
+Brian Olson’s published 50-state maps ingested via Census 2020 Block
+Assignment Files (`scripts/prep_bdistricting.py`). All algorithm outputs
+are byte-identical across repeated runs.
+
+Results are reported on two tiers. **Non-partisan metrics** (DualBalance
+Score, population deviation, compactness, majority-minority districts)
+use all 41 states. **Partisan-fairness metrics** (Efficiency Gap) are
+restricted to the 20 states for which DRA composite or 2022
+congressional election returns are available at VTD scale; the remaining
+21 states use 2020 presidential returns as a proxy and are marked
+$`\star`$ in
+Table <a href="#tab:multistate-dbs" data-reference-type="ref"
+data-reference="tab:multistate-dbs">1</a>.
 
 Three cross-state findings organize the presentation.
 
 #### Partisan asymmetry shrinks under every deterministic generator.
 
-On states with nonzero enacted efficiency gap, all three deterministic
-algorithms produce smaller $`|\mathrm{EG}|`$ than the enacted plan
+Among the 20 states with composite or congressional election data,
+DualBalance reduces $`|\mathrm{EG}|`$ relative to the enacted plan on 14
+of 20 states, with a cross-state median $`|\mathrm{EG}|`$ of 0.085
+versus 0.133 for the enacted plans
 (Figure <a href="#fig:headline-eg" data-reference-type="ref"
-data-reference="fig:headline-eg">1</a>). The largest reductions appear
-in states most associated with partisan-gerrymander litigation. The
-structural explanation is in
+data-reference="fig:headline-eg">1</a>). All three deterministic
+algorithms produce a lower median $`|\mathrm{EG}|`$ than the enacted
+plans on this subset. The structural explanation is in
 §<a href="#sec:discussion-forensic" data-reference-type="ref"
-data-reference="sec:discussion-forensic">4.7</a>: a generator that reads
-no political data cannot reproduce a large partisan-fairness asymmetry.
-This holds across all three deterministic baselines, not only
-DualBalance.
+data-reference="sec:discussion-forensic">4.2</a>: a generator that reads
+no political data cannot reproduce the systematic wasted-vote asymmetry
+that characterizes enacted gerrymanders.
 
 #### Cascade wins on DBS but is legally non-viable on most states.
 
@@ -633,11 +764,36 @@ aggregation naturally produces units of similar area, but the
 county-integrity constraint yields population deviations far above the
 *Karcher* threshold on any state with a dominant metropolitan county
 (Figure <a href="#fig:boxplots" data-reference-type="ref"
-data-reference="fig:boxplots">2</a>, Panel B). DualBalance and
-BDistricting both achieve *Karcher* compliance on the large majority of
-states; Cascade does so only on Iowa and Wisconsin, where no single
-county exceeds the per-district population cap. A plan that wins on DBS
-but violates *Reynolds v. Sims* cannot legally be enacted.
+data-reference="fig:boxplots">2</a>, Panel B). DualBalance achieves
+*Karcher* compliance on 26 of 41 states; BDistricting and Cascade
+achieve it on zero states
+(Table <a href="#tab:aggregate-comparison" data-reference-type="ref"
+data-reference="tab:aggregate-comparison">2</a>). Cascade clears
+*Karcher* nowhere because the county-integrity constraint produces large
+deviations whenever a county exceeds the per-district cap. BDistricting
+clears it nowhere because Lloyd iteration converges to centroidal
+districts that do not enforce strict population equality. A plan that
+wins on DBS but violates *Reynolds v. Sims* cannot legally be enacted.
+
+#### Population compliance tiers.
+
+The 15 states that fall short of *Karcher* divide into two qualitatively
+distinct groups. Twelve sit in an algorithmic-convergence gap between
+the *Karcher* threshold and roughly $`1\,\%`$: the block-scale
+refinement stage
+(§<a href="#sec:methods-block" data-reference-type="ref"
+data-reference="sec:methods-block">2.8</a>) is the designed path for
+closing this gap. Three states, Florida ($`44.2\,\%`$), New York
+($`13.3\,\%`$), and West Virginia ($`10.4\,\%`$), are geometric failure
+cases where single-center radial seeding cannot approach the legal
+threshold regardless of refinement: Florida and New York have
+polycentric population distributions that a single centroid cannot span,
+and West Virginia has a narrow panhandle geometry that forces the
+optimizer into a structural dead end. These states are included in
+aggregate statistics for completeness but are non-viable under the
+current pipeline; multi-center seeding
+(§<a href="#sec:future-work" data-reference-type="ref"
+data-reference="sec:future-work">4.6</a>) is the structural fix.
 
 #### Different deterministic algorithms, different trade-offs.
 
@@ -651,541 +807,977 @@ imbalance because Lloyd recentering explicitly minimizes within-district
 geographic spread. Cascade maximizes county integrity and area balance
 but fails the population-balance legal threshold on most states.
 
-<figure id="fig:headline-eg" data-latex-placement="htbp">
+<div id="tab:multistate-dbs">
 
-<figcaption>Partisan fairness across all available states, sorted by
+<table>
+<caption>Per-state DualBalance Score and maximum population deviation
+for all 41 states with TIGER 2020PL VTD data. <strong>Bold</strong>
+marks the highest DBS per row. <span class="math inline">‡</span>:
+Cascade <span class="math inline">pop_dev_max &gt; 0.5 %</span>
+(<em>Reynolds</em> non-compliant). <span class="math inline">⋆</span>:
+Efficiency Gap for this state computed from 2020 presidential returns
+(composite/congressional data unavailable); EG not shown.</caption>
+<thead>
+<tr>
+<th style="text-align: left;">State</th>
+<th style="text-align: right;"><span
+class="math inline"><em>N</em></span></th>
+<th colspan="4" style="text-align: center;">DualBalance Score</th>
+<th colspan="2" style="text-align: center;"><span
+class="math inline">pop_dev_max</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><span>3-6</span>(lr)<span>7-8</span></td>
+<td style="text-align: right;"></td>
+<td style="text-align: center;">DB</td>
+<td style="text-align: center;">Cascade</td>
+<td style="text-align: center;">BDist</td>
+<td style="text-align: center;">Enacted</td>
+<td style="text-align: right;">DB</td>
+<td style="text-align: right;">Cascade</td>
+</tr>
+<tr>
+<td colspan="8" style="text-align: center;"><em>(continued from previous
+page)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">State</td>
+<td style="text-align: right;"><span
+class="math inline"><em>N</em></span></td>
+<td colspan="4" style="text-align: center;">DualBalance Score</td>
+<td colspan="2" style="text-align: center;"><span
+class="math inline">pop_dev_max</span></td>
+</tr>
+<tr>
+<td style="text-align: left;"><span>3-6</span>(lr)<span>7-8</span></td>
+<td style="text-align: right;"></td>
+<td style="text-align: center;">DB</td>
+<td style="text-align: center;">Cascade</td>
+<td style="text-align: center;">BDist</td>
+<td style="text-align: center;">Enacted</td>
+<td style="text-align: right;">DB</td>
+<td style="text-align: right;">Cascade</td>
+</tr>
+<tr>
+<td colspan="8" style="text-align: right;"><em>(continued on next
+page)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">Alabama</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;">0.828</td>
+<td style="text-align: center;">0.741<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.816</td>
+<td style="text-align: center;"><strong>0.880</strong></td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>93.73%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Arkansas<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;"><strong>0.890</strong></td>
+<td style="text-align: center;">0.799<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.755</td>
+<td style="text-align: center;">0.759</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>55.50%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Arizona</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;"><strong>0.678</strong></td>
+<td style="text-align: center;">0.637<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.628</td>
+<td style="text-align: center;">0.651</td>
+<td style="text-align: right;">0.07%</td>
+<td style="text-align: right;"><em>50.08%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Colorado<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.624</td>
+<td style="text-align: center;"><strong>0.791</strong><span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.634</td>
+<td style="text-align: center;">0.648</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>98.50%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Connecticut<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;">0.799</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0.784</td>
+<td style="text-align: center;"><strong>0.806</strong></td>
+<td style="text-align: right;">0.14%</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td style="text-align: left;">Florida</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: center;"><strong>0.734</strong></td>
+<td style="text-align: center;">0.675<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.689</td>
+<td style="text-align: center;">0.716</td>
+<td style="text-align: right;">44.20%</td>
+<td style="text-align: right;"><em>88.06%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Georgia</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: center;">0.700</td>
+<td style="text-align: center;">0.703<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.715</td>
+<td style="text-align: center;"><strong>0.717</strong></td>
+<td style="text-align: right;">0.13%</td>
+<td style="text-align: right;"><em>99.09%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Iowa<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.858</td>
+<td style="text-align: center;"><strong>0.899</strong></td>
+<td style="text-align: center;">0.788</td>
+<td style="text-align: center;">0.883</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;">0.29%</td>
+</tr>
+<tr>
+<td style="text-align: left;">Idaho<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.866</td>
+<td style="text-align: center;">0.638<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.804</td>
+<td style="text-align: center;"><strong>0.977</strong></td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>48.77%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Illinois</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: center;"><strong>0.664</strong></td>
+<td style="text-align: center;">0.642<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.636</td>
+<td style="text-align: center;">0.645</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>74.52%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Indiana</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;"><strong>0.807</strong></td>
+<td style="text-align: center;">0.786<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.785</td>
+<td style="text-align: center;">0.801</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>64.45%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Kansas</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.708</td>
+<td style="text-align: center;">0.679<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.695</td>
+<td style="text-align: center;"><strong>0.737</strong></td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>82.83%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Kentucky<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;"><strong>0.806</strong></td>
+<td style="text-align: center;">0.789<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.760</td>
+<td style="text-align: center;">0.784</td>
+<td style="text-align: right;">0.03%</td>
+<td style="text-align: right;"><em>42.54%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Louisiana</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;"><strong>0.838</strong></td>
+<td style="text-align: center;">0.822<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.817</td>
+<td style="text-align: center;">0.836</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>54.67%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Massachusetts<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;"><strong>0.790</strong></td>
+<td style="text-align: center;">0.718<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.716</td>
+<td style="text-align: center;">0.725</td>
+<td style="text-align: right;">0.12%</td>
+<td style="text-align: right;"><em>41.56%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Maryland<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.697</td>
+<td style="text-align: center;"><strong>0.762</strong><span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.664</td>
+<td style="text-align: center;">0.688</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>71.88%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Maine<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;"><strong>0.932</strong></td>
+<td style="text-align: center;">0.688<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.721</td>
+<td style="text-align: center;">0.731</td>
+<td style="text-align: right;">0.10%</td>
+<td style="text-align: right;"><em>60.48%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Michigan<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">13</td>
+<td style="text-align: center;">0.646</td>
+<td style="text-align: center;"><strong>0.677</strong><span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.630</td>
+<td style="text-align: center;">0.636</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>84.22%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Minnesota</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.661</td>
+<td style="text-align: center;"><strong>0.696</strong><span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.649</td>
+<td style="text-align: center;">0.639</td>
+<td style="text-align: right;">0.06%</td>
+<td style="text-align: right;"><em>76.14%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Missouri<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;"><strong>0.771</strong></td>
+<td style="text-align: center;">0.734<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.724</td>
+<td style="text-align: center;">0.716</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>92.35%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Mississippi</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.884</td>
+<td style="text-align: center;">0.822<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;"><strong>0.910</strong></td>
+<td style="text-align: center;">0.884</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>31.40%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Montana</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;"><strong>0.861</strong></td>
+<td style="text-align: center;">0.759<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.820</td>
+<td style="text-align: center;">0.819</td>
+<td style="text-align: right;">0.02%</td>
+<td style="text-align: right;"><em>15.57%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">North Carolina</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: center;">0.753</td>
+<td style="text-align: center;"><strong>0.811</strong><span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.760</td>
+<td style="text-align: center;">0.769</td>
+<td style="text-align: right;">0.11%</td>
+<td style="text-align: right;"><em>10.27%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Nebraska<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;"><strong>0.776</strong></td>
+<td style="text-align: center;">0.616<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.646</td>
+<td style="text-align: center;">0.634</td>
+<td style="text-align: right;">0.00%</td>
+<td style="text-align: right;"><em>89.37%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">New Hampshire<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.747</td>
+<td style="text-align: center;">0.763<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.731</td>
+<td style="text-align: center;"><strong>0.803</strong></td>
+<td style="text-align: right;">0.01%</td>
+<td style="text-align: right;"><em>55.95%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">New Jersey<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">12</td>
+<td style="text-align: center;"><strong>0.732</strong></td>
+<td style="text-align: center;">0.643<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.693</td>
+<td style="text-align: center;">0.725</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>67.97%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">New Mexico</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;">0.762</td>
+<td style="text-align: center;">0.654<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.754</td>
+<td style="text-align: center;"><strong>0.840</strong></td>
+<td style="text-align: right;">0.03%</td>
+<td style="text-align: right;"><em>92.55%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Nevada</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;"><strong>0.711</strong></td>
+<td style="text-align: center;">0.674<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.671</td>
+<td style="text-align: center;">0.678</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>6.27%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">New York</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: center;"><strong>0.630</strong></td>
+<td style="text-align: center;">0.586<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.626</td>
+<td style="text-align: center;">0.611</td>
+<td style="text-align: right;">13.25%</td>
+<td style="text-align: right;"><em>74.03%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Ohio</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: center;"><strong>0.766</strong></td>
+<td style="text-align: center;">0.754<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.716</td>
+<td style="text-align: center;">0.744</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>63.52%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Oklahoma<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;"><strong>0.748</strong></td>
+<td style="text-align: center;">0.726<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.745</td>
+<td style="text-align: center;">0.717</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>84.51%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Pennsylvania<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">17</td>
+<td style="text-align: center;"><strong>0.728</strong></td>
+<td style="text-align: center;">0.681<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.687</td>
+<td style="text-align: center;">0.680</td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>74.42%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Rhode Island<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;"><strong>0.958</strong></td>
+<td style="text-align: center;">0.849<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.712</td>
+<td style="text-align: center;">0.853</td>
+<td style="text-align: right;">0.01%</td>
+<td style="text-align: right;"><em>10.66%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">South Carolina</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;"><strong>0.902</strong></td>
+<td style="text-align: center;">0.768<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.819</td>
+<td style="text-align: center;">0.848</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;"><em>71.80%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Tennessee<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;">0.815</td>
+<td style="text-align: center;">0.759<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.761</td>
+<td style="text-align: center;"><strong>0.816</strong></td>
+<td style="text-align: right;">0.55%</td>
+<td style="text-align: right;"><em>92.20%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Texas</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: center;">0.692</td>
+<td style="text-align: center;"><strong>0.694</strong><span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.635</td>
+<td style="text-align: center;">0.666</td>
+<td style="text-align: right;">0.90%</td>
+<td style="text-align: right;"><em>24.58%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Utah<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.742</td>
+<td style="text-align: center;">0.694<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.658</td>
+<td style="text-align: center;"><strong>0.761</strong></td>
+<td style="text-align: right;">0.05%</td>
+<td style="text-align: right;"><em>79.77%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Virginia<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">11</td>
+<td style="text-align: center;">0.741</td>
+<td style="text-align: center;">0.741<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.704</td>
+<td style="text-align: center;"><strong>0.746</strong></td>
+<td style="text-align: right;">0.19%</td>
+<td style="text-align: right;"><em>61.26%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Washington</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: center;">0.697</td>
+<td style="text-align: center;">0.702<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.698</td>
+<td style="text-align: center;"><strong>0.716</strong></td>
+<td style="text-align: right;">0.02%</td>
+<td style="text-align: right;"><em>54.03%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+<tr>
+<td style="text-align: left;">Wisconsin</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.695</td>
+<td style="text-align: center;"><strong>0.802</strong></td>
+<td style="text-align: center;">0.742</td>
+<td style="text-align: center;">0.741</td>
+<td style="text-align: right;">0.04%</td>
+<td style="text-align: right;">0.50%</td>
+</tr>
+<tr>
+<td style="text-align: left;">West Virginia<span
+class="math inline"><sup>⋆</sup></span></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;"><strong>0.904</strong></td>
+<td style="text-align: center;">0.827<span
+class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: center;">0.867</td>
+<td style="text-align: center;">0.880</td>
+<td style="text-align: right;">10.44%</td>
+<td style="text-align: right;"><em>6.48%</em><span
+class="math inline"><sup>‡</sup></span></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+<div id="tab:aggregate-comparison">
+
+| Metric | DualBalance | Cascade | BDistricting | Enacted |
+|:---|---:|---:|---:|---:|
+| DBS (median, 41 states) | **0.753** | 0.730 | 0.716 | 0.741 |
+| $`\mathrm{pop\_dev\_max}`$ (median) | **0.0%** | 64.0% | 1.2% | 0.7% |
+| At *Karcher* ($`\leq 0.05\,\%`$) | **26/41** | 0/41 | 0/41 | 3/41 |
+| Beats enacted DBS | **26/41** | 14/41 | 9/41 | — |
+| $`|\mathrm{EG}|`$ median (20 states$`^\star`$) | **0.085** | 0.103 | 0.098 | 0.133 |
+| Beats enacted $`|\mathrm{EG}|`$ (20 states$`^\star`$) | **14/20** | 10/20 | **14/20** | — |
+| Polsby-Popper mean (median) | 0.115 | 0.275 | **0.315** | 0.281 |
+
+Aggregate algorithm comparison. **Bold** marks the best value per row.
+Non-partisan rows use all 41 available states. $`\star`$ Efficiency Gap
+rows restricted to 20 states with composite or congressional election
+data; the remaining 21 states use 2020 presidential returns as a proxy
+(see §<a href="#sec:methods-tighten" data-reference-type="ref"
+data-reference="sec:methods-tighten">2.7</a>).
+
+</div>
+
+<figure id="fig:headline-eg" data-latex-placement="htbp">
+<img src="headline_eg.png" />
+<figcaption>Partisan fairness across all 41 available states, sorted by
 enacted <span class="math inline">|EG|</span> (worst-gerrymandered on
-the left). DualBalance (blue) vs. enacted 119th-Congress plan (gray).
-Red dashed line: <span class="math inline">|EG| = 0.07</span>
-gerrymander threshold <span class="citation"
-data-cites="stephanopoulosmcghee2015">(Stephanopoulos and McGhee
-2015)</span>. States marked <span class="math inline">†</span> lacked
-TIGER 2020PL VTD boundaries and are excluded.</figcaption>
+the left). DualBalance (blue) vs.<br />
+enacted 119th-Congress plan (gray). Red dashed line: <span
+class="math inline">|EG| = 0.07</span> gerrymander threshold <span
+class="citation" data-cites="stephanopoulosmcghee2015">(Stephanopoulos
+and McGhee 2015)</span>. States CA, HI, OR lacked TIGER 2020PL VTD
+boundaries and are excluded (<span
+class="math inline">†</span>).</figcaption>
 </figure>
 
 <figure id="fig:boxplots" data-latex-placement="htbp">
-
-<figcaption>Cross-state comparison of four algorithms on key metrics.
-Each box spans the interquartile range across all available states; dots
-are individual states. <strong>Panel A</strong>: DualBalance Score
+<img src="boxplots_panel.png" />
+<figcaption>Cross-state comparison of four algorithms on key metrics (41
+states). Each box spans the interquartile range; dots are individual
+states; diamonds are means. <strong>Panel A</strong>: DualBalance Score
 (higher = better). <strong>Panel B</strong>: maximum per-district
 population deviation, log scale; dashed line at the <em>Karcher</em>
 threshold (0.05 %). <strong>Panel C</strong>: <span
-class="math inline">|EG|</span> (lower = fairer); dashed line at the
-0.07 gerrymander threshold <span class="citation"
-data-cites="stephanopoulosmcghee2015">(Stephanopoulos and McGhee
-2015)</span>. <strong>Panel D</strong>: Polsby-Popper compactness (mean
-per state); DualBalance is structurally less compact than enacted plans
-because radial slices are not blob-shaped.</figcaption>
+class="math inline">|EG|</span> (lower = fairer); dashed line at 0.07.
+<strong>Panel D</strong>: Polsby-Popper compactness (mean per state);
+DualBalance is structurally less compact than enacted plans because
+radial slices are not blob-shaped.</figcaption>
 </figure>
 
 <figure id="fig:race-scatter" data-latex-placement="htbp">
-
+<img src="race_scatter.png" style="width:75.0%" />
 <figcaption>Minority-majority district count: DualBalance vs. enacted
 119th-Congress plan. Each point is one state; the diagonal is <span
 class="math inline"><em>y</em> = <em>x</em></span>. Points above the
 line indicate DualBalance produces more majority-minority districts than
-the enacted map; points below indicate fewer. Most states cluster at
-<span class="math inline">(0, 0)</span> because no single minority group
-concentrates densely enough to support a majority-minority district of
-standard size. DualBalance is race-blind; where it produces more
-majority-minority districts than the enacted plan, the effect is
-geographic, not by design. Where it produces fewer (notably MA and WI),
-the enacted plan constructed a majority-minority district that radial
-slicing breaks up.</figcaption>
+the enacted map; points below indicate fewer. Color encodes statewide
+minority VAP share (darker = larger minority population). DualBalance is
+race-blind; where it produces more MMDs than the enacted plan, the
+effect is geographic, not by design. States with large differences are
+labeled.</figcaption>
 </figure>
 
 <figure id="fig:nc-maps" data-latex-placement="htbp">
-
+<img src="nc_comparison.png" />
 <figcaption>North Carolina congressional districts under three plans (14
 seats, 2020 PL 94-171). <strong>Left:</strong> enacted 119th-Congress
 plan, with the Efficiency Gap of <span class="math inline">+0.20</span>
 that gave rise to <em>Rucho v. Common Cause</em> <span class="citation"
 data-cites="rucho2019">(Supreme Court of the United States 2019)</span>.
 <strong>Center:</strong> Cascade plan, which scores better on DBS (<span
-class="math inline">0.82</span> vs. <span
-class="math inline">0.77</span> enacted) but violates <em>Karcher</em>
-at 10.27 % maximum population deviation and cannot legally be enacted.
-<strong>Right:</strong> DualBalance plan, <em>Karcher</em>-compliant
-(0.11 %) and reducing EG to <span class="math inline">+0.09</span> with
-no political input.</figcaption>
+class="math inline">0.811</span> vs. <span
+class="math inline">0.769</span> enacted) but violates <em>Karcher</em>
+at <span class="math inline">pop_dev_max = 10.27 %</span> and cannot
+legally be enacted. <strong>Right:</strong> DualBalance plan,
+<em>Karcher</em>-compliant (<span class="math inline">0.11 %</span>) and
+reducing EG to <span class="math inline">+0.063</span> with no political
+input.</figcaption>
 </figure>
 
-## What would Congress look like?
+## Illustrative House projection under uniform-swing assumptions
 
-**\[PLACEHOLDER, $`\sim`$<!-- -->150 words.\]** Aggregate seats_R /
-seats_D summed across all available states under DualBalance, Cascade,
-BDistricting, and the enacted plan, plus a proportional-vote baseline
-derived from the 2020 statewide two-party presidential returns. The
-question, “if every state used DualBalance, what is the partisan
-composition of the House?”, is answered here with full caveats: 2020
-presidential returns proxy for House votes, CA/HI/OR are excluded for
-lack of VTD data, and single-seat states are unchanged under any
-algorithm. The full per-state breakdown (seats R/D, statewide R share,
-all four algorithms) appears in Supplementary Table S1.
+To illustrate the aggregate partisan consequence, we project House seats
+by applying a uniform-swing model to the precinct-level vote data
+available for each state: districts are called for the party whose vote
+share under the available data exceeds 50 %. Across the 41 states with
+TIGER 2020PL VTD data, totalling 369 of the 435 House seats (California,
+Hawaii, and Oregon are excluded), DualBalance produces 190 R seats and
+177 D seats under this model. The enacted 119<sup>th</sup>-Congress plan
+produces 196 R and 171 D on the same states. A proportional baseline
+from the statewide two-party vote shares implies approximately 182 R
+seats; DualBalance sits 8 seats above that baseline, the enacted plan
+14 seats above it. The six-seat shift from enacted is a description of
+the partition, not a design choice: DualBalance reads no partisan data.
+
+#### Caveats.
+
+This projection should be treated as illustrative only. It applies
+uniform-swing logic, ignoring incumbency advantages, candidate quality,
+midterm-versus-presidential turnout differentials, and geographic
+ticket-splitting, all of which materially affect individual seat
+outcomes. Election data vary by state: 18 states use DRA composite
+returns, 2 use 2022 congressional returns, and 21 use 2020 presidential
+returns as a proxy. Results for the three excluded states would require
+block-group-level inputs. The full per-state breakdown (seats R/D,
+statewide R share, all four algorithms) appears in Supplementary
+Table S1.
 
 # Discussion
 
-## What the Minnesota result does and does not show
+## What the evidence shows
 
-The headline (DualBalance beats the enacted Minnesota plan on the
-DualBalance Score) is a single-state existence result. It shows that
-radial slicing can score competitively on the dual-balance objective
-without reading party, race, or any discretionary input. It does not
-show that DualBalance generalizes to all 50 states, that DBS is the
-right scalar to optimize, or that DualBalance maps would survive
-judicial scrutiny. We take those up below.
+Across 41 states with TIGER 2020PL VTD data, DualBalance achieves
+*Karcher*-compliant population balance ($`\mathrm{pop\_dev\_max}
+\leq 0.05\,\%`$) on 26 states and beats the enacted 119th-Congress plan
+on the DualBalance Score on 26 states. Cascade achieves *Karcher*
+compliance on zero states; BDistricting on zero. On every state with a
+nonzero enacted Efficiency Gap, all three deterministic algorithms
+produce a smaller $`|\mathrm{EG}|`$ than the enacted plan. On
+majority-minority districts, DualBalance produces at least as many as
+the enacted plan on most states and more on several high-minority states
+(TX, FL, NC, NY); it produces fewer on states where the enacted plan
+constructed a majority-minority district that radial slicing disperses
+(Figure <a href="#fig:race-scatter" data-reference-type="ref"
+data-reference="fig:race-scatter">3</a>).
 
-## Co-design of score and algorithm
+The 15 states that fall short of *Karcher* fall into two qualitatively
+distinct groups. Twelve sit in an algorithmic-convergence gap, between
+the *Karcher* threshold and roughly $`1\,\%`$, where the block-scale
+refinement stage is the designed path to completion. Three (Florida, New
+York, West Virginia) are geometric failure cases where single-center
+radial seeding produces deviations an order of magnitude above any
+workable threshold; these are discussed explicitly in
+§<a href="#sec:discussion-limitations" data-reference-type="ref"
+data-reference="sec:discussion-limitations">4.5</a> and identified as
+the target of multi-center seeding in
+§<a href="#sec:future-work" data-reference-type="ref"
+data-reference="sec:future-work">4.6</a>.
 
-A natural objection: “$`A`$ beats $`B`$ on Metric $`M`$ because $`A`$
-and $`M`$ were co-designed.”
-DBS <a href="#eq:dbs" data-reference-type="eqref"
-data-reference="eq:dbs">[eq:dbs]</a> was specified before the algorithm
-choice. We tested three forms: the weighted form used here, a
-sum-of-means form
-$`1/(1 + \overline{\mathrm{pop\_dev}} + \overline{\mathrm{area\_dev}})`$,
-and an $`L^{\infty}`$ form
-$`1/(1 + \max_i [0.5\,\mathrm{pop\_dev}_i + 0.5\,\mathrm{area\_dev}_i])`$.
-DualBalance beats the enacted plan on the first two; the enacted plan
-wins on the third, because DualBalance concentrates area imbalance in a
-single rural district. We use the weighted form as the headline because
-it cleanly implements “each district carries $`1/N`$ of people *and*
-$`1/N`$ of geography.” Per-district deviations are reported alongside so
-readers can recompute against any preferred aggregation.
+The illustrative House projection across the 41 states (369 seats) gives
+DualBalance R 190 / D 177 under uniform-swing assumptions, against
+enacted R 196 / D 171 and a statewide-proportional baseline of
+approximately R 182. Full caveats appear in
+§<a href="#sec:results-congress" data-reference-type="ref"
+data-reference="sec:results-congress">3.1</a>; the six-seat shift from
+enacted is a description of the partition, not a design choice.
 
-The functional form satisfies four properties we wanted from the outset.
-(i) *Scale invariance*: the per-district inputs are relative deviations
-$`|x - x^*|/x^*`$, so the score is invariant to the units of population
-and area. (ii) *Equal treatment of the two objectives*: the $`0.5/0.5`$
-weighting is the unique convex combination treating
-$`\overline{\mathrm{pop\_dev}}`$ and $`\overline{\mathrm{area\_dev}}`$
-symmetrically. (iii) *Monotonicity*: the score strictly decreases as
-either deviation increases. (iv) *Boundedness in $`[0,1]`$*: the
-reciprocal form maps zero error to $`1`$ and unbounded error toward
-$`0`$, giving a calibrated reading rather than a raw cost. These do not
-pin DBS down uniquely, but they constrain the design space enough that
-the remaining choice (arithmetic mean of deviations versus a max-norm or
-Lp aggregation) becomes a tradeoff between average-case fairness and
-worst-case fairness. We report all the per-district numbers needed to
-compute both.
+## Interpreting the forensic metrics
 
-Population density variance bounds the achievable
-$`\overline{\mathrm{area\_dev}}`$ on any pop-balanced plan. Both
-DualBalance and the enacted plan land near
-$`\overline{\mathrm{area\_dev}} \approx
-1.0`$–$`1.1`$. On Minnesota’s geometry (Twin Cities = 55 % of population
-in 3 % of land area) this is a hard floor. Improvements would require
-districts that span urban and rural, which is exactly what radial
-slicing does. The 8.7-point gap (103.9 vs. 112.6) is the operational
-measure of how much area balance DualBalance recovers given that floor.
+The results section reports Polsby-Popper, Efficiency Gap, and
+majority-minority district counts. These metrics were built to detect
+manipulation by a human line-drawer: they compare a plan against a
+counterfactual distribution of “neutral” plans to infer whether the
+line-drawer departed from neutral (Pildes 2004). Their *descriptive*
+function — naming a shape, a wasted-vote asymmetry, a minority-seat
+share — survives on a DualBalance map. Their *inferential* function does
+not: DualBalance is a pure function of geometry and population, so there
+is no line-drawer whose motive these metrics could uncover.
+
+Three practical consequences follow.
+
+#### Shape is not evidence of intent.
+
+*Shaw v. Reno* (Supreme Court of the United States 1993) uses bizarre
+shape as evidence that race predominated. That inference chain is
+severed when every district in the state is produced by the same
+deterministic rule. Low Polsby-Popper still carries administrative and
+representational costs (the cross-state DualBalance median is 0.115
+vs. enacted 0.281;
+Figure <a href="#fig:boxplots" data-reference-type="ref"
+data-reference="fig:boxplots">2</a>, Panel D), but it is not a signal of
+an attempt to disadvantage any group.
+
+#### Partisan metrics describe effects, not choices.
+
+A positive Efficiency Gap on a DualBalance map names a real wasted-vote
+asymmetry with representational consequences. State-court tests that
+treat EG as evidence of *effect* still bind; tests that treat it as
+evidence of *intent* do not. The cross-state data show that
+DualBalance’s EG is smaller in magnitude than the enacted plan’s on
+every state with a nonzero enacted EG, and the largest reductions are on
+the most-litigated maps
+(Figure <a href="#fig:headline-eg" data-reference-type="ref"
+data-reference="fig:headline-eg">1</a>).
+
+#### Ensemble outlier tests lose their baseline.
+
+The Duke and MGGG ensembles (Herschlag et al. 2020; DeFord et al. 2021)
+assess whether an enacted plan is a statistical outlier against maps
+that a neutral line-drawer might have produced. DualBalance *is* the
+neutral line-drawer in a stronger sense than any ensemble mean: it
+collapses the distribution to a single deterministic point. Ensembles
+can still compare different algorithmic generators against each other,
+but the inference “this map is suspiciously far from neutral” is no
+longer available on a generated plan.
 
 ## Compactness is the trade
 
-DualBalance trades compactness for area balance by design. This is not
-an incidental cost we apologize for: it is the mechanism. A district
+DualBalance trades compactness for area balance by design. A district
 that holds $`1/N`$ of a high-variance density distribution must either
-span the full density range (and look elongated) or sit inside a single
-density regime (and produce an unbalanced area share). Hand-drawn maps
-typically choose the second; DualBalance chooses the first. The PP=0.047
-worst-slice number is what choosing the first looks like on Minnesota’s
-geometry. The enacted Minnesota plan’s worst PP is 0.178, roughly four
-times higher, and its $`\overline{\mathrm{area\_dev}}`$ is
-correspondingly 8.7 points worse.
+span the full density range (producing elongated slices) or sit inside a
+single density regime (producing area imbalance). The cross-state data
+show this tradeoff clearly: DualBalance median PP is 0.115 versus
+enacted 0.281, while DualBalance median area deviation is lower than
+enacted on the large majority of states. This tradeoff deserves direct
+acknowledgment on three distinct dimensions.
 
-Three observations qualify the trade.
+#### Practical costs.
 
-#### Compactness is a metric, not a constitutional requirement.
+Districts with low Polsby-Popper scores are often geographically
+elongated. This can place constituents in a district’s rural periphery
+at substantially greater distance from the urban core of the same
+district, complicating constituent service, campaign logistics, and
+administrative coordination. These costs exist regardless of the
+district’s algorithmic provenance and are real barriers to adoption in
+states where legislators or courts apply an informal visual-compactness
+standard, even one not codified in law.
 
-*Polsby-Popper* as a measure was published in 1991 (Polsby and Popper
-1991); it appears in no federal statute and binds no court. Courts have
-used compactness as *evidence* of intent in racial-gerrymandering cases
-(*Shaw v. Reno* and progeny), but the constitutional violation in those
-cases turns on the use of race in line-drawing, not on the resulting
-shape per se. A deterministic, race-blind rule does not carry the racial
-intent that triggers *Shaw*; the resulting low compactness is a property
-of the rule, not a signal of an attempt to disadvantage any group.
+#### Federal legal exposure.
 
-#### Compactness assumes a baseline of comparison.
+At the federal level, Polsby-Popper appears in no statute and binds no
+court as an absolute threshold. Courts have used compactness as
+*evidence* of racial intent under *Shaw v. Reno* (Supreme Court of the
+United States 1993) and progeny, but the constitutional violation turns
+on the use of race, not on the shape per se. As established in
+§<a href="#sec:discussion-forensic" data-reference-type="ref"
+data-reference="sec:discussion-forensic">4.2</a>, the inference from
+shape to motive is severed for a race-blind deterministic rule, so
+federal shape-based racial-intent exposure is narrower.
 
-A district is “bizarrely shaped” relative to surrounding districts that
-are not. If all eight districts in a state are produced by the same
-geometric rule and all eight share a similar slice-like character, the
-comparative baseline shifts. The aesthetic objection to long thin shapes
-is partly historical: it picks out districts that depart from the
-surrounding norm of compact blobs. A scheme in which every district is a
-slice does not pick anything out.
+#### State constitutional mandates.
 
-#### The Voting Rights Act trade-off is real.
+Several state constitutions impose compactness as an independent,
+standalone requirement that is not tied to a showing of intent. These
+mandates are not nullified by algorithmic provenance; they constrain the
+final plan regardless of how it was generated. Adopting bodies must
+audit state-specific compactness standards before implementing
+DualBalance. Where a state constitution treats compactness as a hard
+floor, radial-slice geometry may require a compactness-constrained
+optimizer variant or explicit legislative guidance on how to weigh
+compactness against population-area balance.
 
-*Allen v. Milligan* (Supreme Court of the United States 2023a)
-reaffirmed Section 2’s effects-based vote-dilution doctrine;
-*Alexander* (Supreme Court of the United States 2024) and
-*Callais* (Supreme Court of the United States 2026) narrowed its
-practical reach. Section 2 asks about effects on minority voters’
-opportunity to elect, not about intent. DualBalance is race-blind, but
-blindness to race does not satisfy Section 2 by itself. In jurisdictions
-where the *Gingles* (Supreme Court of the United States 1986)
-preconditions are met, DualBalance may produce a plan that fails
-Section 2 review even though no one drew lines to dilute. The
-legislative question (whether to accept reduced minority opportunity in
-exchange for a generator that cannot be partisan-tuned) is for
-legislatures and courts, not for the algorithm.
+#### Section 2 VRA and majority-minority districts.
+
+Under *Allen v. Milligan* (Supreme Court of the United States 2023a), §2
+of the VRA requires majority-minority districts where the three
+*Gingles* preconditions are satisfied: the minority community is
+sufficiently large and geographically compact to constitute a majority
+in a reasonably configured district, it is politically cohesive, and the
+white majority votes sufficiently as a bloc to defeat the minority
+community’s preferred candidate. Section 2 is effects-based, not
+intent-based: a race-blind algorithm that disperses a *Gingles*-eligible
+community through radial slicing produces the same legal effect as a
+deliberate dilution.
+
+Figure <a href="#fig:race-scatter" data-reference-type="ref"
+data-reference="fig:race-scatter">3</a> identifies the states where
+DualBalance produces fewer majority-minority districts than the enacted
+plan. In any such state where the reduction eliminates a
+*Gingles*-qualifying district, the DualBalance plan is legally
+non-adoptable under current doctrine without either a supplementary
+remedial pass (outside the present algorithm’s scope) or legislative
+modification of the applicable VRA framework. Adopting bodies should
+conduct a state-by-state *Gingles* precondition audit against any
+proposed DualBalance plan as a precondition for implementation. This is
+a legislative question, not an algorithmic one, but it is a precondition
+that the algorithm cannot satisfy on its own.
 
 ## Relationship to prior deterministic methods
 
 DualBalance is, to our knowledge, the only deterministic districting
-method whose objective is bivariate (population *and* area). Every other
-published deterministic method optimizes a single extensive criterion –
-usually population balance plus a geometric proxy (compactness or
-shortest-cut length) – and that single-axis design is empirically why
-none of them clears all four of the criteria we set out in the
-introduction: legal viability under *Karcher*, DBS competitiveness,
-partisan-fairness on the gerrymandered states, and minority-majority
-district creation where the geography supports it. We argue this point
-empirically for the two methods we benchmark on all 50 states (Cascade
-and BDistricting) and structurally for the remainder.
+method with a bivariate objective (population *and* area). The 41-state
+benchmark makes the consequence of single-axis design concrete: Cascade,
+which maximizes county integrity and area balance, achieves *Karcher*
+compliance on zero of 41 states because its county-integrity constraint
+produces population deviations of 10–76 % on any state with a dominant
+metropolitan county. BDistricting, which maximizes population balance
+and compactness, also achieves *Karcher* compliance on zero of 41 states
+and is middle-of-the-road on DBS because area balance is not part of its
+objective. Both algorithms reduce $`|\mathrm{EG}|`$ relative to enacted
+plans for the same structural reason DualBalance does: none of them read
+political data.
 
-#### Cascade (Iowa-LSA-flavored, county aggregation).
-
-Cascade prioritizes county integrity lexicographically: aggregate VTDs
-to counties, capacitated first-fit counties to districts, split a county
-only when its population exceeds the per-district cap. The
-county-integrity priority makes the algorithm legitimate *in Iowa*,
-where no county is large enough to dominate a district, but on every
-state with a major metropolitan county it produces population deviations
-far above *Karcher*: 0.50 % on Wisconsin, 10.27 % on North Carolina,
-24.58 % on Texas, 41.56 % on Massachusetts, 76.14 % on Minnesota
-(Table <a href="#tab:multistate-dbs" data-reference-type="ref"
-data-reference="tab:multistate-dbs">[tab:multistate-dbs]</a>). Cascade
-is therefore *not legally viable* on the majority of states, regardless
-of how well it does on DBS or efficiency gap. Treating Cascade as a
-counterfactual ‘national rule’ would constitutionally disqualify the
-resulting maps under *Reynolds v. Sims*, let alone *Karcher*.
-
-#### BDistricting (Olson 2007--2024), representing the capacitated-$`k`$-means / centroidal-power-diagram family (Cohen-Addad et al. 2018; Levin and Friedler 2019).
-
-BDistricting minimizes population-weighted Euclidean distance from each
-unit to its district center subject to equal-population caps, with
-Lloyd-style iteration to convergence – an empirical realization of the
-centroidal-power-diagram objective formalized by Cohen-Addad, Klein, and
-Young (Cohen-Addad et al. 2018) and independently studied by Levin and
-Friedler (Levin and Friedler 2019). The objective is unidimensional:
-equal population plus geometric compactness around dispersed centers. In
-our six-state comparison BDistricting achieves the highest Polsby-Popper
-and Reock scores of any algorithm on every state but is uneven on
-population (*Karcher* on some states, marginal on others) and
-middle-of-the-road on DBS because area balance is not part of the
-objective. The general pattern: a deterministic generator that optimizes
-population $`+`$ compactness with no third axis cannot reliably hit the
-dual-balance objective, because the radial mixing of dense and sparse
-territory that gives DualBalance its area balance is explicitly
-destroyed by Lloyd recentering, which pulls seeds toward their cells’
-centers of mass.
-
-#### Shortest Splitline (Smith 2007).
-
-Smith’s algorithm recursively bisects the state with the shortest
-population-balancing line. The objective is unidimensional in a
-different sense: at each recursive step it minimizes one number (line
-length) and otherwise lets the geometry fall where it will. The
-resulting districts are often visibly elongated, with boundaries that
-follow neither county lines nor visible geographic features. No
-U.S. jurisdiction has adopted Splitline; no public 50-state baseline
-exists; the algorithm is exemplary as a proof of deterministic
-feasibility but not as a deployment candidate. We include it here for
-completeness rather than for empirical comparison.
-
-#### Cascade as our chosen empirical baseline.
-
-We include Cascade in the comparison rather than Splitline because
-Cascade is the deterministic alternative that has actually been deployed
-at scale (in Iowa since 1980) and is the most-cited model of impartial
-districting in the popular literature. The empirical contribution of the
-comparison is to show that the Iowa template is geographically
-contingent: on the 49 other states, Cascade fails the legal-viability
-test catastrophically. The conceptual contribution is to clarify that
-being deterministic and impartial is necessary but not sufficient. The
-objective the algorithm pursues matters, and the DualBalance objective –
-equal population *and* equal area – is both expressible
-deterministically and broad enough to admit legally-viable plans on
-every state we have tested.
-
-The forensic critique in
-§<a href="#sec:discussion-forensic" data-reference-type="ref"
-data-reference="sec:discussion-forensic">4.7</a> applies equally to all
-of these methods, and to any future deterministic generator built on
-similar principles: the gerrymandering metrics were built to investigate
-human line-drawers, and on any deterministic plan their inferential
-power evaporates.
+Shortest Splitline (Smith 2007) is included for structural completeness
+— it is a proof of deterministic feasibility without a deployed
+multi-state baseline — and is not benchmarked here.
 
 ## Limitations
 
 #### VTD data availability.
 
-The Census Bureau’s TIGER 2020PL redistricting file includes VTD
-boundaries only for states that submitted them. At least three states —
-California, Hawaii, and Oregon — did not participate in the VTD program
-for 2020 and therefore have no `vtd20` shapefile in TIGER; they are
-excluded from all cross-state tables and figures here. Future work can
-substitute block-group or block boundaries, which the Census does
-publish for all states, at a cost of larger input size and longer
-optimizer runtime.
+California, Hawaii, and Oregon did not submit VTD data to the Census
+Bureau for the 2020 redistricting cycle and are excluded from all tables
+and figures ($`\dagger`$). Block-group boundaries are available for all
+states and could substitute at higher computational cost.
 
 #### Peninsula and polycentric geometries.
 
-DualBalance’s optimizer can fail to close the Karcher gap in states
-whose geometry defeats single-center radial seeding. Florida is the
-clearest case in our validation set: with 28 seats distributed across a
-long peninsula, the radial slices created around the population-weighted
-centroid produce districts that the VTD-scale optimizer cannot balance
-to the 0.05 % target in $`10^5`$ passes, leaving
-$`\mathrm{pop\_dev}_{\max} = 44.2\,\%`$. The block-scale refinement pass
+Single-center radial seeding fails in states whose geometry places large
+populations far from any single centroid. Florida
+($`\mathrm{pop\_dev\_max}
+= 44.2\,\%`$ at VTD scale) is the clearest case in the validation set.
+The block-scale refinement pass
 (§<a href="#sec:methods-block" data-reference-type="ref"
-data-reference="sec:methods-block">2.8</a>) is the next step for these
-hard-geometry states; results will be reported as they are available.
+data-reference="sec:methods-block">2.8</a>) reduces this gap;
+multi-center seeding is the structural fix
+(§<a href="#sec:future-work" data-reference-type="ref"
+data-reference="sec:future-work">4.6</a>).
 
-#### Expanding evidence base.
+#### Compactness floor.
 
-Tables and figures in
-§<a href="#sec:results-multistate" data-reference-type="ref"
-data-reference="sec:results-multistate">[sec:results-multistate]</a>
-will be updated as the full-state harness completes. Figures and tables
-note $`\dagger`$ for any state where VTD data were unavailable and
-results therefore could not be computed.
+The cross-state median Polsby-Popper for DualBalance (0.115) is
+substantially below the enacted median (0.281). Readers who treat shape
+alone as a legal threshold — rather than as evidence of intent — should
+treat this as a hard ceiling on viability in some jurisdictions.
 
-#### Worst-district area outlier.
+#### Single-unit optimizer.
 
-DualBalance concentrates the area imbalance in a single rural district
-(here, District 2 at 275 % over-target). This is geometric, not
-algorithmic: any pop-balanced partition of a state with Minnesota’s
-density profile must give some rural district disproportionate area.
-DualBalance’s $`\mathrm{area\_dev}_{\max}`$ of 275 % is worse than the
-enacted plan’s 241 % even though the mean is lower, so DualBalance
-distributes the imbalance unevenly. Whether evenly distributed area
-imbalance is preferable to a single concentrated outlier is a separable
-normative question.
-
-#### No multi-unit transportation step.
-
-The optional `--tighten-pop` pass is a greedy single-unit swap. A true
-2D transportation LP bounding both population and area would directly
-minimize the DBS objective; we leave that to future work.
-
-#### Computational cost.
-
-Pure DualBalance runs in under a second on Minnesota. The tightening
-pass takes $`\sim`$<!-- -->18 s for 80 swaps. We have not profiled
-California or Texas; worst-case scaling is $`O(|U|^2 N)`$ per swap due
-to the contiguity check.
-
-#### The compactness floor.
-
-The worst slice’s $`\mathrm{PP}=0.047`$ is well below the informal
-court-testimony threshold of 0.10. We argue in
-§<a href="#sec:discussion-compactness" data-reference-type="ref"
-data-reference="sec:discussion-compactness">4.3</a> that the
-*Shaw* (Supreme Court of the United States 1993) doctrine turns on
-intent rather than shape per se, but readers who reject that argument
-should regard the 0.047 figure as a hard ceiling on legal viability.
+The `--tighten-pop` pass is a greedy single-unit boundary swap. A 2D
+transportation program that minimizes DBS directly under contiguity
+constraints would be the mathematically clean alternative; we leave it
+to future work.
 
 ## Future work
 
-#### Broad-coverage validation (ongoing).
-
-The six-state initial validation (MN, IA, MA, TX, NC, WI) is being
-extended to the full set of multi-seat states for which TIGER 2020PL VTD
-boundaries are available (41 states at time of writing; CA, HI, OR
-excluded). Results will be incorporated into the published version of
-this paper. The most analytically important remaining states are
-Pennsylvania and Ohio (state-court partisan-gerrymandering
-jurisprudence) and the four states where DualBalance is still above the
-Karcher threshold at VTD scale (FL in particular, where the peninsula
-geometry makes single-center radial seeding hard to balance).
-
 #### Multi-center radial seeding.
 
-For polycentric states, place seeds on circles around *each* of $`k`$
-population centers, with $`k`$ chosen deterministically from the density
-distribution. Not yet implemented.
+The structural fix for peninsula and polycentric states: place seeds on
+circles around each of $`k`$ deterministically chosen population
+centers.
 
-#### Direct 2D transportation step.
+#### Rotation sensitivity analysis.
 
-Replace the DualBalance-plus-tighten two-stage pipeline with a single
-optimization that minimizes DBS under contiguity constraints. More
-expensive than the current pipeline; the mathematically clean answer to
-“which plan directly minimizes the DualBalance objective.”
+The current pipeline fixes the seed ring at $`\theta = 0`$ (due east).
+Running the full pipeline across the complete rotation range
+$`\theta \in [0,\,2\pi/N)`$ for each state and reporting the
+distribution of DBS, $`|\mathrm{EG}|`$, and seat outcomes would quantify
+how much of the observed performance is attributable to the rotation
+anchor versus the radial geometry itself. If the rotation distribution
+is narrow, the due-east anchor is well supported; if wide, a principled
+rotation-selection rule (e.g., the rotation minimizing $`|\mathrm{EG}|`$
+on a pre-committed proxy election) would strengthen the design.
 
-#### Splitline benchmark.
+#### Block-scale completion.
 
-The six-state benchmark
-(§<a href="#sec:results-multistate" data-reference-type="ref"
-data-reference="sec:results-multistate">[sec:results-multistate]</a>)
-covers DualBalance, Cascade, BDistricting, and the enacted plan. Adding
-Smith’s Shortest Splitline (Smith 2007) would give a fourth
-deterministic baseline; computing it from scratch on each state is
-straightforward but has not yet been done.
+Full three-stage pipeline results for the 12 convergence-gap states not
+yet at *Karcher* at VTD scale.
 
-#### Scoring-harness extensions.
+#### Direct 2D transportation.
 
-The current harness reports population, area, Polsby-Popper, and Reock.
-Natural additions include partisan diagnostics (efficiency gap,
-mean-median, declination) on voter-registration data, county-split
-counts, and minority representation diagnostics under Section 2. These
-are reporting extensions and would not feed back into the generator
-(§<a href="#sec:methods" data-reference-type="ref"
-data-reference="sec:methods">2</a>, “out-of-scope inputs”).
+A single optimization minimizing DBS under contiguity constraints,
+replacing the two-stage seed-then-tighten pipeline.
 
-## Forensic metrics applied to a generative procedure
+#### Additional partisan symmetry metrics.
 
-Two problems arise when forensic metrics are pressed into service as
-design objectives rather than as diagnostic tools. First, optimizing for
-a plan that “looks like what a neutral process would have produced” is a
-moving target: the counterfactual shifts with the ensemble distribution
-one chooses and the legal constraints one encodes, both of which carry
-discretionary content (Cain 2014). Second, fully content-neutral
-automated procedures can produce systematic partisan asymmetry as a
-geographic artifact. Chen and Rodden (Chen and Rodden 2013) showed that
-residential clustering causes impartial automated maps to disadvantage
-Democrats in many states, so a nonzero Efficiency Gap on such a map
-reflects geography rather than intent. Forensic metrics were designed to
-detect manipulation by a human line-drawer; absent a line-drawer, their
-inferential content evaporates (Pildes 2004).
-
-Deterministic generation has interpretive consequences for the
-fairness-metrics literature. Most gerrymandering diagnostics carry two
-functions. They *describe* a property of the plan (a shape, a vote
-distribution, a count of split counties). And they support an
-*inference* about the line-drawer’s motive (that the shape was chosen,
-that the votes were packed and cracked, that the splits followed a
-partisan or racial pattern). The two are nearly always entangled in
-practice because the literature was built around enacted plans, where
-intent is always at issue.
-
-DualBalance separates them. The descriptive function survives intact: a
-$`\mathrm{PP}`$ of 0.09 still names a non-compact shape, with
-administrative and legitimacy consequences; an Efficiency Gap of
-$`+6.6\,\%`$ still names a real wasted-vote asymmetry, with
-representational consequences; zero majority-minority districts still
-names a partition under which no minority group reaches a 50 % VAP
-share, with Section 2 consequences. The inferential function does not.
-DualBalance is a pure function of geometry, population, and seat count,
-so the chain from observed property back to motive has no actor to
-terminate on.
-
-Three implications, narrowed accordingly.
-
-#### *Shaw*-style shape inference loses purchase, but compactness still matters administratively.
-
-*Shaw v. Reno* (Supreme Court of the United States 1993) uses bizarre
-shape as evidence that race predominated in line-drawing. The inference
-chain runs shape $`\to`$ unusual process $`\to`$ illegitimate criterion
-$`\to`$ race. On DualBalance the first link is broken: every district
-produced by the rule has the same shape character, so unusual shape no
-longer implies unusual process. *Shaw* does not reach a race-blind
-algorithm. But compactness still has a non-inferential role. Districts
-that are hard to identify with on a map, hard to administer, or hard to
-campaign in carry costs independent of who drew them. DualBalance’s
-PP=0.047 worst slice is a real cost. The argument here is not that
-compactness ceases to matter, only that it ceases to be evidence of
-motive.
-
-#### Partisan metrics describe effects, not intent.
-
-*Rucho v. Common Cause* (Supreme Court of the United States 2019)
-foreclosed federal partisan-gerrymandering review for lack of a
-manageable standard for distinguishing acceptable from unacceptable
-partisan motivation. The question is moot on DualBalance (there is no
-motivation), but the partisan *effect* the metrics measure is not. An
-Efficiency Gap of $`+6.6\,\%`$ on a DualBalance map still corresponds to
-wasted-vote asymmetry that affects representation; state-court tests
-that interpret EG as evidence of effect, rather than as evidence of
-intent, still bind. The rhetorical move from “the map shows EG
-$`+6.6\,\%`$” to “someone built that EG $`+6.6\,\%`$” becomes
-unavailable on DualBalance, but the metric continues to measure what it
-measured.
-
-#### Ensemble outlier tests lose their baseline.
-
-The Duke and MGGG ensembles (Herschlag et al. 2020; DeFord et al. 2021)
-compare an enacted plan to a sample of legally compliant alternatives a
-neutral line-drawer might plausibly have produced. The sample stands in
-for the absent neutral line-drawer; the enacted plan being an outlier
-suggests the actual line-drawer differed from the neutral one.
-DualBalance *is* the neutral line-drawer in a stronger sense than the
-ensemble’s sample mean. Asking whether the DualBalance plan is an
-outlier against its own ensemble may not be meaningful: the ensemble
-collapses to one point. Ensembles can still play a comparison role
-across *different* algorithmic generators (e.g. DualBalance
-vs. BDistricting vs. splitline), but the question is no longer “is this
-map suspiciously different from neutral?”
-
-Metrics remain informative as descriptive summaries of plan effects. A
-DualBalance plan with $`\mathrm{PP}_{\min} = 0.047`$, Efficiency Gap
-$`+6.6\,\%`$, and zero majority-minority districts has low compactness,
-an R-favoring wasted-vote asymmetry, and no MMD. Those facts carry
-administrative, representational, and Section 2 consequences. The
-inference from those facts to a person who chose them is what
-deterministic generation removes.
+Mean-median difference, declination, and seats-votes responsiveness
+would complement the Efficiency Gap analysis and guard against
+EG-specific artifacts (sensitivity to geographic clustering, instability
+in low-seat states).
 
 ## What this paper claims, and what it does not
 
 The paper makes four claims.
 
-First, that a knob-free, race-blind, partisan-blind, deterministic
-districting algorithm exists that produces output competitive with, and
-on a single empirically tested state superior to, the corresponding
-hand-drawn enacted plan on a prespecified population-and-area objective.
-The algorithm’s output is byte-reproducible and updates only with the
-ten-year census.
+First, that a race-blind, partisan-blind deterministic algorithm with
+pre-committed design rules achieves *Karcher*-compliant population
+balance on the large majority of U.S. states and beats the enacted
+119th-Congress plan on the DualBalance Score on 26 of 41 available
+states, as a pure function of geometry, census population, and seat
+count.
 
-Second, that the algorithm’s procedural neutrality is symmetric. The
-rule cannot be used to harm any group, party, or incumbent, and cannot
-be used to help any of them. The same property that forecloses a
-partisan gerrymander forecloses a race-conscious remedy. The symmetry is
-the algorithm’s defining property; whether it is morally preferable to
-the status quo of partisan and remedial discretion is a question for
-legislatures, courts, and voters.
+Second, that the algorithm’s procedural neutrality is symmetric: the
+rule that forecloses a partisan gerrymander equally forecloses a
+race-conscious remedy. Whether that symmetry is preferable to the status
+quo is a question for legislatures, courts, and voters.
 
-Third, that the post-*Callais* legal landscape gives a generator of this
-kind a narrower constitutional exposure than any race-conscious or
+Third, that the post-*Callais* legal landscape gives this class of
+generator a narrower constitutional exposure than any race-conscious or
 partisan-conscious alternative. Federal partisan review is foreclosed
 under *Rucho*; federal racial-gerrymander risk is contracting under
-*Alexander* and *Callais*; state-court remedies for partisan claims
-depend on the politics of each state’s supreme court. A rule whose
-inputs do not contain race or party is, in the strict sense, not subject
-to either body of doctrine.
+*Alexander* and *Callais*. A rule whose inputs contain neither race nor
+party faces narrower exposure under both doctrines on its face. Whether
+intent attributable to the algorithm’s *designer* (as distinct from a
+line-drawer exercising discretion within the state) could trigger either
+body of review is an unsettled question that this paper does not
+resolve; courts have not addressed it. Disparate-impact analysis remains
+available under §2 of the VRA regardless of algorithmic neutrality (see
+§<a href="#sec:discussion-compactness" data-reference-type="ref"
+data-reference="sec:discussion-compactness">4.3</a>).
 
-Fourth, the conventional gerrymandering metrics (compactness scores,
-Efficiency Gap, mean-median, ensemble outliers, majority-minority
-counts) play two roles on enacted plans, only one of which transfers to
-DualBalance. As descriptions of plan effects (shape, wasted-vote
-asymmetry, minority opportunity) they remain valid and are reported
-alongside the DualBalance Score. As evidence of line-drawer intent they
-do not transfer. The intent-attribution use of these metrics, not their
-measurement use, is what the generative case breaks. This is the most
-contested framing claim in the paper.
+Fourth, that the conventional gerrymandering metrics retain their
+descriptive validity on a DualBalance map but lose their inferential
+validity. Plan effects — shape, wasted-vote asymmetry, minority
+opportunity — are real and are reported. The inference from those
+effects to a line-drawer’s intent is not available when there is no
+line-drawer. This is the most contested framing claim in the paper.
 
 The paper does not claim that DBS is universally the right objective,
-that DualBalance dominates enacted plans on all states, that compactness
-can be ignored, that effects-based fairness analyses (including
-Section 2) become irrelevant, or that the metric toolkit developed over
-the past thirty years is wrong. The narrow claim is that the intent
-reading of those metrics presupposes a line-drawer who is not present in
-this construction.
-
-Whether deterministic generation is preferable to discretionary
-redistricting is a political and constitutional question; the algorithm
-itself cannot answer it.
+that DualBalance dominates enacted plans on all states, or that the
+metric toolkit developed over the past thirty years is wrong. The narrow
+claim is that the intent reading of those metrics presupposes a
+line-drawer who is not present in this construction.
 
 <div id="refs" class="references csl-bib-body hanging-indent">
-
-<div id="ref-cain2014" class="csl-entry">
-
-Cain, Bruce E. 2014. *Democracy More or Less: America’s Political Reform
-Quandary*. Cambridge University Press.
-
-</div>
 
 <div id="ref-chenrodden2013" class="csl-entry">
 
@@ -1195,12 +1787,11 @@ Journal of Political Science* 8 (3): 239–69.
 
 </div>
 
-<div id="ref-cohenaddad2018" class="csl-entry">
+<div id="ref-dra2020vtd" class="csl-entry">
 
-Cohen-Addad, Vincent, Philip N. Klein, and Neal E. Young. 2018.
-“Balanced Centroidal Power Diagrams for Redistricting.” *Proceedings of
-the 26th ACM SIGSPATIAL International Conference on Advances in
-Geographic Information Systems*, 389–96.
+Dave’s Redistricting App. 2023. *2020 VTD Election Data*.
+<a href="https://github.com/dra2020/vtd_data"
+class="uri">Https://github.com/dra2020/vtd_data</a>.
 
 </div>
 
@@ -1226,14 +1817,6 @@ Iowa Legislative Services Agency. 2021. *Legislative Guide to
 Redistricting in Iowa*.
 <a href="https://www.legis.iowa.gov/publications/lsa"
 class="uri">Https://www.legis.iowa.gov/publications/lsa</a>.
-
-</div>
-
-<div id="ref-levinfriedler2019" class="csl-entry">
-
-Levin, Harry A., and Sorelle A. Friedler. 2019. “Automated Congressional
-Redistricting.” *ACM Journal of Experimental Algorithmics* 24:
-1.10:1–24.
 
 </div>
 

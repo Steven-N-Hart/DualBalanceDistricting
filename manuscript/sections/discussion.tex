@@ -16,11 +16,22 @@ states (TX, FL, NC, NY); it produces fewer on states where the enacted
 plan constructed a majority-minority district that radial slicing
 disperses (Figure~\ref{fig:race-scatter}).
 
-The Congress-level projection across these 41 states (369 seats)
-gives DualBalance R\,190~/~D\,177, against the enacted R\,196~/~D\,171
-and a statewide-proportional baseline of approximately R\,182. The
-six-seat shift from enacted is a description of the partition; DualBalance
-reads no partisan data.
+The 15 states that fall short of \emph{Karcher} fall into two
+qualitatively distinct groups. Twelve sit in an algorithmic-convergence
+gap, between the \emph{Karcher} threshold and roughly $1\,\%$, where
+the block-scale refinement stage is the designed path to completion.
+Three (Florida, New York, West Virginia) are geometric failure cases
+where single-center radial seeding produces deviations an order of
+magnitude above any workable threshold; these are discussed explicitly
+in \S\ref{sec:discussion-limitations} and identified as the target of
+multi-center seeding in \S\ref{sec:future-work}.
+
+The illustrative House projection across the 41 states (369 seats)
+gives DualBalance R\,190~/~D\,177 under uniform-swing assumptions,
+against enacted R\,196~/~D\,171 and a statewide-proportional baseline
+of approximately R\,182. Full caveats appear in
+\S\ref{sec:results-congress}; the six-seat shift from enacted is a
+description of the partition, not a design choice.
 
 \subsection{Interpreting the forensic metrics}
 \label{sec:discussion-forensic}
@@ -75,19 +86,63 @@ span the full density range (producing elongated slices) or sit inside
 a single density regime (producing area imbalance). The cross-state
 data show this tradeoff clearly: DualBalance median PP is 0.115 versus
 enacted 0.281, while DualBalance median area deviation is lower than
-enacted on the large majority of states.
+enacted on the large majority of states. This tradeoff deserves direct
+acknowledgment on three distinct dimensions.
 
-This tradeoff has a legal dimension. Polsby-Popper~\cite{polsbypopper1991}
-appears in no federal statute and binds no court; courts have used
-compactness as \emph{evidence} of racial intent (\textit{Shaw v.\ Reno}
-and progeny), but the constitutional violation turns on the use of
-race, not on the shape per se. As established in
-\S\ref{sec:discussion-forensic}, the inference from shape to motive
-is severed for a race-blind deterministic rule. However, in
-jurisdictions where the \textit{Gingles}~\cite{gingles1986}
-preconditions are met, DualBalance may produce a plan that fails
-Section~2 review despite drawing no lines to dilute. That is a
-legislative question, not an algorithmic one.
+\paragraph{Practical costs.}
+Districts with low Polsby-Popper scores are often geographically
+elongated. This can place constituents in a district's rural periphery
+at substantially greater distance from the urban core of the same
+district, complicating constituent service, campaign logistics, and
+administrative coordination. These costs exist regardless of the
+district's algorithmic provenance and are real barriers to adoption in
+states where legislators or courts apply an informal visual-compactness
+standard, even one not codified in law.
+
+\paragraph{Federal legal exposure.}
+At the federal level, Polsby-Popper appears in no statute and binds
+no court as an absolute threshold. Courts have used compactness as
+\emph{evidence} of racial intent under \textit{Shaw v.~Reno}~\cite{shaw1993}
+and progeny, but the constitutional violation turns on the use of race,
+not on the shape per se. As established in \S\ref{sec:discussion-forensic},
+the inference from shape to motive is severed for a race-blind
+deterministic rule, so federal shape-based racial-intent exposure is
+narrower.
+
+\paragraph{State constitutional mandates.}
+Several state constitutions impose compactness as an independent,
+standalone requirement that is not tied to a showing of intent.
+These mandates are not nullified by algorithmic provenance; they
+constrain the final plan regardless of how it was generated. Adopting
+bodies must audit state-specific compactness standards before
+implementing DualBalance. Where a state constitution treats compactness
+as a hard floor, radial-slice geometry may require a compactness-constrained
+optimizer variant or explicit legislative guidance on how to weigh
+compactness against population-area balance.
+
+\paragraph{Section~2 VRA and majority-minority districts.}
+Under \textit{Allen v.~Milligan}~\cite{milligan2023}, \S2 of the VRA
+requires majority-minority districts where the three \textit{Gingles}
+preconditions are satisfied: the minority community is sufficiently
+large and geographically compact to constitute a majority in a
+reasonably configured district, it is politically cohesive, and the
+white majority votes sufficiently as a bloc to defeat the minority
+community's preferred candidate. Section~2 is effects-based, not
+intent-based: a race-blind algorithm that disperses a
+\textit{Gingles}-eligible community through radial slicing produces
+the same legal effect as a deliberate dilution.
+
+Figure~\ref{fig:race-scatter} identifies the states where DualBalance
+produces fewer majority-minority districts than the enacted plan. In
+any such state where the reduction eliminates a \textit{Gingles}-qualifying
+district, the DualBalance plan is legally non-adoptable under current
+doctrine without either a supplementary remedial pass (outside the
+present algorithm's scope) or legislative modification of the
+applicable VRA framework. Adopting bodies should conduct a
+state-by-state \textit{Gingles} precondition audit against any
+proposed DualBalance plan as a precondition for implementation.
+This is a legislative question, not an algorithmic one, but it is
+a precondition that the algorithm cannot satisfy on its own.
 
 \subsection{Relationship to prior deterministic methods}
 \label{sec:discussion-prior}
@@ -111,6 +166,7 @@ completeness --- it is a proof of deterministic feasibility without
 a deployed multi-state baseline --- and is not benchmarked here.
 
 \subsection{Limitations}
+\label{sec:discussion-limitations}
 
 \paragraph{VTD data availability.} California, Hawaii, and Oregon
 did not submit VTD data to the Census Bureau for the 2020
@@ -144,23 +200,40 @@ mathematically clean alternative; we leave it to future work.
 peninsula and polycentric states: place seeds on circles around each
 of $k$ deterministically chosen population centers.
 
+\paragraph{Rotation sensitivity analysis.} The current pipeline fixes
+the seed ring at $\theta = 0$ (due east). Running the full pipeline
+across the complete rotation range $\theta \in [0,\,2\pi/N)$ for each
+state and reporting the distribution of DBS, $|\mathrm{EG}|$, and seat
+outcomes would quantify how much of the observed performance is
+attributable to the rotation anchor versus the radial geometry itself.
+If the rotation distribution is narrow, the due-east anchor is well
+supported; if wide, a principled rotation-selection rule (e.g., the
+rotation minimizing $|\mathrm{EG}|$ on a pre-committed proxy election)
+would strengthen the design.
+
 \paragraph{Block-scale completion.} Full three-stage pipeline results
-for the 15 states not yet at \emph{Karcher} at VTD scale.
+for the 12 convergence-gap states not yet at \emph{Karcher} at VTD scale.
 
 \paragraph{Direct 2D transportation.} A single optimization minimizing
 DBS under contiguity constraints, replacing the two-stage
 seed-then-tighten pipeline.
 
+\paragraph{Additional partisan symmetry metrics.} Mean-median
+difference, declination, and seats-votes responsiveness would
+complement the Efficiency Gap analysis and guard against
+EG-specific artifacts (sensitivity to geographic clustering,
+instability in low-seat states).
+
 \subsection{What this paper claims, and what it does not}
 
 The paper makes four claims.
 
-First, that a knob-free, race-blind, partisan-blind deterministic
-algorithm achieves \emph{Karcher}-compliant population balance on
-the large majority of U.S.\ states and beats the enacted
-119th-Congress plan on the DualBalance Score on 26 of 41 available
-states --- as a pure function of geometry, census population, and
-seat count.
+First, that a race-blind, partisan-blind deterministic algorithm
+with pre-committed design rules achieves \emph{Karcher}-compliant
+population balance on the large majority of U.S.\ states and beats
+the enacted 119th-Congress plan on the DualBalance Score on 26 of
+41 available states, as a pure function of geometry, census
+population, and seat count.
 
 Second, that the algorithm's procedural neutrality is symmetric: the
 rule that forecloses a partisan gerrymander equally forecloses a
@@ -172,8 +245,14 @@ class of generator a narrower constitutional exposure than any
 race-conscious or partisan-conscious alternative. Federal partisan
 review is foreclosed under \textit{Rucho}; federal racial-gerrymander
 risk is contracting under \textit{Alexander} and \textit{Callais}.
-A rule whose inputs contain neither race nor party is not subject
-to either body of doctrine.
+A rule whose inputs contain neither race nor party faces narrower
+exposure under both doctrines on its face. Whether intent
+attributable to the algorithm's \emph{designer} (as distinct from a
+line-drawer exercising discretion within the state) could trigger
+either body of review is an unsettled question that this paper does
+not resolve; courts have not addressed it. Disparate-impact
+analysis remains available under \S2 of the VRA regardless of
+algorithmic neutrality (see \S\ref{sec:discussion-compactness}).
 
 Fourth, that the conventional gerrymandering metrics retain their
 descriptive validity on a DualBalance map but lose their inferential

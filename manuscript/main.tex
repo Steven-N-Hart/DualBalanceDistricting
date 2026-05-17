@@ -23,8 +23,11 @@
 Most current work on gerrymandering tries to detect it. We generate
 maps instead. \emph{DualBalance Districting} is a deterministic
 algorithm that draws congressional districts as a pure function of
-state geometry, census population, and seat count~$N$, with no free
-parameters, no randomness, and no human input at any stage. Each
+state geometry, census population, and seat count~$N$, with no
+discretionary parameters, no randomness, and no human input at any
+stage. Every design choice (seed geometry, objective weighting,
+tie-breaking rules) is pre-committed and fixed before any specific
+state's data are examined. Each
 district carries roughly $1/N$ of the state's people \emph{and}
 roughly $1/N$ of its land, weighted equally in a single objective
 called the DualBalance Score (DBS). The procedural neutrality is
@@ -43,7 +46,9 @@ precinct-level composite or congressional election returns are available;
 on this subset DualBalance reduces $|\mathrm{EG}|$ relative to the
 enacted plan on 14 of 20 states (median $|\mathrm{EG}|$ 0.085 vs.\
 enacted 0.133). A House-wide projection across the 41 scored states
-(369 seats) gives DualBalance R\,190~/~D\,177 versus enacted R\,196~/~D\,171.
+(369 seats), under uniform-swing assumptions from the available
+precinct-level vote data, gives DualBalance R\,190~/~D\,177 versus
+enacted R\,196~/~D\,171 (see \S\ref{sec:results-congress} for caveats).
 
 The conventional gerrymandering metrics --- compactness, Efficiency
 Gap, ensemble outlier tests, majority-minority counts --- play two

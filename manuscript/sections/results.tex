@@ -18,7 +18,7 @@ outputs are byte-identical across repeated runs.
 Results are reported on two tiers. \textbf{Non-partisan metrics}
 (DualBalance Score, population deviation, compactness, majority-minority
 districts) use all 41 states. \textbf{Partisan-fairness metrics}
-(Efficiency Gap, mean-median) are restricted to the 20 states for which
+(Efficiency Gap) are restricted to the 20 states for which
 DRA composite or 2022 congressional election returns are available at VTD
 scale; the remaining 21 states use 2020 presidential returns as a proxy
 and are marked $\star$ in Table~\ref{tab:multistate-dbs}.
@@ -47,6 +47,23 @@ produces large deviations whenever a county exceeds the per-district cap.
 BDistricting clears it nowhere because Lloyd iteration converges to
 centroidal districts that do not enforce strict population equality. A plan that wins on DBS but
 violates \emph{Reynolds v.~Sims} cannot legally be enacted.
+
+\paragraph{Population compliance tiers.}
+The 15 states that fall short of \emph{Karcher} divide into two
+qualitatively distinct groups. Twelve sit in an
+algorithmic-convergence gap between the \emph{Karcher} threshold
+and roughly $1\,\%$: the block-scale refinement stage
+(\S\ref{sec:methods-block}) is the designed path for closing this
+gap. Three states, Florida ($44.2\,\%$), New York ($13.3\,\%$), and
+West Virginia ($10.4\,\%$), are geometric failure cases where
+single-center radial seeding cannot approach the legal threshold
+regardless of refinement: Florida and New York have polycentric
+population distributions that a single centroid cannot span,
+and West Virginia has a narrow panhandle geometry that forces
+the optimizer into a structural dead end. These states are
+included in aggregate statistics for completeness but are
+non-viable under the current pipeline; multi-center seeding
+(\S\ref{sec:future-work}) is the structural fix.
 
 \paragraph{Different deterministic algorithms, different trade-offs.}
 DualBalance holds $\mathrm{pop\_dev\_max}$ below 1\,\% on nearly all
@@ -216,22 +233,32 @@ reducing EG to $+0.063$ with no political input.}
 \end{figure}
 
 
-\subsection{What would Congress look like?}
+\subsection{Illustrative House projection under uniform-swing assumptions}
 \label{sec:results-congress}
 
-Across the 41 states for which TIGER 2020PL VTD data are available,
-totalling 369 of the 435 House seats (California, Hawaii, and Oregon
-are excluded; see \S\ref{sec:discussion}), DualBalance produces
-190~R seats and 177~D seats. The enacted 119\textsuperscript{th}-Congress
-plan produces 196~R and 171~D across the same states. A proportional
-baseline derived from the 2020 statewide two-party presidential returns
-implies approximately 182~R seats; DualBalance sits
-8~seats above that
-baseline, the enacted plan 14~seats above it. The
-six-seat difference between DualBalance and enacted ($196-190=6$~R)
-is a description of the partition, not a design choice: DualBalance reads
-no partisan data. The full per-state breakdown (seats R/D, statewide R share,
-all four algorithms) appears in Supplementary Table~S1. Caveats: 2020
-presidential returns proxy for House votes, state-level ticket-splitting is
-ignored, and results for the excluded states would require block-group-level
-inputs.
+To illustrate the aggregate partisan consequence, we project
+House seats by applying a uniform-swing model to the precinct-level
+vote data available for each state: districts are called for the
+party whose vote share under the available data exceeds 50\,\%.
+Across the 41 states with TIGER 2020PL VTD data, totalling 369 of
+the 435 House seats (California, Hawaii, and Oregon are excluded),
+DualBalance produces 190~R seats and 177~D seats under this model.
+The enacted 119\textsuperscript{th}-Congress plan produces 196~R
+and 171~D on the same states. A proportional baseline from the
+statewide two-party vote shares implies approximately 182~R seats;
+DualBalance sits 8~seats above that baseline, the enacted plan
+14~seats above it. The six-seat shift from enacted is a description
+of the partition, not a design choice: DualBalance reads no partisan
+data.
+
+\paragraph{Caveats.}
+This projection should be treated as illustrative only.
+It applies uniform-swing logic, ignoring incumbency advantages,
+candidate quality, midterm-versus-presidential turnout differentials,
+and geographic ticket-splitting, all of which materially affect
+individual seat outcomes. Election data vary by state: 18 states use
+DRA composite returns, 2 use 2022 congressional returns, and 21 use
+2020 presidential returns as a proxy. Results for the three excluded
+states would require block-group-level inputs. The full per-state
+breakdown (seats R/D, statewide R share, all four algorithms)
+appears in Supplementary Table~S1.
