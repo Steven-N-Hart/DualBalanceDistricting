@@ -26,7 +26,7 @@ configs/           per-state YAML configs (mn_vtd, ia_vtd, ma_vtd, tx_vtd,
                    nc_vtd, wi_vtd, apportion_2020)
 data/              prepared input geojson + data/README.md (data files gitignored)
 scripts/           prep_state_units.py — per-state TIGER + Census + dra2020 + cd119 join
-                   compare_state.py — side-by-side PRISM vs enacted scoring
+                   compare_state.py — side-by-side DualBalance vs enacted scoring
                    prep_bdistricting.py — ingest BDistricting reference plans for cross-algo comparison
                    fetch_enacted_mn.py, plot_mn_poc.py, plot_mn_comparison.py — PoC helpers
 docs/              Formalism.md (mathematical spec), legal-standards.md,
@@ -54,27 +54,27 @@ dualbalance --help             # see subcommands
 python scripts/prep_state_units.py --state MN            # writes data/mn_vtd.geojson + data/mn_enacted.geojson
 dualbalance generate --config configs/mn_vtd.yaml        # writes out/mn_yaml/{map,metrics}.{geojson,json}
 dualbalance generate-cascade --config configs/mn_vtd.yaml --out out/mn_cascade   # Cascade baseline
-python scripts/compare_state.py --state MN               # PRISM vs Cascade vs BDistricting vs enacted
+python scripts/compare_state.py --state MN               # DualBalance vs Cascade vs BDistricting vs enacted
 ```
 
 `prep_state_units.py` (generalized from the earlier `prep_mn_units.py`) handles any state in `dualbalance.states.STATE_INFO`: downloads TIGER 2020 VTDs, fetches Census PL 94-171 demographics (using `CENSUS_API_KEY` from `.env` if present, else synthesized uniform 1000), joins dra2020/vtd_data 2020 presidential votes, and joins the enacted 119th-Congress plan via a TIGER 2024 cd119 spatial join (representative-point join with smallest-CD-number tiebreaker). Add a new state by extending `STATE_INFO` (in [src/dualbalance/states.py](src/dualbalance/states.py)) with its FIPS, TIGER state name, and apportioned seat count.
 
 ## What the project is
 
-DualBalance Districting is the project framing: each congressional district should carry both ~1/N of a state's people and ~1/N of its land, weighted equally. The objective is captured by the DualBalance Score (DBS); the algorithm that pursues it is **PRISM** (Population-weighted Radial Impartial Slicing Method). Given a state boundary, census-unit data, and a fixed district count `N`, PRISM places `N` seeds radially around the population-weighted centroid and runs a single capacitated first-fit assignment. There is no randomness, no manual adjustment, and no tuning knobs — same input always yields the same output. The CLI, Python package, and repo retain the `dualbalance` umbrella name; algorithm references in the manuscript and docs use `PRISM`.
+DualBalance Districting is the project framing: each congressional district should carry both ~1/N of a state's people and ~1/N of its land, weighted equally. The objective is captured by the DualBalance Score (DBS); the algorithm that pursues it is **DualBalance**. Given a state boundary, census-unit data, and a fixed district count `N`, DualBalance places `N` seeds radially around the population-weighted centroid and runs a single capacitated first-fit assignment. There is no randomness, no manual adjustment, and no tuning knobs, so the same input always yields the same output. Project name, algorithm name, CLI, and Python package are all `dualbalance`. The older internal name **PRISM** (Population-weighted Radial Impartial Slicing Method) has been retired across manuscript, docs, and code; do not reintroduce it.
 
 The motivating context (2026): partisan gerrymandering is entrenched, the Supreme Court's *Rucho* / *Alexander* / *Callais* line has significantly limited Section 2 of the Voting Rights Act in practice, and states are now redrawing maps for partisan advantage on every cycle rather than once per decade. The project proposes a deterministic alternative: a districting rule that updates only with each 10-year census, cannot be tuned to advantage a party, and reframes congressional districts as carrying *both* the House (population) and Senate (geography) representation principles within a single chamber.
 
 Two-level structure:
 
 - **National apportionment** assigns each state its district count `N_s` using the Method of Equal Proportions, where `priority(s, n) = population(s) / sqrt(n(n+1))`.
-- **State-level districting** runs PRISM independently inside each state to produce `N_s` districts.
+- **State-level districting** runs DualBalance independently inside each state to produce `N_s` districts.
 
-The scoring harness is intentionally decoupled from the generator: it can score any plan (enacted, court-drawn, third-party) using the same metrics applied to PRISM's own output.
+The scoring harness is intentionally decoupled from the generator: it can score any plan (enacted, court-drawn, third-party) using the same metrics applied to DualBalance's own output.
 
 ## The algorithm
 
-PRISM's core is a deterministic, single-pass pipeline. No iteration, no tuning weights, no post-hoc tightening. An opt-in local-search refinement (`tighten.py` + `optimize.py`) is available separately; it is off by default and never modifies the core pass.
+DualBalance's core is a deterministic, single-pass pipeline. No iteration, no tuning weights, no post-hoc tightening. An opt-in local-search refinement (`tighten.py` + `optimize.py`) is available separately; it is off by default and never modifies the core pass.
 
 1. **Radial seed placement.** Compute the population-weighted centroid of the state's atomic units. Place `N` seeds on a small circle around that centroid (radius = 0.1 % of the bounding-box diagonal) at equally-spaced angles `2π · d / N` for `d = 0, …, N-1`. Seed 0 points due east; seeds advance counter-clockwise.
 2. **Capacitated first-fit assignment.** Sort all `(unit, district)` pairs by normalized Euclidean distance ascending; assign each unit to its first district with remaining population capacity `P* = total_population / N`. Ties on distance break by `(unit_id asc, district_id asc)`. Leftover units from integer-rounding edge cases go to the district with the most remaining capacity (`np.argmax` tie-breaks to the lowest district id).
@@ -95,7 +95,7 @@ Engineering: [contiguity.py](src/dualbalance/contiguity.py) maintains a per-dist
 
 ### Cascade baseline (`dualbalance generate-cascade`)
 
-[cascade.py](src/dualbalance/cascade.py) is a separate, Iowa-LSA-flavored deterministic baseline (not a variant of PRISM). It aggregates VTDs to counties, uses farthest-point seeding for spread, and lexicographically prioritizes (1) county integrity (oversized counties are split via PRISM-style capacitated assignment inside the county), (2) population balance via capacitated first-fit, (3) compactness via distance-based ordering. The L¹ tightening pass from `optimize.py` runs by default after assignment (skip with `--no-tighten`). Cascade is the structural opposite of PRISM: instead of spanning urban-rural by slicing radially, it preserves administrative units and produces compact county-bundled districts. It is exposed primarily for cross-algorithm comparison; the project's primary method is PRISM.
+[cascade.py](src/dualbalance/cascade.py) is a separate, Iowa-LSA-flavored deterministic baseline (not a variant of DualBalance). It aggregates VTDs to counties, uses farthest-point seeding for spread, and lexicographically prioritizes (1) county integrity (oversized counties are split via DualBalance-style capacitated assignment inside the county), (2) population balance via capacitated first-fit, (3) compactness via distance-based ordering. The L¹ tightening pass from `optimize.py` runs by default after assignment (skip with `--no-tighten`). Cascade is the structural opposite of DualBalance: instead of spanning urban-rural by slicing radially, it preserves administrative units and produces compact county-bundled districts. It is exposed primarily for cross-algorithm comparison; the project's primary method is DualBalance.
 
 ## Core algorithm invariants
 
@@ -106,7 +106,7 @@ Non-negotiable. Check every design decision against them:
 - **Population balance is a hard cap.** Each district receives at most `P* = total_population / N` (a capacitated transportation step in the lineage of Hess-style models). Soft penalty forms destabilize on real census geometry; do not re-introduce them.
 - **Area balance is reported, not enforced.** The algorithm draws geometry that naturally trades pop-balance and area-balance equally via radial slicing; the score reports area deviation as a diagnostic.
 - **Contiguity, non-empty, full coverage.** Every unit belongs to exactly one district; the repair pass guarantees every district is contiguous.
-- **No tuning knobs on the core algorithm.** The `generate` subcommand exposes only data-plumbing flags for the radial generator itself: `--districts`, `--units`, `--geography`, `--id-column`, `--pop-column`, `--county-column`, `--out`, `--config`. There is no `--seed-method`, `--alpha`, `--max-iter`, `--reynolds-tighten`, `--enforce-area`, etc.: the core algorithm has no behavior to tune. One **opt-in** post-pass is available — `--tighten-pop` plus `--pop-tolerance T` — that runs the two-phase deterministic optimizer to close the per-district pop_deviation gap to `T` (default 0.5 %) and then hill-climbs the DualBalance Score. This is the only piece of the PRISM pipeline that is not a pure function of `(units, n_districts)` (it depends additionally on `T`); it is off by default, and turning it on is a project-level decision about whether to trade a small degradation of the visible radial structure for *Reynolds v. Sims* compliance. The separate `generate-cascade` subcommand is a different algorithm exposed as a baseline, not a tuning of PRISM.
+- **No tuning knobs on the core algorithm.** The `generate` subcommand exposes only data-plumbing flags for the radial generator itself: `--districts`, `--units`, `--geography`, `--id-column`, `--pop-column`, `--county-column`, `--out`, `--config`. There is no `--seed-method`, `--alpha`, `--max-iter`, `--reynolds-tighten`, `--enforce-area`, etc.: the core algorithm has no behavior to tune. One **opt-in** post-pass is available — `--tighten-pop` plus `--pop-tolerance T` — that runs the two-phase deterministic optimizer to close the per-district pop_deviation gap to `T` (default 0.5 %) and then hill-climbs the DualBalance Score. This is the only piece of the DualBalance pipeline that is not a pure function of `(units, n_districts)` (it depends additionally on `T`); it is off by default, and turning it on is a project-level decision about whether to trade a small degradation of the visible radial structure for *Reynolds v. Sims* compliance. The separate `generate-cascade` subcommand is a different algorithm exposed as a baseline, not a tuning of DualBalance.
 - **Out-of-scope inputs.** Politics, race/demographics, communities of interest, competitiveness — the generator must not read these. Partisan metrics may be *reported* by the scoring harness but never fed back into the generator.
 
 ## Objective function
@@ -134,4 +134,4 @@ The `compare` subcommand and `comparison.json`, the HTML report, and the multi-s
 
 ## Manuscript
 
-The [manuscript/](manuscript/) directory holds a LaTeX write-up of the method, kept under version control alongside the code. Structure: `main.tex` includes `sections/{introduction,methods,results,discussion}.tex` and `references.bib`; figures go in `figures/`. Build with `pdflatex main.tex` (run twice, with `bibtex main` in between, to resolve citations). Methods should mirror [docs/Formalism.md](docs/Formalism.md) — if one changes, update the other.
+The [manuscript/](manuscript/) directory holds a LaTeX write-up of the method, kept under version control alongside the code. Structure: `main.tex` includes `sections/{introduction,methods,results,discussion}.tex` and `references.bib`; figures go in `figures/`. Build the PDF with `pdflatex main.tex` (run twice, with `bibtex main` in between, to resolve citations). Build the GitHub-rendered markdown with `pandoc -s --from=latex --to=gfm --bibliography=references.bib --citeproc -o main.md main.tex`. `main.pdf` and `main.md` are committed and must be regenerated whenever the `.tex` sources change; there is no hand-maintained markdown twin. Methods should mirror [docs/Formalism.md](docs/Formalism.md), if one changes, update the other.

@@ -13,17 +13,17 @@ field, projected to EPSG:5070 (CONUS Albers, equal area) at load
 time. Per-district targets are
 $P^{*} = P/8 = 713{,}312$ and $A^{*} = A/8 = 28{,}148$~km$^2$. All
 runs are deterministic and reproducible from the script
-\verb|scripts/prep_mn_units.py| (which fetches TIGER and joins the
+\verb|scripts/prep_state_units.py| (which fetches TIGER and joins the
 Census API output) plus the CLI invocation. The data pipeline is
 documented end-to-end in \verb|docs/mn-poc-walkthrough.md|.
 
 We compare three plans on the same 4{,}110-VTD input:
 
 \begin{itemize}
-  \item \textbf{PRISM.} The default algorithm
+  \item \textbf{DualBalance.} The default algorithm
         (\S\ref{sec:methods-seeds}--\S\ref{sec:methods-repair}). No
         tuning knobs.
-  \item \textbf{PRISM + tighten-pop ($\tau = 0.005$).} PRISM followed
+  \item \textbf{DualBalance + tighten-pop ($\tau = 0.005$).} DualBalance followed
         by the optional $L^{1}$ pop-tightening pass
         (\S\ref{sec:methods-tighten}) targeting per-district deviation
         within 0.5\,\% of $P^{*}$.
@@ -48,7 +48,7 @@ defined in \S\ref{sec:methods}. Best result per row in bold.}
 \label{tab:mn-results}
 \begin{tabular}{lrrr}
 \toprule
-Metric & PRISM & PRISM + tighten-pop & Enacted (119th) \\
+Metric & DualBalance & DualBalance + tighten-pop & Enacted (119th) \\
 \midrule
 $\mathrm{DBS}$ & 0.6472 & \textbf{0.6574} & 0.6390 \\
 $\overline{\mathrm{pop\_dev}}$ & 5.08\,\% & \textbf{0.08\,\%} & 0.42\,\% \\
@@ -64,8 +64,8 @@ $\mathrm{Reock}_{\mathrm{mean}}$ & 0.361 & 0.342 & \textbf{0.419} \\
 
 Three findings.
 
-\paragraph{PRISM beats the enacted plan on the DualBalance Score.}
-PRISM scores 0.6472 against the enacted 0.6390, a $+1.3$\,\% margin
+\paragraph{DualBalance beats the enacted plan on the DualBalance Score.}
+DualBalance scores 0.6472 against the enacted 0.6390, a $+1.3$\,\% margin
 with no iteration, no tuning, no post-processing. The advantage comes
 entirely from area balance ($\overline{\mathrm{area\_dev}}$ 103.9\,\%
 vs 112.6\,\%). Radial slicing gives each district a slice of the
@@ -75,7 +75,7 @@ ones, which the DualBalance Score penalizes because it weights area
 equally with population.
 
 \paragraph{Tightening closes the legal gap and improves DBS.} Pure
-PRISM's $\mathrm{pop\_dev}_{\max}$ of 11.24\,\% exceeds the
+DualBalance's $\mathrm{pop\_dev}_{\max}$ of 11.24\,\% exceeds the
 \textasciitilde{}0.5\,\% \emph{Reynolds v.~Sims} threshold for U.S.
 House plans~\cite{reynolds1964}. The optional pass
 (\S\ref{sec:methods-tighten}) ran 81 boundary swaps in
@@ -84,9 +84,9 @@ House plans~\cite{reynolds1964}. The optional pass
 $\overline{\mathrm{area\_dev}}$ rose only 0.3 points and the score
 \emph{improved} to 0.6574.
 
-\paragraph{Compactness is the price.} The enacted plan beats PRISM on
+\paragraph{Compactness is the price.} The enacted plan beats DualBalance on
 every compactness measure: $\mathrm{PP}_{\min}$ 0.178 vs 0.094 (pure
-PRISM) and 0.047 (after tightening), $\mathrm{PP}_{\mathrm{mean}}$
+DualBalance) and 0.047 (after tightening), $\mathrm{PP}_{\mathrm{mean}}$
 0.320 vs 0.200 / 0.162, $\mathrm{Reock}_{\mathrm{mean}}$ 0.419 vs
 0.361 / 0.342. Radial slices are structurally less compact than
 hand-drawn blobs. Tightening makes it worse by inserting small
@@ -101,13 +101,13 @@ Figure~\ref{fig:mn-comparison} displays the three plans side by side.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\textwidth]{mn_radial_with_tighten.png}
+\includegraphics[width=\textwidth]{mn_comparison.png}
 \caption{Minnesota congressional districts under three plans.
 \textbf{Left:} the enacted 119th-Congress plan, with four compact
 Twin Cities seats and four large rural seats.
-\textbf{Center:} PRISM (score $0.6472$); eight slices radiate from
+\textbf{Center:} DualBalance (score $0.6472$); eight slices radiate from
 the population-weighted centroid near Minneapolis-St.~Paul, each
-spanning dense and sparse territory. \textbf{Right:} PRISM $+$
+spanning dense and sparse territory. \textbf{Right:} DualBalance $+$
 \texttt{--tighten-pop 0.005} (score $0.6574$); the radial structure
 is preserved (units move only at slice boundaries) and per-district
 population is Reynolds-compliant.}
@@ -127,7 +127,7 @@ output remained byte-identical. The CLI integration test
 \subsection{Per-district breakdown}
 
 Table~\ref{tab:mn-perdistrict} reports the per-district metrics for
-PRISM $+$ tighten-pop, indexed by seed angle (district 0 sits due
+DualBalance $+$ tighten-pop, indexed by seed angle (district 0 sits due
 east of the population-weighted centroid; subsequent districts
 advance counter-clockwise in steps of $2\pi/8$ rad). District IDs
 are a deterministic function of seed angle and carry no political
@@ -135,7 +135,7 @@ meaning.
 
 \begin{table}[h]
 \centering
-\caption{Per-district breakdown, PRISM $+$ tighten-pop 0.5\,\%.
+\caption{Per-district breakdown, DualBalance $+$ tighten-pop 0.5\,\%.
 Areas are in km$^2$.}
 \label{tab:mn-perdistrict}
 \begin{tabular}{rrrrrrr}
@@ -166,7 +166,7 @@ with its District~7 at 241\,\% over-target.
 \subsection{Descriptive diagnostics: partisan, race, county}
 \label{sec:results-diagnostics}
 
-PRISM reads none of these inputs. We report them anyway, because
+DualBalance reads none of these inputs. We report them anyway, because
 readers will ask. They are descriptions of the partition, not
 evaluations of it (\S\ref{sec:discussion-forensic}). Partisan totals
 come from 2020 presidential returns
@@ -174,7 +174,7 @@ come from 2020 presidential returns
 on GEOID20). Race comes from Census PL~94-171 VAP.
 
 \paragraph{Partisan.} Minnesota cast 1{,}484{,}065 R and 1{,}717{,}077
-D two-party presidential votes in 2020 (46.4\,\% R, 53.6\,\% D). PRISM
+D two-party presidential votes in 2020 (46.4\,\% R, 53.6\,\% D). DualBalance
 splits the eight seats 4--4 against a seats-proportional expectation
 of 3.7 R seats. The two D-leaning slices contain the Twin Cities and
 run 64--75\,\% D; two R-leaning slices reach into western and southern
@@ -183,10 +183,10 @@ points of even. The efficiency gap is $+6.6\,\%$ (positive = R-favorable);
 the mean-median R difference is $+3.9$ points (positive = D-favorable).
 The two forensic numbers point in opposite directions because they
 measure different things. Both are artifacts of where Minnesota's
-Democrats live (packed into the metro), not of any choice by PRISM.
+Democrats live (packed into the metro), not of any choice by DualBalance.
 
 \paragraph{Race / VAP.} Statewide VAP is 80.0\,\% non-Hispanic white,
-5.9\,\% Black, 5.0\,\% Hispanic, 4.9\,\% Asian, 1.1\,\% AIAN. PRISM
+5.9\,\% Black, 5.0\,\% Hispanic, 4.9\,\% Asian, 1.1\,\% AIAN. DualBalance
 draws zero majority-minority districts. The Twin Cities slice
 (District~7) has the lowest non-Hispanic-white share (65.3\,\%) and
 the highest Black VAP share (15.7\,\%); the remaining seven run
@@ -195,13 +195,13 @@ Congress plan also draws zero majority-minority districts. Minnesota
 does not contain a region where a single minority group concentrates
 densely enough to support a 50\,\%-VAP district of conventional size.
 
-\paragraph{County splits.} PRISM splits 44 of 87 counties into 143
+\paragraph{County splits.} DualBalance splits 44 of 87 counties into 143
 cross-district pieces. Any line from the population centroid to the
 boundary crosses county lines; the enacted plan trades area balance
 for fewer such crossings.
 
 \paragraph{What to make of this.} The descriptive content of these
-metrics survives on a PRISM plan; their intent-attribution role does
+metrics survives on a DualBalance plan; their intent-attribution role does
 not. \S\ref{sec:discussion-forensic} develops the distinction.
 
 \subsection{Cross-state, multi-algorithm validation}
@@ -221,19 +221,19 @@ federal court). The data pipeline (TIGER 2020 VTDs, Census PL
 TIGER 2024 cd119 spatial join for the enacted plan) is automated
 in \verb|scripts/prep_state_units.py|.
 
-To put PRISM in context against other deterministic baselines we
+To put DualBalance in context against other deterministic baselines we
 score two additional algorithms on the same six states.
 \emph{Cascade} (\verb|src/dualbalance/cascade.py|) is an
 Iowa-LSA-flavored construction: aggregate VTDs to counties, pick
 $N$ farthest-spread county seeds, run capacitated first-fit
 county-to-district assignment, and split a county into
-pseudo-counties (via PRISM internally) only when its population
+pseudo-counties (via DualBalance internally) only when its population
 exceeds the per-district cap. \emph{BDistricting}~\cite{olsonbd} is
 Brian Olson's published 50-state map series, ingested via Olson's
 block-level CSV output joined to our VTDs through the Census 2020
 Block Assignment File (\verb|scripts/prep_bdistricting.py|).
 Cascade prioritizes county integrity; BDistricting prioritizes
-compactness; PRISM prioritizes area balance. Together with the
+compactness; DualBalance prioritizes area balance. Together with the
 enacted plan this gives four points of comparison on each state.
 
 \begin{table}[h]
@@ -244,7 +244,7 @@ winner on each row.}
 \small
 \begin{tabular}{lrrrrr}
 \toprule
-State & N & PRISM & Cascade & BDistricting & Enacted \\
+State & N & DualBalance & Cascade & BDistricting & Enacted \\
 \midrule
 Iowa           &  4 & 0.8132 & 0.8227 & 0.7885 & \textbf{0.8828} \\
 Massachusetts  &  9 & 0.7591 & \textbf{0.7602} & 0.7158 & 0.7246 \\
@@ -264,7 +264,7 @@ Wisconsin      &  8 & 0.6556 & \textbf{0.8399} & 0.7422 & 0.7410 \\
 \small
 \begin{tabular}{lrrrrr}
 \toprule
-State & Statewide R\,\% & PRISM & Cascade & BDistricting & Enacted \\
+State & Statewide R\,\% & DualBalance & Cascade & BDistricting & Enacted \\
 \midrule
 Iowa           & 54.2 & $-0.173$ & $+0.165$ & \textbf{$-0.088$} & $+0.416$ \\
 Massachusetts  & 32.9 & $-0.158$ & $-0.158$ & $-0.158$ & $-0.158$ \\
@@ -284,7 +284,7 @@ its population exceeds the per-district cap.}
 \small
 \begin{tabular}{lrrrrr}
 \toprule
-State & Counties & PRISM (split) & Cascade (split) & BDistricting (split) & Enacted (split) \\
+State & Counties & DualBalance (split) & Cascade (split) & BDistricting (split) & Enacted (split) \\
 \midrule
 Iowa           &  99 &  30 & \textbf{0}  & 21 & \textbf{0} \\
 Massachusetts  &  14 &  12 & \textbf{4}  & 10 & 9 \\
@@ -299,7 +299,7 @@ Wisconsin      &  72 &  46 & \textbf{1}  & 25 & 12 \\
 Three findings stand out.
 
 \paragraph{Cascade dominates on DBS.} Cascade wins on five of six
-states (MN, MA, TX, NC, WI) and runs second on Iowa. PRISM wins on
+states (MN, MA, TX, NC, WI) and runs second on Iowa. DualBalance wins on
 no state outright; BDistricting on none. Cascade's lead comes from
 the structural pairing of high county integrity (1--10 splits vs.
 the enacted plan's 9--30) with low area imbalance (county
@@ -310,7 +310,7 @@ LSA's manual refinement gives it a small edge.
 
 \paragraph{Different deterministic algorithms, different
 trade-offs.} The three deterministic generators win on different
-axes. PRISM minimizes $\overline{\mathrm{area\_dev}}$ on
+axes. DualBalance minimizes $\overline{\mathrm{area\_dev}}$ on
 single-metro states with a clean radial structure but produces
 high county splits and low compactness. BDistricting maximizes
 compactness and pop-balance but accepts high area imbalance
@@ -331,6 +331,6 @@ five of six states; BDistricting on one (Iowa). The structural
 claim in \S\ref{sec:discussion-forensic} is the empirical core of
 this finding: a generator with no political input cannot produce
 a $+0.20$ partisan-fairness metric. The result holds across all
-three deterministic baselines, not just PRISM. Cascade is the
+three deterministic baselines, not just DualBalance. Cascade is the
 existence proof of that claim under a different objective
-hierarchy than PRISM's.
+hierarchy than DualBalance's.

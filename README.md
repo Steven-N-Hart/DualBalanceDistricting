@@ -133,10 +133,9 @@ Each stage is a pure function of its inputs; the composition is
 therefore a pure function of `(state geometry, census populations,
 N, Karcher tolerance T)`.
 
-### Stage 1 — Radial seed (PRISM)
+### Stage 1 — Radial seed
 
-The seed step is **PRISM** (Population-weighted Radial Impartial
-Slicing). Three sub-steps, no iteration:
+The seed step is **DualBalance**. Three sub-steps, no iteration:
 
 1. **Radial seed placement.** Compute the population-weighted
    centroid of the units. Place `N` seeds on a small circle around
@@ -154,7 +153,7 @@ Slicing). Three sub-steps, no iteration:
 
 The radial configuration is what carries the dual-balance property:
 each slice spans both dense (near-center) and sparse (boundary-side)
-territory. PRISM alone leaves several percent per-district
+territory. DualBalance alone leaves several percent per-district
 population deviation — radially well-spread but not yet legally
 viable. The next two stages close the gap.
 
@@ -246,7 +245,7 @@ pytest                                                # 106 tests, ~2s
 
 # Per-state PoC end-to-end (any state in dualbalance.states.STATE_INFO)
 python scripts/prep_state_units.py --state MN
-dualbalance generate --config configs/mn_vtd.yaml     # PRISM core, raw
+dualbalance generate --config configs/mn_vtd.yaml     # DualBalance core, raw
 python scripts/compare_state.py --state MN            # vs Cascade, BDistricting, enacted
 
 # Full block-scale refinement pipeline (the headline numbers)

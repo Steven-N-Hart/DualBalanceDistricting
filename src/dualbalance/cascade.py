@@ -1,6 +1,6 @@
 """Cascade: an Iowa-LSA-flavored deterministic baseline.
 
-Where PRISM treats VTDs as the atomic primitive and uses radial seeds
+Where DualBalance treats VTDs as the atomic primitive and uses radial seeds
 around the population centroid, Cascade treats counties as the atomic
 primitive and uses farthest-point seeding to spread coverage. The
 algorithm is deterministic (no RNG, no iteration) and lexicographically
@@ -8,7 +8,7 @@ prioritizes:
 
 1. **County integrity.** Counties are kept whole wherever possible.
    Counties whose population exceeds the per-district cap are split
-   into the minimum number of pseudo-counties via PRISM-style
+   into the minimum number of pseudo-counties via DualBalance-style
    capacitated assignment within the county (this matches what Iowa
    LSA does in practice when its own large counties exceed the cap).
 2. **Population balance.** A capacitated first-fit assignment caps each
@@ -18,7 +18,7 @@ prioritizes:
 
 The result is a per-VTD plan in which every VTD inherits its
 county's district (or sub-county district, where the county was
-split). This is the structural opposite of PRISM: instead of spanning
+split). This is the structural opposite of DualBalance: instead of spanning
 urban-rural by slicing radially, Cascade preserves administrative
 units and produces compact county-bundled districts.
 """
@@ -43,7 +43,7 @@ def _split_oversize_county(
     """Split a single county into ``ceil(pop/cap)`` pseudo-counties.
 
     Calls the radial-seed capacitated assignment on the county's VTD
-    subset. PRISM's internal capacitated rule guarantees each piece
+    subset. DualBalance's internal capacitated rule guarantees each piece
     holds at most ``county_pop / n_pieces`` people, which is at most
     ``cap`` since ``n_pieces = ceil(pop/cap)``. Small integer-rounding
     overflow at the splitter's fallback step is possible but bounded

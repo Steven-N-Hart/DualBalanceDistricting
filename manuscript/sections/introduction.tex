@@ -1,25 +1,17 @@
 \section{Introduction}
 
-\subsection{The Problem Is Getting Worse}
+Congressional redistricting in the United States currently lacks a neutral algorithmic anchor. The Constitution mandates population balance across House districts (Art.~I, \S2) but leaves every other line-drawing choice (where county lines are crossed, which precincts are grouped, how compactness is weighted) to political actors, and the federal courts have progressively narrowed their oversight of those choices. This paper proposes and validates \emph{DualBalance Districting}: a deterministic algorithm that computes congressional district maps as a pure function of state geometry, census populations, and district count $N$, with no free parameters, no randomness, and no human intervention at any stage. Each district is designed to carry approximately $1/N$ of the state's population and approximately $1/N$ of its land area, weighted equally in a single objective we call the DualBalance Score.
 
-U.S. legislative districts are drawn by human beings under nominal
-constraints, and the structure invites gerrymandering. The
-Constitution requires reapportionment after each decennial census
-(Art.~I, \S2) but specifies neither a method for allocating seats
-among the states nor a procedure for drawing district boundaries
-within them. Both decisions have, by default, been delegated to
-political actors. The result is what the design predicts: maps drawn
-to advantage whichever party controls the pen at the moment of
-redistricting.
+\subsection{Redistricting Without a Neutral Standard}
 
-The federal courts have largely stepped back from the problem. In
+The federal courts have largely withdrawn from gerrymandering review. In
 \emph{Rucho v.~Common Cause}~\cite{rucho2019}, the Supreme Court held
 5--4 that partisan-gerrymandering claims present nonjusticiable
 political questions; the Court conceded the practice is
 ``incompatible with democratic principles'' but found no manageable
 judicial standard. After \emph{Rucho}, the only federal channel for
-gerrymandering review is racial. That channel has now narrowed as
-well. Section~2 of the Voting Rights Act, as construed in
+gerrymandering review is racial. That channel has since narrowed.
+Section~2 of the Voting Rights Act, as construed in
 \emph{Thornburg v.~Gingles}~\cite{gingles1986}, requires
 majority-minority districts where the three Gingles preconditions are
 met. The Court reaffirmed this in \emph{Allen v.~Milligan}~\cite{milligan2023}.
@@ -28,47 +20,43 @@ NAACP}~\cite{alexander2024} raised plaintiffs' evidentiary burden;
 \emph{Louisiana v.~Callais}~\cite{callais2026} held in April 2026
 that even a plan drawn to comply with a prior Section~2 order may
 violate the Equal Protection Clause if Section~2 did not in fact
-compel a race-based remedy. The combined effect of \emph{Alexander}
-and \emph{Callais} is that race-conscious line-drawing now faces a
-narrower window of constitutional safety than at any point since the
-VRA's adoption.
+compel a race-based remedy. Together, \emph{Alexander} and
+\emph{Callais} leave race-conscious line-drawing in a narrower window
+of constitutional safety than at any point since the VRA's adoption.
 
-Federal partisan review is foreclosed. Section~2 has been
-narrowed. State review under \emph{Moore v.~Harper}~\cite{moore2023}
-remains, but is uneven and politically contingent: roughly ten state
-supreme courts have so far recognized state-constitutional
+State constitutional review under \emph{Moore v.~Harper}~\cite{moore2023}
+remains available but is uneven and politically contingent: roughly ten
+state supreme courts have recognized state-constitutional
 partisan-gerrymandering claims~\cite{stateline2025}; the rest have
-not. Several states have already redrawn maps mid-decade in response
-to electoral results rather than census revision. Redistricting is
-shifting from a once-per-decade event into a continuous partisan
-exercise. The trend line is bad and accelerating.
+not. Several states have already redrawn maps mid-decade in response to
+electoral results rather than census revision, shifting redistricting
+from a once-per-decade process into a continuous partisan exercise. The
+structural response is to remove the line-drawer, replacing it with a
+procedure whose output is determined entirely by the census data.
 
-\subsection{The Founders' Refusal to Reduce Representation to a Single Axis}
+\subsection{Population and Geography as Dual Representational Axes}
 
-The U.S. Constitution divides representation along two axes: the
+The Constitution already encodes two theories of representation: the
 House apportions seats by population (Art.~I, \S2), the Senate by
 sovereign state regardless of population (Art.~I, \S3). Madison's
-defense in \emph{Federalist} Nos.~54--58~\cite{federalist54} treats
-this as a principled refusal to collapse representation onto a single
-dimension. We do not claim the Senate represents land area; it
-represents states. What we take from the bicameral compromise is a
-weaker but still useful intuition: \emph{within a chamber}, the
-choice to make districts equal in only one extensive quantity --
-population -- is a choice, not a necessity. A second extensive
-quantity, geographic area, is available, well-defined, and
-computable from the same census data. A district that spans both
-metropolitan and rural territory forces each elected representative
-to answer to constituents across the state's density range, rather
-than to a single dense metro or a single rural hinterland.
+defense in \emph{Federalist} Nos.~54--58~\cite{federalist54} frames
+the bicameral structure as a principled refusal to collapse
+representation onto a single dimension. Within the House, the existing
+framework uses only one extensive quantity, population, to define what
+a district should be. Geographic area is a second such quantity: it is
+well-defined, computable from the same census data, and substantively
+meaningful. A district that spans both metropolitan and rural territory
+requires its representative to answer to constituents across the
+state's density range, rather than to a single dense metro or a single
+rural hinterland.
 
-This is a mathematical challenge, not a free choice. Real states are
-not uniform in population density: a typical state varies by two to
-three orders of magnitude between its densest urban tract and its
-sparsest rural one. Equal population, equal area, contiguity, and
-shape compactness are not simultaneously achievable in general. Some
-trade-off is unavoidable. The question, then, is which trade-off to
-make, how transparently to make it, and whether the resulting
-procedure can be defended as impartial.
+This is a mathematical challenge, not a free choice. A typical U.S.\
+state varies by two to three orders of magnitude between its densest
+census tract and its sparsest rural block. Equal population, equal
+area, contiguity, and shape compactness cannot all be satisfied
+simultaneously in general; some trade-off is unavoidable. The question
+is which trade-off to make, how transparently to make it, and whether
+the resulting procedure can be defended as impartial.
 
 \subsection{Existing Metrics Are Forensic, Not Generative}
 
@@ -79,36 +67,34 @@ Gap~\cite{stephanopoulosmcghee2015}; mean--median, lopsided wins,
 and partisan-asymmetry $t$-tests~\cite{wang2016};
 declination~\cite{warrington2018}; ensemble outlier methods from
 Duke~\cite{mattinglyduke} and the MGGG Redistricting
-Lab~\cite{recom2021}. The Efficiency Gap (EG) in particular is the
-metric we use as our headline forensic check below, so its
-construction matters. EG counts ``wasted'' votes -- votes for a
-losing candidate (all of them) and the surplus above the
-bare-majority threshold for a winning candidate -- and reports the
-difference between the two parties' wasted-vote totals as a
-fraction of the statewide turnout:
+Lab~\cite{recom2021}. The Efficiency Gap (EG) is the metric we use as
+our headline forensic check below, so its construction matters. EG
+counts ``wasted'' votes (votes for a losing candidate, plus votes
+above the bare-majority threshold for a winning candidate) and reports
+the difference between the two parties' wasted-vote totals as a
+fraction of statewide turnout:
 \begin{equation}
   \mathrm{EG}
     = \frac{\sum_d \mathrm{wasted}_R(d) - \sum_d \mathrm{wasted}_D(d)}
            {\sum_d \mathrm{total}(d)}.
   \label{eq:eg}
 \end{equation}
-$\mathrm{EG} = 0$ corresponds to equal vote-wasting; positive favors
-R, negative favors D. Stephanopoulos and McGhee proposed
+$\mathrm{EG} = 0$ corresponds to equal vote-wasting; positive values
+favor R, negative values favor D. Stephanopoulos and McGhee proposed
 $|\mathrm{EG}| > 0.07$ as the threshold above which a plan may
 plausibly be challenged as a partisan
 gerrymander~\cite{stephanopoulosmcghee2015}, and this threshold has
 since been cited in federal litigation
 (e.g.~\emph{Whitford v.~Gill}). All of these metrics are
-\emph{forensic} instruments:
-they take an enacted map as input and ask whether its observed
-properties (shape, vote efficiency, partisan asymmetry, the location
-of its seat--vote curve) are consistent with maps that some
-reference process -- random redistricting, ensemble sampling under
-legal constraints -- would have produced absent partisan
-intent. They are differential, comparing the enacted plan against a
-counterfactual distribution to infer the line-drawer's motive. They
-were built for an adversarial context in which the question is
-``did somebody do something here that they should not have done?''
+\emph{forensic} instruments: they take an enacted map as input and
+ask whether its observed properties (shape, vote efficiency, partisan
+asymmetry, the location of its seat--vote curve) are consistent with
+maps that some reference process (random redistricting, ensemble
+sampling under legal constraints) would have produced absent partisan
+intent. They compare the enacted plan against a counterfactual
+distribution to infer the line-drawer's motive, and were built for an
+adversarial context in which the question is ``did somebody do
+something here that they should not have done?''
 
 A generative metric is a different object. It states, directly,
 what a district \emph{should} look like, and is used as the
@@ -121,22 +107,20 @@ roughly $1/N$ of the relevant population. Every other criterion
 (compactness, communities of interest, partisan fairness) enters
 the law as a forensic instrument or a discretionary guideline.
 
-This matters for two reasons. First, forensic metrics depend on a
-line-drawer to investigate. Removing the line-drawer -- replacing
-it with a deterministic generator -- preserves the descriptive role
-of these metrics (the shape is still non-compact; the seat--vote
-curve is still asymmetric) but evacuates their inferential
-content. There is no intent to infer~\cite{pildes2004}. Second,
-when forensic metrics are used as design objectives, the rule that
-emerges is often unstable: optimizing for ``looks like a fair plan
-would have looked'' is a moving target that depends on which
+This distinction matters for two reasons. First, forensic metrics
+depend on a line-drawer to investigate. Removing the line-drawer
+preserves the descriptive role of these metrics (the shape is still
+non-compact; the seat--vote curve is still asymmetric) but evacuates
+their inferential content: there is no intent to infer~\cite{pildes2004}.
+Second, when forensic metrics are used as design objectives, the rule
+that emerges is often unstable: optimizing for ``looks like a fair
+plan would have looked'' is a moving target that depends on which
 ensemble distribution one chooses and which legal constraints one
-chooses to encode. Chen and Rodden~\cite{chenrodden2013} showed
-that even fully content-neutral automated maps systematically
-disadvantage Democrats in many states because of residential
-clustering; a nonzero Efficiency Gap on such a map reflects
-geography, not intent. The choice of constraint set is itself
-political~\cite{cain2014}.
+encodes. Chen and Rodden~\cite{chenrodden2013} showed that even
+fully content-neutral automated maps systematically disadvantage
+Democrats in many states because of residential clustering; a
+nonzero Efficiency Gap on such a map reflects geography, not intent.
+The choice of constraint set is itself political~\cite{cain2014}.
 
 The DualBalance Score we propose,
 \begin{equation}
@@ -146,18 +130,18 @@ The DualBalance Score we propose,
 \end{equation}
 is a \emph{generative} criterion: it states what a district should
 be (carries roughly $1/N$ of the people and roughly $1/N$ of the
-land) and is the objective the algorithm minimizes against,
-rather than a test it must pass.
+land) and serves as the objective the algorithm pursues, rather than
+a test applied after the fact.
 
 \subsection{Does the Iowa Model Generalize?}
 
 Iowa's Legislative Services Agency~\cite{iowalsa} operates under a
-written procedure that has been described to us as a counterexample
-to the partisan-redistricting norm: aggregate whole counties,
-prioritize county integrity lexicographically, balance population by
-capacity, use distance-based assignment for compactness. The
-procedure has been in continuous use since 1980. If it works in
-Iowa, why not elsewhere?
+written procedure often cited as a counterexample to the
+partisan-redistricting norm: aggregate whole counties, prioritize
+county integrity lexicographically, balance population by capacity,
+and use distance-based assignment for compactness. The procedure has
+been in continuous use since 1980. If it works in Iowa, why not
+elsewhere?
 
 The answer, which we document quantitatively in
 \S\ref{sec:results}, is that the algorithm's behavior is sensitive
@@ -171,15 +155,14 @@ population deviation of $0.29\%$; on Wisconsin, $0.50\%$. On the
 remaining four states the same algorithm produces deviations that
 are not legally usable: $10.27\%$ on North Carolina, $24.58\%$ on
 Texas, $41.56\%$ on Massachusetts, $76.14\%$ on Minnesota. The
-county-integrity priority that produces clean maps in Iowa --
-where no county is too large -- produces unconstitutional maps in
-any state with a county large enough to swallow a district. The
-Iowa procedure is exemplary for the geographic conditions in which
-it was designed; on these results, it is not a transplantable
-template.
+county-integrity priority that produces clean maps in Iowa produces
+unconstitutional maps in any state with a county large enough to
+swallow a district. The Iowa procedure is exemplary for the
+geographic conditions in which it was designed; on these results,
+it does not scale to more geographically diverse states.
 
-A deterministic procedure that hopes to scale to the full set of
-states needs a different structural commitment. We propose one
+A deterministic procedure intended to work across the full range of
+U.S. states needs a different structural commitment. We propose one
 below.
 
 \subsection{Contribution}
@@ -215,8 +198,8 @@ $(\text{state geometry}, \text{census populations}, N, \text{Karcher tolerance }
     either reduces the L$^1$ pop-deviation sum or strictly reduces
     the L$^\infty$ maximum (max-reducing preferred). When 1-opt
     stalls in a multi-tied-max local optimum, a length-2 then
-    length-3 augmenting-chain escape -- the deterministic analogue
-    of an ejection chain -- searches for a transport sequence on
+    length-3 augmenting-chain escape (the deterministic analogue
+    of an ejection chain) searches for a transport sequence on
     the district-adjacency graph that the 1-opt neighborhood cannot
     express. Phase~2 then hill-climbs DBS subject to the running
     pop-deviation envelope.
@@ -244,8 +227,8 @@ states selected to cover the geographic range that breaks Cascade:
 IA, MA, MN, NC, TX, WI. Five of six achieve a DualBalance Score
 above the enacted 119th-Congress plan. Two (IA, WI) reach the
 $0.05\%$ Karcher threshold exactly; three more (MN, NC, MA) sit
-within a factor of two of it; TX, the hardest case, sits at $0.52\%$
--- five times tighter than the same state's enacted plan. On
+within a factor of two of it; TX, the hardest case, sits at $0.52\%$,
+five times tighter than the same state's enacted plan. On
 partisan fairness, DualBalance's Efficiency Gap is smaller in
 magnitude than the enacted plan's in four of six states, with the
 largest improvements on the three most heavily-litigated maps (NC,

@@ -22,11 +22,11 @@ units = load_units("data/ia_block.geojson", id_column="GEOID20",
                    pop_column="population", county_column="county")
 print(f"  loaded {len(units):,} blocks in {time.time() - t0:.1f}s", flush=True)
 
-print("building PRISM seed plan + dual graph…", flush=True)
+print("building DualBalance seed plan + dual graph…", flush=True)
 t0 = time.time()
 plan = generate_plan(units, 4, geography="block")
 graph = _build_dual_graph(units)
-print(f"  PRISM+graph in {time.time() - t0:.1f}s", flush=True)
+print(f"  DualBalance+graph in {time.time() - t0:.1f}s", flush=True)
 
 print("creating ContiguityTracker (first call also JIT-compiles numba)…", flush=True)
 t0 = time.time()

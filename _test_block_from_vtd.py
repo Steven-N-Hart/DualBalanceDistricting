@@ -1,7 +1,7 @@
 """Block-scale optimizer initialized from VTD-Karcher plan.
 
 Pipeline (for any state):
-1. Load <state> VTD units; run full optimizer (PRISM + Phase 1 + Phase 2)
+1. Load <state> VTD units; run full optimizer (DualBalance + Phase 1 + Phase 2)
    with Karcher tolerance.
 2. Load <state> block units and reproject to the same CRS.
 3. Spatial join: each block's representative point -> containing VTD ->
@@ -51,9 +51,9 @@ def main(state: str, n_districts: int) -> int:
     log(f"LOAD: {len(vtd_units):,} VTDs in {time.time() - t:.1f}s")
 
     t = time.time()
-    log("PRISM(vtd): generate seed plan…")
+    log("DualBalance(vtd): generate seed plan…")
     vtd_prism = generate_plan(vtd_units, n_districts, geography="vtd")
-    log(f"PRISM(vtd): in {time.time() - t:.1f}s")
+    log(f"DualBalance(vtd): in {time.time() - t:.1f}s")
 
     t = time.time()
     log("OPT(vtd) with Karcher tolerance…")

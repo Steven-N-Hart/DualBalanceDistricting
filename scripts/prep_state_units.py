@@ -223,11 +223,13 @@ def _fetch_dra_elections(url: str) -> pd.DataFrame:
     missing = need - set(df.columns)
     if missing:
         raise RuntimeError(f"dra2020 CSV missing expected columns: {sorted(missing)}")
-    return (
+    out = (
         df[["GEOID20", "E_20_PRES_Rep", "E_20_PRES_Dem"]]
         .rename(columns={"E_20_PRES_Rep": "votes_R", "E_20_PRES_Dem": "votes_D"})
-        .astype({"votes_R": int, "votes_D": int})
     )
+    out["votes_R"] = pd.to_numeric(out["votes_R"], errors="coerce").fillna(0).astype(int)
+    out["votes_D"] = pd.to_numeric(out["votes_D"], errors="coerce").fillna(0).astype(int)
+    return out
 
 
 def _attach_demographics(
@@ -367,6 +369,8 @@ def _join_enacted_cd(
             f"(looked for one of {cd_col_candidates})"
         )
     cd_gdf = cd_gdf[[cd_col, "geometry"]].rename(columns={cd_col: "cd119_district"})
+    cd_gdf["cd119_district"] = pd.to_numeric(cd_gdf["cd119_district"], errors="coerce")
+    cd_gdf = cd_gdf.dropna(subset=["cd119_district"])  # drop 'ZZ' non-district areas
     cd_gdf["cd119_district"] = cd_gdf["cd119_district"].astype(int)
     cd_gdf = cd_gdf.to_crs(EQUAL_AREA_CRS)
 
@@ -416,7 +420,7 @@ def _write_enacted_plan(
     """Write the enacted plan as a Plan-format GeoJSON (unit_id + district_id)."""
     plan_gdf = gdf[[id_column, "cd119_district", "geometry"]].copy()
     plan_gdf = plan_gdf.rename(columns={id_column: "unit_id"})
-    # PRISM districts are 0-indexed; TIGER CDs are 1-indexed. Match PRISM.
+    # DualBalance districts are 0-indexed; TIGER CDs are 1-indexed. Match DualBalance.
     plan_gdf["district_id"] = (plan_gdf["cd119_district"].astype(int) - 1).astype(int)
     plan_gdf = plan_gdf[["unit_id", "district_id", "geometry"]].sort_values("unit_id")
     out_path.parent.mkdir(parents=True, exist_ok=True)

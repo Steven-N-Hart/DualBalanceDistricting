@@ -1,6 +1,6 @@
 """Reynolds-constrained DBS optimizer test (two-phase optimizer).
 
-Init: PRISM raw (no separate tighten step needed).
+Init: DualBalance raw (no separate tighten step needed).
 Optimize: two-phase greedy with Reynolds constraint.
   Phase 1 (max-norm): drive pop_dev_max down to <= 0.005.
   Phase 2 (DBS): hill-climb DBS subject to pop_dev_max <= 0.005.
@@ -67,7 +67,7 @@ def run_state(postal: str, n: int) -> dict:
         "state": postal,
         "n_districts": n,
         "n_units": len(units),
-        # PRISM raw
+        # DualBalance raw
         "prism_dbs": prism_metrics["dualbalance_score"],
         "prism_pop_dev_max": prism_metrics["pop_deviation_max"],
         "prism_time_s": round(prism_time, 1),
@@ -112,7 +112,7 @@ def main() -> int:
     print("\n========== SUMMARY ==========")
     print(
         f"{'State':<5} {'N':>3} "
-        f"{'PRISM':>7} {'Opt':>7} {'Enacted':>8} "
+        f"{'DualBalance':>7} {'Opt':>7} {'Enacted':>8} "
         f"{'Winner':>7} {'Reyn':>5} "
         f"{'TightMv':>7} {'Chain':>11} {'DbsMv':>6} "
         f"{'TotalTime':>9} {'OptPopMax%':>10}"
