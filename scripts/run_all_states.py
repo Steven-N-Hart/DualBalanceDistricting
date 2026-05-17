@@ -4,17 +4,17 @@ For each state with >1 congressional district:
   1. Skip prep if data/<state>_vtd.geojson and _block.geojson already exist.
   2. Otherwise call scripts/prep_state_units.py to download TIGER +
      Census + cd119 data.
-  3. Run _test_block_from_vtd.py and capture metrics.
+  3. Run dev/test_block_from_vtd.py and capture metrics.
 
 Results are appended to out/all50_results.json after each state so a
 crash mid-loop loses at most one state's run. Re-runs of the script
 skip states whose results are already recorded.
 
 Usage:
-    python _run_all_states.py            # all states
-    python _run_all_states.py CA OR WA   # subset
+    python scripts/run_all_states.py            # all states
+    python scripts/run_all_states.py CA OR WA   # subset
 
-Background-friendly: run with ``python -u _run_all_states.py``.
+Background-friendly: run with ``python -u scripts/run_all_states.py``.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ import sys
 import time
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parent.parent
 RESULTS = REPO / "out" / "all50_results.json"
 
 # State FIPS, TIGER state-name (used in the prep download URL), 119th-Congress
@@ -131,7 +131,7 @@ def need_prep(state: str) -> tuple[bool, bool]:
 
 
 def parse_block_metrics(log_path: Path) -> dict | None:
-    """Parse the final 'BLOCK result' line from _test_block_from_vtd.py output."""
+    """Parse the final 'BLOCK result' line from dev/test_block_from_vtd.py output."""
     if not log_path.exists():
         return None
     text = log_path.read_text(errors="replace")
@@ -198,7 +198,7 @@ def process_state(postal: str, info: dict, results: dict) -> None:
             return
 
     rc = run(
-        [sys.executable, "-u", "_test_block_from_vtd.py", postal, str(n)],
+        [sys.executable, "-u", "dev/test_block_from_vtd.py", postal, str(n)],
         log_dir / f"{state_lc}_test.log",
     )
     if rc != 0:

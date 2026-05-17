@@ -29,6 +29,16 @@ scripts/           prep_state_units.py — per-state TIGER + Census + dra2020 + 
                    compare_state.py — side-by-side DualBalance vs enacted scoring
                    prep_bdistricting.py — ingest BDistricting reference plans for cross-algo comparison
                    fetch_enacted_mn.py, plot_mn_poc.py, plot_mn_comparison.py — PoC helpers
+                   run_all_states.py — run VTD+block pipeline for all 50 states
+                   run_compare_all.py — generate + score all PoC states; writes compare_all_summary.json
+manuscript/scripts/ gen_tables.py — generate LaTeX table content from compare_all_summary.json
+                   patch_results.py — replace placeholder blocks in results.tex
+                   plot_figures.py — generate four manuscript figures (headline EG, boxplots, maps, race scatter)
+                   plot_maps.py — side-by-side district maps for PoC states
+                   plot_story.py — exploratory story plots from compare_all_summary.json
+dev/               bench_articulation.py — benchmark numba Tarjan vs networkx at block scale
+                   test_block_from_vtd.py — block-scale optimizer from VTD-Karcher init
+                   test_optimizer.py — Reynolds-constrained optimizer test across PoC states
 docs/              Formalism.md (mathematical spec), legal-standards.md,
                    mn-poc-walkthrough.md, stuck-state-problem.md,
                    gerrymandering-research.md

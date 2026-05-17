@@ -5,7 +5,7 @@ import json
 import numpy as np
 from dualbalance.states import STATE_INFO
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parents[2]
 TEX = REPO / "manuscript" / "sections" / "results.tex"
 TABLES = (REPO / "out" / "tables_latex.txt").read_text()
 TABLE1, TABLE2 = TABLES.split("\n\n", 1)

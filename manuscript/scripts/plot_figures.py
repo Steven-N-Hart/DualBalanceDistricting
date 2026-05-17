@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parents[2]
 FIG_DIR = REPO / "manuscript" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 

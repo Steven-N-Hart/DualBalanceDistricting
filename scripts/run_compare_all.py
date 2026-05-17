@@ -22,7 +22,7 @@ import sys
 import time
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parent.parent
 
 from dualbalance.cascade import generate_cascade_plan
 from dualbalance.districting import generate_plan
@@ -69,11 +69,11 @@ def ensure_dualbalance_plan(state: str, n: int) -> Path:
     if map_path.exists():
         log(f"{state}: DualBalance plan already exists, skipping regen")
         return map_path
-    log(f"{state}: generating DualBalance plan (PRISM + Phase 1 + Phase 2)…")
+    log(f"{state}: generating DualBalance plan (DualBalance + Phase 1 + Phase 2)...")
     units = _load_vtd_units(state)
-    prism = generate_plan(units, n, geography="vtd")
+    raw = generate_plan(units, n, geography="vtd")
     opt = optimize_dbs(
-        prism, units,
+        raw, units,
         pop_dev_max_tolerance=KARCHER, max_passes=100000,
     )
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -89,7 +89,7 @@ def ensure_cascade_plan(state: str, n: int) -> Path | None:
     if map_path.exists():
         log(f"{state}: Cascade plan already exists, skipping regen")
         return map_path
-    log(f"{state}: generating Cascade plan…")
+    log(f"{state}: generating Cascade plan...")
     try:
         units = _load_vtd_units(state)
         plan = generate_cascade_plan(units, n, geography="vtd")
@@ -108,7 +108,7 @@ def ensure_bdistricting_plan(state: str) -> Path | None:
     if path.exists():
         log(f"{state}: BDistricting plan already exists, skipping fetch")
         return path
-    log(f"{state}: fetching BDistricting plan from Olson…")
+    log(f"{state}: fetching BDistricting plan from Olson...")
     rc = subprocess.call(
         [sys.executable, "scripts/prep_bdistricting.py", "--state", state],
         cwd=REPO,

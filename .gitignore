@@ -30,12 +30,16 @@ manuscript/sections/*.aux
 .env
 .env.*
 !.env.example
+manuscript/reviews/
 
 # Generated MN data + run outputs
 data/*.geojson
 data/*.zip
 data/*.shp*
 out/
+
+# LaTeX root artifacts
+texput.log
 
 # OS
 .DS_Store

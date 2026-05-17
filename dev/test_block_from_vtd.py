@@ -9,8 +9,8 @@ Pipeline (for any state):
 4. Run the block-scale optimizer from this initial state with Karcher
    tolerance.
 
-Usage: python _test_block_from_vtd.py <STATE> <N_DISTRICTS>
-e.g.   python _test_block_from_vtd.py IA 4
+Usage: python dev/test_block_from_vtd.py <STATE> <N_DISTRICTS>
+e.g.   python dev/test_block_from_vtd.py IA 4
 """
 
 from __future__ import annotations
@@ -179,6 +179,6 @@ def main(state: str, n_districts: int) -> int:
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("usage: python _test_block_from_vtd.py <STATE> <N>", file=sys.stderr)
+        print("usage: python dev/test_block_from_vtd.py <STATE> <N>", file=sys.stderr)
         raise SystemExit(2)
     raise SystemExit(main(sys.argv[1], int(sys.argv[2])))

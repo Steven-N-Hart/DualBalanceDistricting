@@ -12,7 +12,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parents[2]
 STATES = [("IA", 4), ("MA", 9), ("MN", 8), ("NC", 14), ("WI", 8), ("TX", 38)]
 
 # Plan label -> path template + load strategy.

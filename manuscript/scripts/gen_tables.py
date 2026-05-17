@@ -4,7 +4,7 @@ Prints two blocks:
   1. tab:multistate-dbs  -- per-state DBS + pop_dev_max (41 rows)
   2. tab:aggregate-comparison -- summary medians + counts (6 rows)
 
-Run: python _gen_tables.py > /tmp/tables.tex
+Run: python manuscript/scripts/gen_tables.py > /tmp/tables.tex
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import json
 import numpy as np
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parents[2]
 DATA = json.load(open(REPO / "out" / "compare_all_summary.json"))
 STATES = sorted(DATA.keys())
 # EG-tier states: those with composite or 2022 congressional election data.
