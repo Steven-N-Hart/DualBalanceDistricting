@@ -1,8 +1,19 @@
 \section{Methods}
 \label{sec:methods}
 
-% Mirrors docs/Formalism.md in the repository. If one changes, update the
-% other.
+\subsection{Data and inputs}
+\label{sec:methods-data}
+
+Atomic units are U.S.\ Census Bureau \emph{voting tabulation
+districts} (VTDs) and \emph{census tabulation blocks} from the 2020
+decennial release~\cite{census2020pl}, obtained via TIGER/Line
+shapefiles~\cite{tiger2020}. Boundaries are used as-is; no
+simplification or smoothing is applied. Population counts are the
+total-population figures from PL~94-171. The enacted congressional
+plan used for comparison is the 119th-Congress plan (effective
+January 2025), joined to VTDs and blocks via a spatial
+representative-point join against the TIGER 2024 \texttt{cd119}
+layer~\cite{tiger2024cd119}.
 
 \subsection{Problem statement}
 
@@ -126,28 +137,48 @@ The $0.5/0.5$ weighting makes the error a convex combination of the
 two mean deviations: each district is judged on representing roughly
 $1/N$ of the people \emph{and} roughly $1/N$ of the state's geography.
 The score reaches $1.0$ for a perfectly balanced plan and approaches
-$0$ as deviations grow without bound. Secondary metrics
-(Polsby-Popper compactness~\cite{polsbypopper1991} and
-Reock~\cite{reock1961}) are computed alongside but not optimized
-against; radial slices have lower compactness than blob-Voronoi or
-hand-drawn districts by construction, and this is a deliberate trade
-in service of the dual-balance objective.
+$0$ as deviations grow without bound. Secondary metrics (Polsby-Popper compactness~\cite{polsbypopper1991}
+and Reock~\cite{reock1961}) are computed alongside but not optimized
+against; the Phase~2 optimizer (\S\ref{sec:methods-tighten})
+hill-climbs DBS, not the compactness metrics. Radial slices have
+lower compactness than blob-Voronoi or hand-drawn districts by
+construction; this is a deliberate trade in service of the
+dual-balance objective.
 
 DualBalance does not directly minimize~\eqref{eq:dbs}; it minimizes
 population-capacitated geographic assignment cost under radial
-seeding. On the Minnesota PoC this still beats the enacted plan on
-DBS ($0.6472$ vs $0.6390$) despite the lower compactness.
+seeding. The empirical consequences are reported in
+\S\ref{sec:results}.
 
-\subsection{Optional: \texorpdfstring{L\textsuperscript{1}}{L1} pop-tightening with DBS hill-climb}
+For partisan-fairness comparison we report the Efficiency Gap
+(EG)~\cite{stephanopoulosmcghee2015}. Let $\mathrm{wasted}_P(d)$
+denote the wasted votes for party $P$ in district $d$: all votes
+cast for a losing candidate, plus votes above the bare majority
+threshold for a winning candidate. Then
+\begin{equation}
+  \mathrm{EG}
+    = \frac{\sum_d \mathrm{wasted}_R(d) - \sum_d \mathrm{wasted}_D(d)}
+           {\sum_d \mathrm{total}(d)},
+  \label{eq:eg}
+\end{equation}
+where positive values indicate Republican advantage and negative
+values indicate Democratic advantage. EG is computed on the plan
+geometry using precinct-level presidential vote totals from the 2020
+election; it is reported as a diagnostic and does not enter the
+generator. All other partisan, racial, and demographic variables are
+similarly excluded from the generator's inputs.
+
+\subsection{\texorpdfstring{L\textsuperscript{1}}{L1} population tightening and DBS hill-climb}
 \label{sec:methods-tighten}
 \label{sec:methods-optimize}
 
 The radial pipeline produces per-district pop deviation in the
 5--15\% range on real census geometry, well above the
 \textasciitilde{}0.5\% threshold required by \textit{Reynolds v.~Sims}
-for U.S.~congressional districts~\cite{reynolds1964}. An optional
-post-pass (\verb|--tighten-pop|) closes this gap via a deterministic
-two-phase local search of boundary-unit moves. Let
+for U.S.~congressional districts~\cite{reynolds1964}. A deterministic
+two-phase local search of boundary-unit moves (activated via
+\verb|--tighten-pop|) closes this gap; all results reported in this
+paper use this pass. Let
 $\delta_i = P(D_i) - P^{*}$ denote the signed population deviation of
 district $D_i$, let $T$ denote the user-supplied tolerance (default
 $0.005$), and call a move \emph{safe} if the source unit is not an
@@ -210,12 +241,9 @@ The L$^1$ objective is essential to the radial geometry. Seed
 placement puts the most over-target and most under-target districts
 on opposite sides of the population centroid, so no single
 adjacent-slice swap reduces the L$^\infty$ maximum, but many such
-swaps reduce the sum. The canonical Reynolds-tightening literature
-uses L$^\infty$ and bottoms out at \textasciitilde{}5\% on this
-geometry; the hybrid pass with chain escape runs to completion in
-\textasciitilde{}80 swaps on Minnesota, reducing
-$\mathrm{pop\_dev\_max}$ from $0.1124$ to $0.0021$ while leaving
-$\mathrm{area\_dev\_mean}$ essentially unchanged.
+swaps reduce the sum. A pure max-norm criterion stalls on this
+geometry; the hybrid with chain escape continues to make progress
+where the L$^\infty$-only criterion would halt.
 
 \paragraph{Phase 2: DBS hill-climb.}
 Once Phase 1 has converged, at each step pick the safe boundary move
@@ -299,80 +327,10 @@ initial configuration than the VTD seed (the population-weighted
 centroid is the same but the much higher density of degenerate
 articulation-point boundaries traps the optimizer), the refinement
 strategy is the path that works in practice: VTD as a coarse
-solver, blocks for the precise area-balance recovery.
+solver, blocks for the precise area-balance recovery. Contiguity
+checks within the optimizer use a per-district articulation-point
+cache (Tarjan's algorithm~\cite{tarjan1972} on CSR adjacency arrays),
+reducing each query from $\mathcal{O}(|V_d|+|E_d|)$ to
+$\mathcal{O}(1)$ amortized; this is what makes the block-scale stage
+tractable on commodity hardware.
 
-\subsection{Engineering: per-district articulation-point cache}
-\label{sec:methods-contig}
-
-The hot loop of the optimizer asks repeatedly whether a candidate
-boundary unit $u$ can be safely removed from its district $d$ -- in
-other words, whether $u$ is an articulation point of the subgraph
-$G[V_d]$. A naive implementation runs $\mathcal{O}(|V_d| + |E_d|)$
-per query via \verb|networkx.is_connected| on the post-removal
-subgraph, which dominates runtime at block scale.
-
-We maintain a per-district cache. For each district $d$, the set
-$A_d \subseteq V_d$ of articulation points is precomputed by Tarjan's
-algorithm~\cite{tarjan1972} on CSR (compressed sparse row) integer
-adjacency arrays. The per-query \verb|can_remove(u)| reduces to the
-set membership $u \notin A_{\pi(u)}$, returned in $\mathcal{O}(1)$
-amortized. After each accepted move $u: d_{\mathrm{src}} \to d_{\mathrm{dest}}$
-the two affected articulation sets $A_{d_{\mathrm{src}}}$,
-$A_{d_{\mathrm{dest}}}$ are recomputed; districts not touched by the
-move keep their cached set unchanged.
-
-Each Tarjan recompute is $\mathcal{O}(|V_d| + |E_d|)$ rather than
-the global $\mathcal{O}(|V| + |E|)$ of the naive check
-($|V_d| \approx |V|/N$ for $N$ districts). The recompute itself is
-\verb|@njit|-compiled via numba when available, operating on
-preallocated workspace buffers (a single integer DFS stack, two
-boolean masks, and three integer arrays sized to $|V|$). On a
-typical block-scale district subgraph of $\sim 44{,}000$ nodes the
-JIT'd recompute completes in $\sim 20$~ms, compared to $\sim 560$~ms
-for the same query through \verb|networkx.articulation_points|: a
-$28\times$ speedup. Across a full block-scale optimizer run
-(thousands of accepted moves and tens of thousands of candidates per
-move), this is the difference between a 20-hour run and a 30-minute
-run.
-
-A boundary-unit set $\partial = \{u : \exists v \in N(u), \pi(v) \neq \pi(u)\}$
-is also maintained incrementally and updated after each move (only
-$u$ and its graph neighbors need to be re-checked). The inner scan
-iterates $\partial$ rather than $V$, dropping per-pass work from
-$|V|$ to $O(|\partial|)$, which on real states is roughly the
-square root of $|V|$.
-
-Neither caching layer changes the algorithm's output. They preserve
-determinism exactly and make the block-scale pipeline tractable on
-commodity hardware.
-
-\subsection{Determinism and tie-breaking}
-
-The pipeline is deterministic at every step. The only sources of
-ambiguity (equidistant seed-to-unit pairs in
-\S\ref{sec:methods-assign}, equal-capacity fallbacks for unplaced
-units, and equal-cost candidates in \S\ref{sec:methods-repair}) all
-resolve to a fixed cascade with no remaining ambiguity:
-
-\begin{enumerate}
-  \item In assignment, ties on normalized distance break by ascending
-        $(\mathrm{unit\_id}, \mathrm{district\_id})$.
-  \item In the fallback for unplaced units, ties on remaining capacity
-        break to the smallest district id.
-  \item In contiguity repair, ties on cost break by ascending
-        $(\mathrm{pop\_pen}, \mathrm{area\_pen}, \mathrm{distance},
-        \mathrm{district\_id})$.
-\end{enumerate}
-
-The implementation uses no random number generator, no wall-clock
-input, and no hash-order dependence. Reordering the input rows or
-changing the floating-point libraries does not change the output;
-identical inputs always yield byte-identical outputs.
-
-\subsection{Out-of-scope inputs}
-
-The generator reads only geography and population. Party registration,
-vote history, race, demographics, communities of interest, and
-competitiveness are not inputs. The scoring harness may \emph{report}
-partisan or demographic diagnostics on the resulting map but does not
-feed them back into the generator.

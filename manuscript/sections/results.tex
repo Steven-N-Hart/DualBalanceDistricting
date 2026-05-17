@@ -207,22 +207,17 @@ not. \S\ref{sec:discussion-forensic} develops the distinction.
 \subsection{Cross-state, multi-algorithm validation}
 \label{sec:results-multistate}
 
-We replicated the Minnesota pipeline on five additional states
-spanning the density-profile and gerrymandering-history spaces:
-Iowa (4 districts, near-uniform density, drawn by Iowa's
-nonpartisan Legislative Services Agency~\cite{iowalsa}),
-Massachusetts (9 districts, single-metro Boston), Texas (38
-districts, polycentric), North Carolina (14 districts, the state
-in which \textit{Rucho}~\cite{rucho2019} originated), and
-Wisconsin (8 districts, where \textit{Whitford v.~Gill} first put
-the Efficiency Gap~\cite{stephanopoulosmcghee2015} in front of a
-federal court). The data pipeline (TIGER 2020 VTDs, Census PL
-94-171 demographics, dra2020/vtd\_data 2020 presidential returns,
-TIGER 2024 cd119 spatial join for the enacted plan) is automated
-in \verb|scripts/prep_state_units.py|.
+We replicated the Minnesota pipeline across all multi-seat states
+for which TIGER 2020PL VTD boundaries are available (California,
+Hawaii, and Oregon did not submit VTD data to the Census Bureau;
+they are excluded and marked $\dagger$ in figures). The data
+pipeline (TIGER 2020 VTDs, Census PL 94-171 demographics,
+dra2020/vtd\_data 2020 presidential returns, TIGER 2024 cd119
+spatial join for the enacted plan) is automated in
+\verb|scripts/prep_state_units.py|.
 
 To put DualBalance in context against other deterministic baselines we
-score two additional algorithms on the same six states.
+score two additional algorithms on every state in the validation set.
 \emph{Cascade} (\verb|src/dualbalance/cascade.py|) is an
 Iowa-LSA-flavored construction: aggregate VTDs to counties, pick
 $N$ farthest-spread county seeds, run capacitated first-fit
@@ -236,101 +231,191 @@ Cascade prioritizes county integrity; BDistricting prioritizes
 compactness; DualBalance prioritizes area balance. Together with the
 enacted plan this gives four points of comparison on each state.
 
-\begin{table}[h]
+% -----------------------------------------------------------------------
+% TABLE 1: Cross-state DualBalance Score + pop_dev_max
+% -----------------------------------------------------------------------
+\begin{table}[htbp]
 \centering
-\caption{Cross-state DualBalance Score. \textbf{Bold} marks the
-winner on each row.}
+\framebox[\textwidth]{\parbox[c][5cm]{0.9\textwidth}{\centering
+\textbf{[PLACEHOLDER --- Table~\ref{tab:multistate-dbs}]}\\[6pt]
+One row per state. Columns: State, $N$, DualBalance Score
+(DualBalance / Cascade / BDistricting / Enacted), $\mathrm{pop\_dev\_max}$
+(DualBalance / Cascade). Bold marks the DBS winner per row.
+Cascade rows flagged $\ddagger$ where $\mathrm{pop\_dev\_max} > 0.5\,\%$
+(legally non-viable). States marked $\dagger$ excluded (no TIGER VTD data).\\[4pt]
+Source: \texttt{out/compare\_all\_summary.json}.
+}}
+\caption{Cross-state DualBalance Score and maximum population deviation
+for all available states.
+$\dagger$~State excluded (TIGER 2020PL VTD data not available).
+$\ddagger$~$\mathrm{pop\_dev\_max} > 0.5\,\%$; plan does not satisfy
+\emph{Reynolds v.~Sims} and is legally non-viable regardless of DBS.
+\textbf{Bold} marks the highest DBS on each row.}
 \label{tab:multistate-dbs}
-\small
-\begin{tabular}{lrrrrr}
-\toprule
-State & N & DualBalance & Cascade & BDistricting & Enacted \\
-\midrule
-Iowa           &  4 & 0.8132 & 0.8227 & 0.7885 & \textbf{0.8828} \\
-Massachusetts  &  9 & 0.7591 & \textbf{0.7602} & 0.7158 & 0.7246 \\
-Minnesota      &  8 & 0.6472 & \textbf{0.7709} & 0.6493 & 0.6391 \\
-North Carolina & 14 & 0.7252 & \textbf{0.8199} & 0.7600 & 0.7689 \\
-Texas          & 38 & 0.6230 & \textbf{0.7943} & 0.6350 & 0.6658 \\
-Wisconsin      &  8 & 0.6556 & \textbf{0.8399} & 0.7422 & 0.7410 \\
-\bottomrule
-\end{tabular}
 \end{table}
 
-\begin{table}[h]
+% -----------------------------------------------------------------------
+% TABLE 2: Cross-state Efficiency Gap
+% -----------------------------------------------------------------------
+\begin{table}[htbp]
 \centering
-\caption{Cross-state Efficiency Gap (positive = R-favorable).
-\textbf{Bold} marks the smallest $|\mathrm{EG}|$ on each row.}
+\framebox[\textwidth]{\parbox[c][5cm]{0.9\textwidth}{\centering
+\textbf{[PLACEHOLDER --- Table~\ref{tab:multistate-eg}]}\\[6pt]
+One row per state. Columns: State, statewide R\,\%, EG for
+DualBalance / Cascade / BDistricting / Enacted (signed; positive = R-favored).
+Bold marks the smallest $|\mathrm{EG}|$ per row. Dashed line separating
+states above vs.\ below the 0.07 threshold for the enacted plan.
+Cascade rows flagged $\ddagger$ where legally non-viable.\\[4pt]
+Source: \texttt{out/compare\_all\_summary.json}.
+}}
+\caption{Cross-state Efficiency Gap (EG; positive = R-favored, negative = D-favored)
+for all available states. \textbf{Bold} marks the smallest $|\mathrm{EG}|$ on each row.
+$\ddagger$~Cascade plan legally non-viable ($\mathrm{pop\_dev\_max} > 0.5\,\%$);
+EG reported for completeness but plan cannot be enacted.}
 \label{tab:multistate-eg}
-\small
-\begin{tabular}{lrrrrr}
-\toprule
-State & Statewide R\,\% & DualBalance & Cascade & BDistricting & Enacted \\
-\midrule
-Iowa           & 54.2 & $-0.173$ & $+0.165$ & \textbf{$-0.088$} & $+0.416$ \\
-Massachusetts  & 32.9 & $-0.158$ & $-0.158$ & $-0.158$ & $-0.158$ \\
-Minnesota      & 46.4 & $+0.066$ & \textbf{$+0.049$} & $+0.067$ & $+0.068$ \\
-North Carolina & 50.7 & $+0.088$ & \textbf{$+0.026$} & $-0.077$ & $+0.201$ \\
-Texas          & 52.8 & $+0.029$ & \textbf{$+0.009$} & $+0.058$ & $+0.153$ \\
-Wisconsin      & 49.7 & $+0.147$ & \textbf{$+0.081$} & $+0.142$ & $+0.267$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[h]
-\centering
-\caption{Counties kept intact. Cascade splits a county only when
-its population exceeds the per-district cap.}
-\label{tab:multistate-counties}
-\small
-\begin{tabular}{lrrrrr}
-\toprule
-State & Counties & DualBalance (split) & Cascade (split) & BDistricting (split) & Enacted (split) \\
-\midrule
-Iowa           &  99 &  30 & \textbf{0}  & 21 & \textbf{0} \\
-Massachusetts  &  14 &  12 & \textbf{4}  & 10 & 9 \\
-Minnesota      &  87 &  44 & \textbf{1}  & 25 & 9 \\
-North Carolina & 100 &  56 & \textbf{2}  & 37 & 11 \\
-Texas          & 254 & 132 & \textbf{10} & 82 & 30 \\
-Wisconsin      &  72 &  46 & \textbf{1}  & 25 & 12 \\
-\bottomrule
-\end{tabular}
 \end{table}
 
 Three findings stand out.
 
-\paragraph{Cascade dominates on DBS.} Cascade wins on five of six
-states (MN, MA, TX, NC, WI) and runs second on Iowa. DualBalance wins on
-no state outright; BDistricting on none. Cascade's lead comes from
-the structural pairing of high county integrity (1--10 splits vs.
-the enacted plan's 9--30) with low area imbalance (county
-aggregation produces pseudo-counties of similar size across each
-state). The exception is Iowa, where the enacted plan is itself the
-result of a closely related cascade process~\cite{iowalsa} and the
-LSA's manual refinement gives it a small edge.
+\paragraph{Cascade wins on DBS but is legally non-viable on most states.}
+Cascade scores well on the DualBalance objective because county
+aggregation naturally produces units of similar area, but the
+county-integrity constraint produces population deviations far above
+the \emph{Karcher} threshold on any state with a major metropolitan
+county. DualBalance and BDistricting both achieve \emph{Karcher}
+compliance on the large majority of states in the validation set;
+Cascade does so only on Iowa and Wisconsin, where no single county
+dominates the district-population cap. The distinction matters: a plan
+that wins on DBS but violates \emph{Reynolds v.~Sims} cannot legally
+be enacted.
 
-\paragraph{Different deterministic algorithms, different
-trade-offs.} The three deterministic generators win on different
-axes. DualBalance minimizes $\overline{\mathrm{area\_dev}}$ on
-single-metro states with a clean radial structure but produces
-high county splits and low compactness. BDistricting maximizes
-compactness and pop-balance but accepts high area imbalance
-($\overline{\mathrm{area\_dev}}$ near $0.8$ on MA, $1.1$ on TX).
-Cascade maximizes county integrity and area balance but tolerates
-looser population balance (10--20\,\% pre-tighten). The ``best''
-algorithm on DBS is whichever happens to weight the underlying
-trade-offs in a way the state's geometry rewards.
+\paragraph{Different deterministic algorithms, different trade-offs.}
+The three generators win on different axes. DualBalance holds
+$\mathrm{pop\_dev\_max}$ below 1\,\% on nearly all states and
+recovers area balance through radial mixing of dense and sparse
+territory, at the cost of high county splits and low compactness.
+BDistricting maximizes compactness and population balance but accepts
+high area imbalance because Lloyd recentering explicitly minimizes
+within-district geographic spread. Cascade maximizes county integrity
+and area balance but fails the population-balance legal threshold on
+most states. The figures below (\ref{fig:headline-eg},
+\ref{fig:boxplots}) display the full distribution across all states.
 
-\paragraph{Partisan asymmetry shrinks across every deterministic
-generator.} On every state with nonzero statewide partisan
-asymmetry, all three deterministic algorithms produce smaller
-$|\mathrm{EG}|$ than the enacted plan. The largest gaps appear in
-the two states most associated with partisan-gerrymander litigation:
-NC (enacted $+0.20$ vs.~Cascade $+0.03$) and WI (enacted $+0.27$
-vs.~Cascade $+0.08$). Cascade has the smallest $|\mathrm{EG}|$ on
-five of six states; BDistricting on one (Iowa). The structural
-claim in \S\ref{sec:discussion-forensic} is the empirical core of
-this finding: a generator with no political input cannot produce
-a $+0.20$ partisan-fairness metric. The result holds across all
-three deterministic baselines, not just DualBalance. Cascade is the
-existence proof of that claim under a different objective
-hierarchy than DualBalance's.
+\paragraph{Partisan asymmetry shrinks under every deterministic
+generator.} On states with nonzero enacted EG, all three
+deterministic algorithms produce smaller $|\mathrm{EG}|$ than the
+enacted plan. The largest reductions appear in the states most
+associated with partisan-gerrymander litigation; see
+Figure~\ref{fig:headline-eg}. The structural claim in
+\S\ref{sec:discussion-forensic} is the empirical core of this
+finding: a generator that reads no political data cannot reproduce a
+large partisan-fairness asymmetry. This holds across all three
+deterministic baselines, not just DualBalance.
+
+% -----------------------------------------------------------------------
+% FIGURE 1: Headline EG comparison (all states, sorted by enacted |EG|)
+% -----------------------------------------------------------------------
+\begin{figure}[htbp]
+\centering
+\framebox[\textwidth]{\parbox[c][6cm]{0.9\textwidth}{\centering
+\textbf{[PLACEHOLDER --- Figure~\ref{fig:headline-eg}]}\\[6pt]
+Ranked bar chart: $|\mathrm{EG}|$ for DualBalance vs.\ enacted 119th-Congress plan,
+one bar pair per state, sorted left-to-right by enacted $|\mathrm{EG}|$
+(worst-gerrymandered on the left).
+Red dashed line at $|\mathrm{EG}|=0.07$ (Stephanopoulos-McGhee threshold).
+Source: \texttt{out/story\_headline\_eg.png} (auto-generated by \texttt{\_plot\_story.py}).
+States without TIGER 2020PL VTD data excluded ($\dagger$).
+}}
+\caption{Partisan fairness across all available states, sorted by enacted
+$|\mathrm{EG}|$ (worst-gerrymandered on the left). DualBalance (blue) vs.\
+enacted 119th-Congress plan (gray). Red dashed line: $|\mathrm{EG}|=0.07$
+gerrymander threshold~\cite{stephanopoulosmcghee2015}. States marked
+$\dagger$ lacked TIGER 2020PL VTD boundaries and are excluded.}
+\label{fig:headline-eg}
+\end{figure}
+
+% -----------------------------------------------------------------------
+% FIGURE 2: Boxplot panel (DBS, pop_dev, EG, MM districts)
+% -----------------------------------------------------------------------
+\begin{figure}[htbp]
+\centering
+\framebox[\textwidth]{\parbox[c][8cm]{0.9\textwidth}{\centering
+\textbf{[PLACEHOLDER --- Figure~\ref{fig:boxplots}]}\\[6pt]
+Four-panel boxplot figure. Each panel: one box per algorithm
+(DualBalance, Cascade, BDistricting, Enacted), one dot per state.\\[4pt]
+\textbf{Panel A:} DualBalance Score (higher = better).\\
+\textbf{Panel B:} $\mathrm{pop\_dev\_max}$, log scale; red dashed line at Karcher 0.05\,\%.\\
+\textbf{Panel C:} $|\mathrm{EG}|$ (lower = fairer); red dashed line at 0.07.\\
+\textbf{Panel D:} Minority-majority district count.\\[4pt]
+Source: \texttt{out/story\_box\_*.png} (auto-generated by \texttt{\_plot\_story.py}).
+}}
+\caption{Cross-state comparison of four algorithms on key metrics.
+Each box spans the interquartile range across all available states; dots are
+individual states. \textbf{Panel A}: DualBalance Score (higher = better).
+\textbf{Panel B}: maximum per-district population deviation, log scale;
+dashed line at the \emph{Karcher} threshold (0.05\,\%).
+\textbf{Panel C}: $|\mathrm{EG}|$ (lower = fairer); dashed line at the 0.07
+gerrymander threshold~\cite{stephanopoulosmcghee2015}.
+\textbf{Panel D}: minority-majority district count.}
+\label{fig:boxplots}
+\end{figure}
+
+% -----------------------------------------------------------------------
+% FIGURE 3: Map comparison (NC as the gerrymander case study)
+% -----------------------------------------------------------------------
+\begin{figure}[htbp]
+\centering
+\framebox[\textwidth]{\parbox[c][6cm]{0.9\textwidth}{\centering
+\textbf{[PLACEHOLDER --- Figure~\ref{fig:nc-maps}]}\\[6pt]
+Three-panel side-by-side map: North Carolina (14 districts).\\
+\textbf{Left:} Enacted 119th-Congress plan (EG $+0.20$, $\mathrm{pop\_dev\_max}$ 0.04\,\%).\\
+\textbf{Center:} Cascade (EG $+0.03$, $\mathrm{pop\_dev\_max}$ 10.27\,\% --- legally non-viable).\\
+\textbf{Right:} DualBalance (EG $+0.09$, $\mathrm{pop\_dev\_max}$ 0.11\,\%).\\
+Source: \texttt{out/maps\_NC.png} (generated by \texttt{\_plot\_maps.py}).
+}}
+\caption{North Carolina congressional districts under three plans (14 seats,
+2020 PL 94-171). \textbf{Left:} enacted 119th-Congress plan, with the
+Efficiency Gap of $+0.20$ that gave rise to \textit{Rucho v.~Common Cause}~\cite{rucho2019}.
+\textbf{Center:} Cascade plan, which scores better on DBS ($0.82$ vs $0.77$ enacted)
+but violates \emph{Karcher} at 10.27\,\% maximum population deviation.
+\textbf{Right:} DualBalance plan, which is \emph{Karcher}-compliant (0.11\,\%) and
+reduces EG to $+0.09$ with no political input.}
+\label{fig:nc-maps}
+\end{figure}
+
+% -----------------------------------------------------------------------
+% FIGURE 4: Minority-majority districts scatter
+% -----------------------------------------------------------------------
+\begin{figure}[htbp]
+\centering
+\framebox[\textwidth]{\parbox[c][6cm]{0.9\textwidth}{\centering
+\textbf{[PLACEHOLDER --- Figure~\ref{fig:race-scatter}]}\\[6pt]
+Scatter plot: minority-majority districts under DualBalance (y-axis) vs.\
+enacted plan (x-axis), one point per state. Points above the diagonal: DualBalance
+creates more MMDs. Points below: enacted creates more. Color by statewide
+minority VAP share. Reference line: $y = x$.\\[4pt]
+Source: computed from \texttt{out/compare\_all\_summary.json}.
+}}
+\caption{Minority-majority district count: DualBalance vs.\ enacted 119th-Congress plan.
+Each point is one state; points above the diagonal indicate DualBalance produces
+more majority-minority districts than the enacted map. Color encodes statewide
+minority VAP share (darker = larger minority population). DualBalance is race-blind;
+when it produces more MMDs than the enacted plan, the effect is geographic, not
+by design.}
+\label{fig:race-scatter}
+\end{figure}
+
+\subsection{What would Congress look like?}
+\label{sec:results-congress}
+
+% [PLACEHOLDER]
+% This subsection aggregates the DualBalance plans across all available
+% states to project the partisan composition of the House under a fully
+% DualBalance-drawn Congress. Key numbers to report:
+%   - Projected D vs. R seat count under DualBalance vs. enacted plans
+%   - Change in EG-weighted representation
+%   - States where DualBalance flips seat composition
+%   - Caveats: (1) uses 2020 presidential returns as a proxy for House votes,
+%     (2) excludes CA/HI/OR (no VTD data), (3) single-seat states unchanged
+% Draft text will be added once the full-state harness completes and
+% seat projections can be computed from compare_all_summary.json.

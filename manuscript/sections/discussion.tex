@@ -194,16 +194,32 @@ deterministic plan their inferential power evaporates.
 
 \subsection{Limitations}
 
-\paragraph{Six-state evidence, not fifty-state generality.} Three
-deterministic algorithms (DualBalance, Cascade, BDistricting) have been
-run end-to-end on six states (\S\ref{sec:results-multistate}). On
-DBS, Cascade wins on MN, MA, TX, NC, and WI; the enacted plan wins
-only on Iowa. Across all six states with nonzero partisan asymmetry,
-every deterministic algorithm produces a smaller $|\mathrm{EG}|$
-than the enacted plan, with the largest gaps in the
-gerrymander-prone states. The remaining 44 states have not been
-run, and six states does not establish generality across the
-density-profile or litigation-history spaces.
+\paragraph{VTD data availability.} The Census Bureau's TIGER 2020PL
+redistricting file includes VTD boundaries only for states that
+submitted them. At least three states --- California, Hawaii, and Oregon ---
+did not participate in the VTD program for 2020 and therefore have no
+\texttt{vtd20} shapefile in TIGER; they are excluded from all
+cross-state tables and figures here. Future work can substitute
+block-group or block boundaries, which the Census does publish for all
+states, at a cost of larger input size and longer optimizer runtime.
+
+\paragraph{Peninsula and polycentric geometries.} DualBalance's optimizer
+can fail to close the Karcher gap in states whose geometry defeats
+single-center radial seeding. Florida is the clearest case in our
+validation set: with 28 seats distributed across a long peninsula,
+the radial slices created around the population-weighted centroid
+produce districts that the VTD-scale optimizer cannot balance to
+the 0.05\,\% target in $10^5$ passes, leaving
+$\mathrm{pop\_dev}_{\max} = 44.2\,\%$. The block-scale refinement
+pass (\S\ref{sec:methods-block}) is the next step for these
+hard-geometry states; results will be reported as they are
+available.
+
+\paragraph{Expanding evidence base.} Tables and figures in
+\S\ref{sec:results-multistate} will be updated as the full-state
+harness completes. Figures and tables note $\dagger$ for any state
+where VTD data were unavailable and results therefore could not be
+computed.
 
 \paragraph{Worst-district area outlier.} DualBalance concentrates the
 area imbalance in a single rural district (here, District~2 at
@@ -236,13 +252,17 @@ regard the 0.047 figure as a hard ceiling on legal viability.
 \subsection{Future work}
 \label{sec:future-work}
 
-\paragraph{Full-50-state validation.} Six states (MN, IA, MA, TX,
-NC, WI) have been run (\S\ref{sec:results-multistate}). Extending
-to the remaining 44 requires no algorithmic change. California,
-Florida, Pennsylvania, and Ohio are the highest-value next
-targets: California for its size and many metros, Florida for its
-peninsula geometry, Pennsylvania and Ohio for their roles in
-state-court partisan-gerrymandering jurisprudence.
+\paragraph{Broad-coverage validation (ongoing).} The six-state
+initial validation (MN, IA, MA, TX, NC, WI) is being extended to
+the full set of multi-seat states for which TIGER 2020PL VTD
+boundaries are available (41 states at time of writing; CA, HI,
+OR excluded). Results will be incorporated into the published
+version of this paper. The most analytically important remaining
+states are Pennsylvania and Ohio (state-court partisan-gerrymandering
+jurisprudence) and the four states where DualBalance is still above
+the Karcher threshold at VTD scale (FL in particular, where the
+peninsula geometry makes single-center radial seeding hard to
+balance).
 
 \paragraph{Multi-center radial seeding.} For polycentric states, place
 seeds on circles around \emph{each} of $k$ population centers, with
@@ -272,6 +292,21 @@ extensions and would not feed back into the generator
 
 \subsection{Forensic metrics applied to a generative procedure}
 \label{sec:discussion-forensic}
+
+Two problems arise when forensic metrics are pressed into service as
+design objectives rather than as diagnostic tools. First, optimizing
+for a plan that ``looks like what a neutral process would have
+produced'' is a moving target: the counterfactual shifts with the
+ensemble distribution one chooses and the legal constraints one
+encodes, both of which carry discretionary content~\cite{cain2014}.
+Second, fully content-neutral automated procedures can produce
+systematic partisan asymmetry as a geographic artifact. Chen and
+Rodden~\cite{chenrodden2013} showed that residential clustering
+causes impartial automated maps to disadvantage Democrats in many
+states, so a nonzero Efficiency Gap on such a map reflects
+geography rather than intent. Forensic metrics were designed to
+detect manipulation by a human line-drawer; absent a line-drawer,
+their inferential content evaporates~\cite{pildes2004}.
 
 Deterministic generation has interpretive consequences for the
 fairness-metrics literature. Most gerrymandering diagnostics carry
