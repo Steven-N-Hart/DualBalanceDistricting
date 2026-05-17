@@ -134,4 +134,18 @@ The `compare` subcommand and `comparison.json`, the HTML report, and the multi-s
 
 ## Manuscript
 
-The [manuscript/](manuscript/) directory holds a LaTeX write-up of the method, kept under version control alongside the code. Structure: `main.tex` includes `sections/{introduction,methods,results,discussion}.tex` and `references.bib`; figures go in `figures/`. Build the PDF with `pdflatex main.tex` (run twice, with `bibtex main` in between, to resolve citations). Build the GitHub-rendered markdown with `pandoc -s --from=latex --to=gfm --bibliography=references.bib --citeproc -o main.md main.tex`. `main.pdf` and `main.md` are committed and must be regenerated whenever the `.tex` sources change; there is no hand-maintained markdown twin. Methods should mirror [docs/Formalism.md](docs/Formalism.md), if one changes, update the other.
+The [manuscript/](manuscript/) directory holds a LaTeX write-up of the method, kept under version control alongside the code. Structure: `main.tex` includes `sections/{introduction,methods,results,discussion}.tex` and `references.bib`; figures go in `figures/`. Build the PDF and markdown from the `manuscript/` directory:
+
+```powershell
+# PDF (three passes to resolve all cross-references and citations)
+$pdflatex = "$env:LOCALAPPDATA\Programs\MiKTeX\miktex\bin\x64\pdflatex.exe"
+& $pdflatex -interaction=nonstopmode main.tex
+& "$env:LOCALAPPDATA\Programs\MiKTeX\miktex\bin\x64\bibtex.exe" main
+& $pdflatex -interaction=nonstopmode main.tex
+& $pdflatex -interaction=nonstopmode main.tex
+
+# Markdown (pandoc)
+& "$env:LOCALAPPDATA\Pandoc\pandoc.exe" -s --from=latex --to=gfm --bibliography=references.bib --citeproc -o main.md main.tex
+```
+
+`main.pdf` and `main.md` are committed and must be regenerated whenever the `.tex` sources change; there is no hand-maintained markdown twin. Methods should mirror [docs/Formalism.md](docs/Formalism.md), if one changes, update the other.
