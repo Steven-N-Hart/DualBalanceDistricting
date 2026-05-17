@@ -209,7 +209,16 @@ def _resolve_dra_election_url(state_postal: str) -> str:
 
 
 def _fetch_dra_elections(url: str) -> pd.DataFrame:
-    """Download a dra2020 state election ZIP and return 2020 presidential."""
+    """Download a dra2020 state election ZIP.
+
+    Election source priority (best available):
+      1. E_16-22_COMP  -- DRA composite across 2016-2022 cycles (mitigates
+                          incumbency effects and uncontested races)
+      2. E_22_CONG     -- 2022 U.S. House votes (actual congressional results)
+      3. E_20_PRES     -- 2020 presidential votes (fallback)
+
+    A 'votes_source' column records which source was used per row.
+    """
     print(f"  downloading election data from {url}")
     with urllib.request.urlopen(url, timeout=180) as resp:
         zip_bytes = resp.read()
@@ -219,16 +228,31 @@ def _fetch_dra_elections(url: str) -> pd.DataFrame:
             raise RuntimeError(f"no CSV inside {url}")
         with zf.open(csv_names[0]) as f:
             df = pd.read_csv(f, dtype={"GEOID20": str})
-    need = {"GEOID20", "E_20_PRES_Rep", "E_20_PRES_Dem"}
-    missing = need - set(df.columns)
-    if missing:
-        raise RuntimeError(f"dra2020 CSV missing expected columns: {sorted(missing)}")
-    out = (
-        df[["GEOID20", "E_20_PRES_Rep", "E_20_PRES_Dem"]]
-        .rename(columns={"E_20_PRES_Rep": "votes_R", "E_20_PRES_Dem": "votes_D"})
-    )
+
+    cols = set(df.columns)
+
+    # Priority 1: 2016-22 composite
+    if {"E_16-22_COMP_Rep", "E_16-22_COMP_Dem"} <= cols:
+        r_col, d_col, source = "E_16-22_COMP_Rep", "E_16-22_COMP_Dem", "comp_16_22"
+    # Priority 2: 2022 congressional
+    elif {"E_22_CONG_Rep", "E_22_CONG_Dem"} <= cols:
+        r_col, d_col, source = "E_22_CONG_Rep", "E_22_CONG_Dem", "cong_22"
+    # Priority 3: 2020 presidential (fallback)
+    elif {"E_20_PRES_Rep", "E_20_PRES_Dem"} <= cols:
+        r_col, d_col, source = "E_20_PRES_Rep", "E_20_PRES_Dem", "pres_20"
+    else:
+        raise RuntimeError(
+            f"dra2020 CSV has none of the expected election columns; "
+            f"available: {sorted(c for c in cols if c.startswith('E_'))}"
+        )
+
+    print(f"  election source: {source}")
+    out = df[["GEOID20", r_col, d_col]].rename(
+        columns={r_col: "votes_R", d_col: "votes_D"}
+    ).copy()
     out["votes_R"] = pd.to_numeric(out["votes_R"], errors="coerce").fillna(0).astype(int)
     out["votes_D"] = pd.to_numeric(out["votes_D"], errors="coerce").fillna(0).astype(int)
+    out["votes_source"] = source
     return out
 
 
@@ -296,7 +320,7 @@ def _attach_elections(
     csv_path: Path | None,
     state_postal: str,
 ) -> gpd.GeoDataFrame:
-    """Join 2020 presidential vote totals onto ``gdf``."""
+    """Join election vote totals onto ``gdf`` (best available source per state)."""
     if csv_path is not None:
         try:
             edf = pd.read_csv(csv_path, dtype={id_column: str})
@@ -328,8 +352,13 @@ def _attach_elections(
         merged[["votes_R", "votes_D"]] = merged[["votes_R", "votes_D"]].fillna(0)
     merged["votes_R"] = merged["votes_R"].astype(int)
     merged["votes_D"] = merged["votes_D"].astype(int)
+    if "votes_source" not in merged.columns:
+        merged["votes_source"] = "pres_20"
+    else:
+        merged["votes_source"] = merged["votes_source"].fillna("pres_20")
+    source = merged["votes_source"].iloc[0] if len(merged) else "unknown"
     print(
-        f"  joined 2020 presidential votes for {len(merged):,} units "
+        f"  joined election votes [{source}] for {len(merged):,} units "
         f"(R {int(merged['votes_R'].sum()):,}; D {int(merged['votes_D'].sum()):,})"
     )
     return merged
@@ -552,7 +581,7 @@ def main(argv: list[str] | None = None) -> int:
     gdf["county"] = gdf[expected_id].astype(str).str[:5]
 
     out_cols = [expected_id, "population", "county"]
-    for c in [*list(_PL_VARIABLES), "votes_R", "votes_D", "cd119_district"]:
+    for c in [*list(_PL_VARIABLES), "votes_R", "votes_D", "votes_source", "cd119_district"]:
         if c in gdf.columns and c not in out_cols:
             out_cols.append(c)
     out_cols.append("geometry")

@@ -34,10 +34,12 @@ Cascade scores well on the DualBalance objective because county
 aggregation naturally produces units of similar area, but the
 county-integrity constraint yields population deviations far above the
 \emph{Karcher} threshold on any state with a dominant metropolitan county
-(Figure~\ref{fig:boxplots}, Panel B). DualBalance and BDistricting both
-achieve \emph{Karcher} compliance on the large majority of states;
-Cascade does so only on Iowa and Wisconsin, where no single county
-exceeds the per-district population cap. A plan that wins on DBS but
+(Figure~\ref{fig:boxplots}, Panel B). DualBalance achieves \emph{Karcher} compliance on 26 of 41 states;
+BDistricting and Cascade achieve it on zero states (Table~\ref{tab:aggregate-comparison}).
+Cascade clears \emph{Karcher} nowhere because the county-integrity constraint
+produces large deviations whenever a county exceeds the per-district cap.
+BDistricting clears it nowhere because Lloyd iteration converges to
+centroidal districts that do not enforce strict population equality. A plan that wins on DBS but
 violates \emph{Reynolds v.~Sims} cannot legally be enacted.
 
 \paragraph{Different deterministic algorithms, different trade-offs.}

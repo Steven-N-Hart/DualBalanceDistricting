@@ -162,11 +162,22 @@ threshold for a winning candidate. Then
   \label{eq:eg}
 \end{equation}
 where positive values indicate Republican advantage and negative
-values indicate Democratic advantage. EG is computed on the plan
-geometry using precinct-level presidential vote totals from the 2020
-election; it is reported as a diagnostic and does not enter the
-generator. All other partisan, racial, and demographic variables are
-similarly excluded from the generator's inputs.
+values indicate Democratic advantage. EG is reported as a diagnostic
+and does not enter the generator; all partisan, racial, and demographic
+variables are excluded from the generator's inputs.
+
+Vote inputs for EG are drawn from the best available precinct-level
+source per state, in priority order: (1)~DRA's 2016--22 composite
+election (\texttt{E\_16-22\_COMP}), which blends presidential, Senate,
+and gubernatorial returns across three cycles to mitigate incumbency
+effects and uncontested-race artifacts~\cite{dra2020vtd}; (2)~2022
+U.S. House returns (\texttt{E\_22\_CONG}) where the composite is
+unavailable; (3)~2020 presidential returns (\texttt{E\_20\_PRES}) as a
+fallback. The composite is available for 18 of 41 states, the 2022
+House-only for 2 states, and the 2020 presidential for the remaining
+21. The \texttt{votes\_source} field in each state's units file records
+which source was used; Table~\ref{tab:multistate-dbs} marks rows where
+the fallback presidential source applies ($\star$).
 
 \subsection{\texorpdfstring{L\textsuperscript{1}}{L1} population tightening and DBS hill-climb}
 \label{sec:methods-tighten}
