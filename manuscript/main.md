@@ -375,10 +375,10 @@ produce different partitions with different partisan and demographic
 properties, because the resulting radial slices land differently on the
 state’s population geography. Rotation sensitivity, i.e., the
 distribution of DBS, $`|\mathrm{EG}|`$, and seat outcomes across the
-full rotation range, is therefore an important robustness check
-identified as future work in
-§<a href="#sec:future-work" data-reference-type="ref"
-data-reference="sec:future-work">4.6</a>. The due-east anchor was
+full rotation range, is therefore an important robustness check; results
+are reported in
+§<a href="#sec:results-rotation" data-reference-type="ref"
+data-reference="sec:results-rotation">3.1</a>. The due-east anchor was
 selected as the natural zero of the standard angular convention; an
 adopting body would need to pre-specify a rotation rule (or adopt this
 one) as part of any legislative implementation.
@@ -1788,17 +1788,16 @@ The structural fix for peninsula and polycentric states: place seeds on
 circles around each of $`k`$ deterministically chosen population
 centers.
 
-#### Rotation sensitivity analysis.
+#### Principled rotation-selection rule.
 
-The current pipeline fixes the seed ring at $`\theta = 0`$ (due east).
-Running the full pipeline across the complete rotation range
-$`\theta \in [0,\,2\pi/N)`$ for each state and reporting the
-distribution of DBS, $`|\mathrm{EG}|`$, and seat outcomes would quantify
-how much of the observed performance is attributable to the rotation
-anchor versus the radial geometry itself. If the rotation distribution
-is narrow, the due-east anchor is well supported; if wide, a principled
-rotation-selection rule (e.g., the rotation minimizing $`|\mathrm{EG}|`$
-on a pre-committed proxy election) would strengthen the design.
+The rotation sensitivity analysis in
+§<a href="#sec:results-rotation" data-reference-type="ref"
+data-reference="sec:results-rotation">3.1</a> shows that the due-east
+anchor produces seat-count swings of 1–3 seats in 26 of 41 states.
+Formalizing a pre-committed rotation-selection rule (e.g., the anchor
+minimizing $`|\mathrm{EG}|`$ on the most recent composite election,
+chosen before any redistricting cycle begins) would close this remaining
+degree of freedom and strengthen the neutrality argument.
 
 #### Block-scale completion.
 

@@ -218,16 +218,14 @@ mathematically clean alternative; we leave it to future work.
 peninsula and polycentric states: place seeds on circles around each
 of $k$ deterministically chosen population centers.
 
-\paragraph{Rotation sensitivity analysis.} The current pipeline fixes
-the seed ring at $\theta = 0$ (due east). Running the full pipeline
-across the complete rotation range $\theta \in [0,\,2\pi/N)$ for each
-state and reporting the distribution of DBS, $|\mathrm{EG}|$, and seat
-outcomes would quantify how much of the observed performance is
-attributable to the rotation anchor versus the radial geometry itself.
-If the rotation distribution is narrow, the due-east anchor is well
-supported; if wide, a principled rotation-selection rule (e.g., the
-rotation minimizing $|\mathrm{EG}|$ on a pre-committed proxy election)
-would strengthen the design.
+\paragraph{Principled rotation-selection rule.} The rotation
+sensitivity analysis in \S\ref{sec:results-rotation} shows that
+the due-east anchor produces seat-count swings of 1--3 seats in 26
+of 41 states. Formalizing a pre-committed rotation-selection rule
+(e.g., the anchor minimizing $|\mathrm{EG}|$ on the most recent
+composite election, chosen before any redistricting cycle begins)
+would close this remaining degree of freedom and strengthen the
+neutrality argument.
 
 \paragraph{Block-scale completion.} Full three-stage pipeline results
 for the 12 convergence-gap states not yet at \emph{Karcher} at VTD scale.
