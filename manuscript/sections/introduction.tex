@@ -176,18 +176,20 @@ census-block scale where finer granularity allows the DualBalance
 Score to make its largest gains. The full formalization is in
 \S\ref{sec:methods}.
 
-\paragraph{Empirical validation.} We run the full pipeline on six
-states selected to cover the geographic range that breaks Cascade:
-IA, MA, MN, NC, TX, WI. Five of six achieve a DualBalance Score
-above the enacted 119th-Congress plan. Two (IA, WI) reach the
-$0.05\%$ Karcher threshold exactly; three more (MN, NC, MA) sit
-within a factor of two of it; TX, the hardest case, sits at $0.52\%$,
-five times tighter than the same state's enacted plan. On partisan
-fairness, DualBalance's Efficiency Gap is smaller in magnitude than
-the enacted plan's in four of six states, with the largest
-improvements on the three most heavily-litigated maps (NC, WI, TX).
-On minority-majority district counts, DualBalance produces more such
-districts than the enacted plan on NC (2 vs.~1) and TX (22 vs.~19).
+\paragraph{Empirical validation.} We evaluate the full pipeline on
+all 41 multi-seat states for which TIGER 2020PL VTD boundaries are
+available (California, Hawaii, and Oregon are excluded for lack of
+VTD data). DualBalance achieves \emph{Karcher}-compliant population
+balance ($\mathrm{pop\_dev\_max} \leq 0.05\,\%$) on 26 of 41
+states and exceeds the enacted 119th-Congress plan on the
+DualBalance Score on 26 of 41 states. On partisan fairness,
+DualBalance reduces $|\mathrm{EG}|$ relative to the enacted plan on
+14 of the 20 states with composite or congressional election data
+(median $|\mathrm{EG}|$ 0.085 vs.\ enacted 0.133). On
+minority-majority district counts, DualBalance produces at least as
+many as the enacted plan on most states and more on several
+high-minority states, including TX (22 vs.~19 enacted) and NC (2
+vs.~1 enacted).
 
 \paragraph{Claims.} The procedure contains no explicit partisan,
 racial, or incumbent-aware optimization criteria: its inputs are

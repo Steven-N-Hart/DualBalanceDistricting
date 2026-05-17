@@ -147,10 +147,16 @@ West Virginia$^{\star}$ & 2 & \textbf{0.904} & 0.827$^{\ddagger}$ & 0.867 & 0.88
 \begin{table}[htbp]
 \centering
 \caption{Aggregate algorithm comparison. \textbf{Bold} marks the best value per row.
-Non-partisan rows use all 41 available states.
-$\star$ Efficiency Gap rows restricted to 20 states with composite or congressional election data;
-the remaining 21 states use 2020 presidential
-returns as a proxy (see \S\ref{sec:methods-tighten}).}
+Non-partisan rows use all 41 available states unless noted.
+$\star$ Efficiency Gap rows restricted to 20 states with composite or congressional
+election data.
+$\dagger$ Enacted $\mathrm{pop\_dev\_max}$ and \emph{Karcher} counts reflect
+the VTD-layer spatial join (see \S\ref{sec:methods-data}), not block-accurate
+deviations; enacted plans meet \emph{Karcher} on block-accurate data by design.
+$\S$ Excludes the three geometric-failure states (FL, NY, WV).
+$\P$ DualBalance directly optimizes DBS in Phase~2; the DBS comparison is
+therefore self-referential. The more probative comparisons are $|\mathrm{EG}|$
+and majority-minority district counts, which the algorithm does not optimize.}
 \label{tab:aggregate-comparison}
 \small
 \begin{tabular}{l rrrr}
@@ -158,11 +164,13 @@ returns as a proxy (see \S\ref{sec:methods-tighten}).}
 Metric & DualBalance & Cascade & BDistricting & Enacted \\
 \midrule
 DBS (median, 41 states) & \textbf{0.753} & 0.730 & 0.716 & 0.741 \\
-$\mathrm{pop\_dev\_max}$ (median) & \textbf{0.0\%} & 64.0\% & 1.2\% & 0.7\% \\
-At \emph{Karcher} ($\leq 0.05\,\%$) & \textbf{26/41} & 0/41 & 0/41 & 3/41 \\
-Beats enacted DBS & \textbf{26/41} & 14/41 & 9/41 & --- \\
+DBS (median, 38 viable states$^{\S}$) & \textbf{0.758} & --- & --- & 0.742 \\
+$\mathrm{pop\_dev\_max}$ (median) & \textbf{0.05\%} & 64.0\% & 1.2\% & 0.7\%$^{\dagger}$ \\
+At \emph{Karcher} ($\leq 0.05\,\%$) & \textbf{26/41} & 0/41 & 0/41 & $\approx$41/41$^{\dagger}$ \\
+Beats enacted DBS (41 states; self-referential$^{\P}$) & 26/41 & 14/41 & 9/41 & --- \\
+Beats enacted DBS (38 viable states$^{\S}$) & 23/38 & --- & --- & --- \\
 $|\mathrm{EG}|$ median (20 states$^\star$) & \textbf{0.085} & 0.103 & 0.098 & 0.133 \\
-Beats enacted $|\mathrm{EG}|$ (20 states$^\star$) & \textbf{14/20} & 10/20 & \textbf{14/20} & --- \\
+Beats enacted $|\mathrm{EG}|$ (20 states$^\star$, $p{=}0.058$) & \textbf{14/20} & 10/20 & \textbf{14/20} & --- \\
 Polsby-Popper mean (median) & 0.115 & 0.275 & \textbf{0.315} & 0.281 \\
 \bottomrule
 \end{tabular}
@@ -232,6 +240,51 @@ reducing EG to $+0.063$ with no political input.}
 \label{fig:nc-maps}
 \end{figure}
 
+
+\subsection{Rotation sensitivity}
+\label{sec:results-rotation}
+
+The due-east seed anchor ($\theta = 0$) is a pre-committed design
+choice. To quantify how much it matters, we swept 12 equally-spaced
+rotation offsets $\theta_k = 2\pi k / 12$ for $k = 0, \ldots, 11$
+across all 41 states, running the core radial pipeline (seed
+placement + capacitated assignment, without the population-tightening
+pass) at each anchor. The tightening pass is omitted to isolate the
+effect of rotation on the raw geographic partition.
+
+\paragraph{DBS stability.}
+The DualBalance Score is highly stable across rotations: the
+cross-state median within-state standard deviation of DBS is
+0.0095 (range 0.0000--0.0878).
+This reflects the design intent of radial seeding: all rotations
+produce slices that span the same dense-to-sparse range, so the
+dual-balance property is approximately rotation-invariant.
+
+\paragraph{Partisan and seat sensitivity.}
+Efficiency Gap shows more variation: the cross-state median
+within-state standard deviation of $|\mathrm{EG}|$ is
+0.0431 (range 0.0000--0.1772).
+On 26 of the 41 states, the projected Republican seat count
+varies by at least one seat across the 12 anchors; among those
+states the swing ranges from 1 to 3 seats. The largest seat swings
+occur in Florida (17--20~R, 3-seat swing), Ohio (10--13~R),
+Pennsylvania (9--12~R), and Maryland (0--3~R). Kansas
+($|\mathrm{EG}|$ std $= 0.132$), Maine (0.177), Maryland (0.165),
+and Nebraska (0.153) show the largest EG variation;
+Illinois, Iowa, Kentucky, and Missouri show near-zero EG variation
+($\leq 0.003$) because their partisan geography is robust to
+the anchor choice.
+The full cross-state distribution is in Supplementary Table~S2.
+
+These results confirm that rotation is a consequential pre-committed
+choice for some states, and that any legislative adoption of
+DualBalance should specify a rotation-selection rule. Two principled
+options are: (1) the due-east anchor as a universal convention,
+analogous to using prime meridian longitude as a universal reference,
+or (2) a state-specific rotation that minimizes $|\mathrm{EG}|$ on
+the most recent available composite election (pre-committed before
+any redistricting cycle begins). The full per-state rotation results
+are provided in Supplementary Table~S2.
 
 \subsection{Illustrative House projection under uniform-swing assumptions}
 \label{sec:results-congress}

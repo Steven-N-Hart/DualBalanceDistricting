@@ -20,11 +20,17 @@ import numpy as np
 from dualbalance.types import Seed
 
 
-def place_seeds(units: gpd.GeoDataFrame, n: int) -> list[Seed]:
+def place_seeds(
+    units: gpd.GeoDataFrame,
+    n: int,
+    *,
+    rotation_offset: float = 0.0,
+) -> list[Seed]:
     """Place ``n`` seeds radially around the population-weighted centroid.
 
-    Seed 0 starts at angle 0 (due east of the centroid) and seeds advance
-    counter-clockwise in equal angular steps of ``2π/n``. Radius is
+    Seed 0 starts at ``rotation_offset`` radians east of the centroid and
+    seeds advance counter-clockwise in equal angular steps of ``2π/n``.
+    The default ``rotation_offset=0.0`` places seed 0 due east. Radius is
     ``0.1 %`` of the bounding-box diagonal — small enough that the
     Voronoi structure is dominated by the radial arrangement, large
     enough to keep seed positions numerically distinct.
@@ -54,8 +60,8 @@ def place_seeds(units: gpd.GeoDataFrame, n: int) -> list[Seed]:
     return [
         Seed(
             district_id=d,
-            x=center_x + radius * float(np.cos(2.0 * np.pi * d / n)),
-            y=center_y + radius * float(np.sin(2.0 * np.pi * d / n)),
+            x=center_x + radius * float(np.cos(2.0 * np.pi * d / n + rotation_offset)),
+            y=center_y + radius * float(np.sin(2.0 * np.pi * d / n + rotation_offset)),
         )
         for d in range(n)
     ]

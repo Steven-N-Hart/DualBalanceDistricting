@@ -98,6 +98,7 @@ def generate_plan(
     n_districts: int,
     *,
     geography: str = "unknown",
+    rotation_offset: float = 0.0,
 ) -> Plan:
     """Generate a deterministic DualBalance plan.
 
@@ -130,7 +131,7 @@ def generate_plan(
     pops = np.asarray(units_sorted["population"], dtype=float)
     unit_ids: list[str] = units_sorted["unit_id"].tolist()
 
-    seeds = place_seeds(units_sorted, n_districts)
+    seeds = place_seeds(units_sorted, n_districts, rotation_offset=rotation_offset)
     assignment = _assign(cx, cy, pops, unit_ids, seeds, targets, norm)
     assignment, repair_iters, contiguous = _repair_contiguity(
         assignment,

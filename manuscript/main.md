@@ -236,17 +236,19 @@ data-reference="sec:methods">2</a>.
 
 #### Empirical validation.
 
-We run the full pipeline on six states selected to cover the geographic
-range that breaks Cascade: IA, MA, MN, NC, TX, WI. Five of six achieve a
-DualBalance Score above the enacted 119th-Congress plan. Two (IA, WI)
-reach the $`0.05\%`$ Karcher threshold exactly; three more (MN, NC, MA)
-sit within a factor of two of it; TX, the hardest case, sits at
-$`0.52\%`$, five times tighter than the same state’s enacted plan. On
-partisan fairness, DualBalance’s Efficiency Gap is smaller in magnitude
-than the enacted plan’s in four of six states, with the largest
-improvements on the three most heavily-litigated maps (NC, WI, TX). On
-minority-majority district counts, DualBalance produces more such
-districts than the enacted plan on NC (2 vs. 1) and TX (22 vs. 19).
+We evaluate the full pipeline on all 41 multi-seat states for which
+TIGER 2020PL VTD boundaries are available (California, Hawaii, and
+Oregon are excluded for lack of VTD data). DualBalance achieves
+*Karcher*-compliant population balance
+($`\mathrm{pop\_dev\_max} \leq 0.05\,\%`$) on 26 of 41 states and
+exceeds the enacted 119th-Congress plan on the DualBalance Score on 26
+of 41 states. On partisan fairness, DualBalance reduces
+$`|\mathrm{EG}|`$ relative to the enacted plan on 14 of the 20 states
+with composite or congressional election data (median $`|\mathrm{EG}|`$
+0.085 vs. enacted 0.133). On minority-majority district counts,
+DualBalance produces at least as many as the enacted plan on most states
+and more on several high-minority states, including TX (22 vs. 19
+enacted) and NC (2 vs. 1 enacted).
 
 #### Claims.
 
@@ -491,16 +493,22 @@ two mean deviations: each district is judged on representing roughly
 $`1/N`$ of the people *and* roughly $`1/N`$ of the state’s geography.
 The score reaches $`1.0`$ for a perfectly balanced plan and approaches
 $`0`$ as deviations grow without bound. The equal weighting is an
-explicit design choice. It treats population and area as co-equal
-extensive quantities, declining to make either the primary criterion
-within the same chamber. A weight of $`1.0`$ on population and $`0.0`$
-on area recovers population-only optimization; any asymmetric choice
-between these poles requires a principled argument for why one axis
-should subordinate the other. The $`0.5/0.5`$ symmetry point is the
-natural default for a criterion that is intended to be impartial between
-the two representational axes. Secondary metrics (Polsby-Popper
-compactness (Polsby and Popper 1991) and Reock (Reock 1961)) are
-computed alongside but not optimized against; the Phase 2 optimizer
+explicit design choice, pre-committed before any state-specific data are
+examined. The pre-commitment is the critical property: once a weighting
+is fixed publicly, neither the designer nor any adopting body can adjust
+it to favor a particular geographic outcome. The symmetric $`0.5/0.5`$
+choice reflects an impartiality principle: a designer who did not know
+whether their state’s geography would favor population-concentrated or
+area-concentrated outcomes would choose the weighting that gives neither
+axis an a priori advantage. A weight of $`1.0`$ on population and
+$`0.0`$ on area recovers population-only optimization; an asymmetric
+choice between these poles requires a principled justification for why
+one representational axis should subordinate the other within the same
+chamber. In the absence of such a justification, $`0.5/0.5`$ is the
+principled default pending democratic deliberation over the weighting
+itself. Secondary metrics (Polsby-Popper compactness (Polsby and Popper
+1991) and Reock (Reock 1961)) are computed alongside but not optimized
+against; the Phase 2 optimizer
 (§<a href="#sec:methods-tighten" data-reference-type="ref"
 data-reference="sec:methods-tighten">2.7</a>) hill-climbs DBS, not the
 compactness metrics. Radial slices have lower compactness than
@@ -638,15 +646,18 @@ region.
 
 #### Determinism and engineering.
 
-Both phases are pure functions of $`(\mathrm{units},\,N,\,T)`$. The only
-source of dependency beyond the core pipeline’s $`(\mathrm{units},\,N)`$
-is the explicit tolerance $`T`$. The optimizer maintains a per-district
-articulation-point cache via Tarjan’s algorithm on CSR adjacency
-arrays (Tarjan 1972), reducing the per-candidate contiguity check from
-$`O(V+E)`$ to $`O(1)`$; an incrementally tracked boundary-unit set
-restricts each scan to units that have a different-district neighbor. At
-VTD scale the speedup is modest; at block scale (tens of thousands of
-units per district) it is the difference between hours and minutes.
+Both phases are pure functions of $`(\mathrm{units},\,N,\,T)`$; the full
+pipeline including the rotation anchor is a pure function of
+$`(\mathrm{units},\,N,\,\theta,\,T)`$ where $`\theta = 0`$ in all
+results reported here. The only source of dependency beyond the core
+pipeline’s $`(\mathrm{units},\,N,\,\theta)`$ is the explicit tolerance
+$`T`$. The optimizer maintains a per-district articulation-point cache
+via Tarjan’s algorithm on CSR adjacency arrays (Tarjan 1972), reducing
+the per-candidate contiguity check from $`O(V+E)`$ to $`O(1)`$; an
+incrementally tracked boundary-unit set restricts each scan to units
+that have a different-district neighbor. At VTD scale the speedup is
+modest; at block scale (tens of thousands of units per district) it is
+the difference between hours and minutes.
 
 The pass is off by default and gated by an explicit flag. Pure radial
 remains the principled algorithm; the two-phase optimizer is an opt-in
@@ -1381,19 +1392,28 @@ class="math inline"><sup>‡</sup></span></td>
 | Metric | DualBalance | Cascade | BDistricting | Enacted |
 |:---|---:|---:|---:|---:|
 | DBS (median, 41 states) | **0.753** | 0.730 | 0.716 | 0.741 |
-| $`\mathrm{pop\_dev\_max}`$ (median) | **0.0%** | 64.0% | 1.2% | 0.7% |
-| At *Karcher* ($`\leq 0.05\,\%`$) | **26/41** | 0/41 | 0/41 | 3/41 |
-| Beats enacted DBS | **26/41** | 14/41 | 9/41 | — |
+| DBS (median, 38 viable states$`^{\S}`$) | **0.758** | — | — | 0.742 |
+| $`\mathrm{pop\_dev\_max}`$ (median) | **0.05%** | 64.0% | 1.2% | 0.7%$`^{\dagger}`$ |
+| At *Karcher* ($`\leq 0.05\,\%`$) | **26/41** | 0/41 | 0/41 | $`\approx`$<!-- -->41/41$`^{\dagger}`$ |
+| Beats enacted DBS (41 states; self-referential$`^{\P}`$) | 26/41 | 14/41 | 9/41 | — |
+| Beats enacted DBS (38 viable states$`^{\S}`$) | 23/38 | — | — | — |
 | $`|\mathrm{EG}|`$ median (20 states$`^\star`$) | **0.085** | 0.103 | 0.098 | 0.133 |
-| Beats enacted $`|\mathrm{EG}|`$ (20 states$`^\star`$) | **14/20** | 10/20 | **14/20** | — |
+| Beats enacted $`|\mathrm{EG}|`$ (20 states$`^\star`$, $`p{=}0.058`$) | **14/20** | 10/20 | **14/20** | — |
 | Polsby-Popper mean (median) | 0.115 | 0.275 | **0.315** | 0.281 |
 
 Aggregate algorithm comparison. **Bold** marks the best value per row.
-Non-partisan rows use all 41 available states. $`\star`$ Efficiency Gap
-rows restricted to 20 states with composite or congressional election
-data; the remaining 21 states use 2020 presidential returns as a proxy
-(see §<a href="#sec:methods-tighten" data-reference-type="ref"
-data-reference="sec:methods-tighten">2.7</a>).
+Non-partisan rows use all 41 available states unless noted. $`\star`$
+Efficiency Gap rows restricted to 20 states with composite or
+congressional election data. $`\dagger`$ Enacted
+$`\mathrm{pop\_dev\_max}`$ and *Karcher* counts reflect the VTD-layer
+spatial join (see §<a href="#sec:methods-data" data-reference-type="ref"
+data-reference="sec:methods-data">2.1</a>), not block-accurate
+deviations; enacted plans meet *Karcher* on block-accurate data by
+design. $`\S`$ Excludes the three geometric-failure states (FL, NY, WV).
+$`\P`$ DualBalance directly optimizes DBS in Phase 2; the DBS comparison
+is therefore self-referential. The more probative comparisons are
+$`|\mathrm{EG}|`$ and majority-minority district counts, which the
+algorithm does not optimize.
 
 </div>
 
@@ -1453,6 +1473,49 @@ legally be enacted. <strong>Right:</strong> DualBalance plan,
 reducing EG to <span class="math inline">+0.063</span> with no political
 input.</figcaption>
 </figure>
+
+## Rotation sensitivity
+
+The due-east seed anchor ($`\theta = 0`$) is a pre-committed design
+choice. To quantify how much it matters, we swept 12 equally-spaced
+rotation offsets $`\theta_k = 2\pi k / 12`$ for $`k = 0, \ldots, 11`$
+across all 41 states, running the core radial pipeline (seed placement +
+capacitated assignment, without the population-tightening pass) at each
+anchor. The tightening pass is omitted to isolate the effect of rotation
+on the raw geographic partition.
+
+#### DBS stability.
+
+The DualBalance Score is highly stable across rotations: the cross-state
+median within-state standard deviation of DBS is 0.0095 (range
+0.0000–0.0878). This reflects the design intent of radial seeding: all
+rotations produce slices that span the same dense-to-sparse range, so
+the dual-balance property is approximately rotation-invariant.
+
+#### Partisan and seat sensitivity.
+
+Efficiency Gap shows more variation: the cross-state median within-state
+standard deviation of $`|\mathrm{EG}|`$ is 0.0431 (range 0.0000–0.1772).
+On 26 of the 41 states, the projected Republican seat count varies by at
+least one seat across the 12 anchors; among those states the swing
+ranges from 1 to 3 seats. The largest seat swings occur in Florida
+(17–20 R, 3-seat swing), Ohio (10–13 R), Pennsylvania (9–12 R), and
+Maryland (0–3 R). Kansas ($`|\mathrm{EG}|`$ std $`= 0.132`$), Maine
+(0.177), Maryland (0.165), and Nebraska (0.153) show the largest EG
+variation; Illinois, Iowa, Kentucky, and Missouri show near-zero EG
+variation ($`\leq 0.003`$) because their partisan geography is robust to
+the anchor choice. The full cross-state distribution is in Supplementary
+Table S2.
+
+These results confirm that rotation is a consequential pre-committed
+choice for some states, and that any legislative adoption of DualBalance
+should specify a rotation-selection rule. Two principled options are:
+(1) the due-east anchor as a universal convention, analogous to using
+prime meridian longitude as a universal reference, or (2) a
+state-specific rotation that minimizes $`|\mathrm{EG}|`$ on the most
+recent available composite election (pre-committed before any
+redistricting cycle begins). The full per-state rotation results are
+provided in Supplementary Table S2.
 
 ## Illustrative House projection under uniform-swing assumptions
 
@@ -1518,7 +1581,7 @@ DualBalance R 190 / D 177 under uniform-swing assumptions, against
 enacted R 196 / D 171 and a statewide-proportional baseline of
 approximately R 182. Full caveats appear in
 §<a href="#sec:results-congress" data-reference-type="ref"
-data-reference="sec:results-congress">3.1</a>; the six-seat shift from
+data-reference="sec:results-congress">3.2</a>; the six-seat shift from
 enacted is a description of the partition, not a design choice.
 
 ## Interpreting the forensic metrics
@@ -1552,12 +1615,22 @@ an attempt to disadvantage any group.
 A positive Efficiency Gap on a DualBalance map names a real wasted-vote
 asymmetry with representational consequences. State-court tests that
 treat EG as evidence of *effect* still bind; tests that treat it as
-evidence of *intent* do not. The cross-state data show that
-DualBalance’s EG is smaller in magnitude than the enacted plan’s on
-every state with a nonzero enacted EG, and the largest reductions are on
-the most-litigated maps
+evidence of *intent* do not. Among the 20 states with composite or
+congressional election data, DualBalance reduces $`|\mathrm{EG}|`$
+relative to enacted on 14 of 20 (sign test against equal-performance
+null: $`p = 0.058`$ one-tailed, $`0.115`$ two-tailed), and the largest
+reductions are on the most-litigated maps
 (Figure <a href="#fig:headline-eg" data-reference-type="ref"
 data-reference="fig:headline-eg">1</a>).
+
+A note on the DualBalance Score comparison: Phase 2 of the optimizer
+directly hill-climbs DBS, so the observation that DualBalance scores
+above enacted plans on 25 of 41 states is structurally expected. The
+more probative comparisons are on metrics the algorithm does not
+optimize: $`|\mathrm{EG}|`$ (wins 14/20 states) and majority-minority
+district counts (meets or exceeds enacted on most states). These carry
+the main evidentiary weight; the DBS comparison describes how well the
+algorithm achieves its own stated objective.
 
 #### Ensemble outlier tests lose their baseline.
 
@@ -1632,15 +1705,25 @@ deliberate dilution.
 Figure <a href="#fig:race-scatter" data-reference-type="ref"
 data-reference="fig:race-scatter">3</a> identifies the states where
 DualBalance produces fewer majority-minority districts than the enacted
-plan. In any such state where the reduction eliminates a
+plan. The labeled states below the diagonal in
+Figure <a href="#fig:race-scatter" data-reference-type="ref"
+data-reference="fig:race-scatter">3</a> include jurisdictions (Alabama,
+Louisiana, Mississippi, New Jersey, and others) where *Gingles*
+preconditions have been actively litigated. In each such state, a
+determination is required — outside the algorithm’s scope — of whether
+the reduction in MMD count crosses a *Gingles*-qualifying threshold.
+Table <a href="#tab:multistate-dbs" data-reference-type="ref"
+data-reference="tab:multistate-dbs">1</a> provides enacted and DB MMD
+counts from which an adopting body can identify states requiring
+scrutiny. In any state where the reduction eliminates a
 *Gingles*-qualifying district, the DualBalance plan is legally
 non-adoptable under current doctrine without either a supplementary
-remedial pass (outside the present algorithm’s scope) or legislative
-modification of the applicable VRA framework. Adopting bodies should
-conduct a state-by-state *Gingles* precondition audit against any
-proposed DualBalance plan as a precondition for implementation. This is
-a legislative question, not an algorithmic one, but it is a precondition
-that the algorithm cannot satisfy on its own.
+remedial pass or legislative modification of the applicable VRA
+framework. Adopting bodies should conduct a state-by-state *Gingles*
+precondition audit against any proposed DualBalance plan as a
+precondition for implementation. This is a legislative question, not an
+algorithmic one, but it is a precondition that the algorithm cannot
+satisfy on its own.
 
 ## Relationship to prior deterministic methods
 
@@ -1766,16 +1849,498 @@ data-reference="sec:discussion-compactness">4.3</a>).
 
 Fourth, that the conventional gerrymandering metrics retain their
 descriptive validity on a DualBalance map but lose their inferential
-validity. Plan effects — shape, wasted-vote asymmetry, minority
-opportunity — are real and are reported. The inference from those
-effects to a line-drawer’s intent is not available when there is no
-line-drawer. This is the most contested framing claim in the paper.
+validity in a specific and bounded sense. The claim is narrow: *the
+intent of the within-state line-drawer* is foreclosed, because no
+within-state line-drawer exists. The intent of the algorithm’s designer
+and the intent of the adopting legislature are not foreclosed; those are
+separate legal questions. Plan effects — shape, wasted-vote asymmetry,
+minority opportunity — are real and are reported. The inference from
+those effects to a within-state line-drawer’s discretionary choices is
+not available when those choices are absent. This is the most contested
+framing claim in the paper, and its scope is deliberately limited to the
+within-state inference.
 
 The paper does not claim that DBS is universally the right objective,
 that DualBalance dominates enacted plans on all states, or that the
 metric toolkit developed over the past thirty years is wrong. The narrow
 claim is that the intent reading of those metrics presupposes a
 line-drawer who is not present in this construction.
+
+# Supplementary Tables
+
+<div id="tab:rotation-sensitivity">
+
+<table>
+<caption>Rotation sensitivity: summary statistics across 12
+equally-spaced anchor angles <span
+class="math inline"><em>θ</em><sub><em>k</em></sub> = 2<em>π</em><em>k</em>/12</span>
+for all 41 states. DBS and <span class="math inline">|EG|</span> are
+computed from the core radial pipeline (no population tightening). Seat
+counts projected by simple plurality on available precinct-level vote
+data.</caption>
+<thead>
+<tr>
+<th style="text-align: left;">State</th>
+<th style="text-align: right;"><span
+class="math inline"><em>N</em></span></th>
+<th colspan="2" style="text-align: center;">DBS</th>
+<th colspan="2" style="text-align: center;"><span
+class="math inline">|EG|</span></th>
+<th colspan="2" style="text-align: center;">Seats R</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td
+style="text-align: left;"><span>3-4</span>(lr)<span>5-6</span>(lr)<span>7-8</span></td>
+<td style="text-align: right;"></td>
+<td style="text-align: center;">mean</td>
+<td style="text-align: center;">std</td>
+<td style="text-align: center;">mean</td>
+<td style="text-align: center;">std</td>
+<td style="text-align: center;">min</td>
+<td style="text-align: center;">max</td>
+</tr>
+<tr>
+<td colspan="8" style="text-align: center;"><em>(continued)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">State</td>
+<td style="text-align: right;"><span
+class="math inline"><em>N</em></span></td>
+<td colspan="2" style="text-align: center;">DBS</td>
+<td colspan="2" style="text-align: center;"><span
+class="math inline">|EG|</span></td>
+<td colspan="2" style="text-align: center;">Seats R</td>
+</tr>
+<tr>
+<td
+style="text-align: left;"><span>3-4</span>(lr)<span>5-6</span>(lr)<span>7-8</span></td>
+<td style="text-align: right;"></td>
+<td style="text-align: center;">mean</td>
+<td style="text-align: center;">std</td>
+<td style="text-align: center;">mean</td>
+<td style="text-align: center;">std</td>
+<td style="text-align: center;">min</td>
+<td style="text-align: center;">max</td>
+</tr>
+<tr>
+<td colspan="8" style="text-align: right;"><em>(continued)</em></td>
+</tr>
+<tr>
+<td style="text-align: left;">AL</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;">0.856</td>
+<td style="text-align: center;">0.0119</td>
+<td style="text-align: center;">0.113</td>
+<td style="text-align: center;">0.0737</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">7</td>
+</tr>
+<tr>
+<td style="text-align: left;">AR</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.822</td>
+<td style="text-align: center;">0.0369</td>
+<td style="text-align: center;">0.216</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;">AZ</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;">0.676</td>
+<td style="text-align: center;">0.0095</td>
+<td style="text-align: center;">0.061</td>
+<td style="text-align: center;">0.0558</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;">CO</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.610</td>
+<td style="text-align: center;">0.0060</td>
+<td style="text-align: center;">0.079</td>
+<td style="text-align: center;">0.0607</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;">CT</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;">0.819</td>
+<td style="text-align: center;">0.0240</td>
+<td style="text-align: center;">0.296</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">FL</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: center;">0.767</td>
+<td style="text-align: center;">0.0088</td>
+<td style="text-align: center;">0.106</td>
+<td style="text-align: center;">0.0422</td>
+<td style="text-align: center;">17</td>
+<td style="text-align: center;">20</td>
+</tr>
+<tr>
+<td style="text-align: left;">GA</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: center;">0.700</td>
+<td style="text-align: center;">0.0047</td>
+<td style="text-align: center;">0.126</td>
+<td style="text-align: center;">0.0271</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">10</td>
+</tr>
+<tr>
+<td style="text-align: left;">IA</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.836</td>
+<td style="text-align: center;">0.0276</td>
+<td style="text-align: center;">0.091</td>
+<td style="text-align: center;">0.0026</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;">ID</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.843</td>
+<td style="text-align: center;">0.0245</td>
+<td style="text-align: center;">0.182</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;">IL</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: center;">0.667</td>
+<td style="text-align: center;">0.0053</td>
+<td style="text-align: center;">0.022</td>
+<td style="text-align: center;">0.0009</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;">IN</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;">0.823</td>
+<td style="text-align: center;">0.0147</td>
+<td style="text-align: center;">0.165</td>
+<td style="text-align: center;">0.0915</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td style="text-align: left;">KS</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.695</td>
+<td style="text-align: center;">0.0081</td>
+<td style="text-align: center;">0.019</td>
+<td style="text-align: center;">0.1323</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;">KY</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;">0.794</td>
+<td style="text-align: center;">0.0147</td>
+<td style="text-align: center;">0.058</td>
+<td style="text-align: center;">0.0026</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;">LA</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: center;">0.802</td>
+<td style="text-align: center;">0.0257</td>
+<td style="text-align: center;">0.198</td>
+<td style="text-align: center;">0.0814</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td style="text-align: left;">MA</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;">0.790</td>
+<td style="text-align: center;">0.0171</td>
+<td style="text-align: center;">0.158</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">MD</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.717</td>
+<td style="text-align: center;">0.0142</td>
+<td style="text-align: center;">0.064</td>
+<td style="text-align: center;">0.1651</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;">ME</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.877</td>
+<td style="text-align: center;">0.0120</td>
+<td style="text-align: center;">0.234</td>
+<td style="text-align: center;">0.1772</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">MI</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: center;">0.672</td>
+<td style="text-align: center;">0.0034</td>
+<td style="text-align: center;">0.108</td>
+<td style="text-align: center;">0.0477</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td style="text-align: left;">MN</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.672</td>
+<td style="text-align: center;">0.0016</td>
+<td style="text-align: center;">0.032</td>
+<td style="text-align: center;">0.0601</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;">MO</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.808</td>
+<td style="text-align: center;">0.0048</td>
+<td style="text-align: center;">0.104</td>
+<td style="text-align: center;">0.0016</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td style="text-align: left;">MS</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.897</td>
+<td style="text-align: center;">0.0104</td>
+<td style="text-align: center;">0.126</td>
+<td style="text-align: center;">0.1213</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;">MT</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.834</td>
+<td style="text-align: center;">0.0365</td>
+<td style="text-align: center;">0.286</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;">NC</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: center;">0.776</td>
+<td style="text-align: center;">0.0037</td>
+<td style="text-align: center;">0.088</td>
+<td style="text-align: center;">0.0541</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">9</td>
+</tr>
+<tr>
+<td style="text-align: left;">NE</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;">0.680</td>
+<td style="text-align: center;">0.0556</td>
+<td style="text-align: center;">0.151</td>
+<td style="text-align: center;">0.1534</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;">NH</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.777</td>
+<td style="text-align: center;">0.0372</td>
+<td style="text-align: center;">0.425</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">NJ</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: center;">0.722</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">0.146</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;">NM</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: center;">0.762</td>
+<td style="text-align: center;">0.0032</td>
+<td style="text-align: center;">0.203</td>
+<td style="text-align: center;">0.1236</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr>
+<td style="text-align: left;">NV</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.715</td>
+<td style="text-align: center;">0.0125</td>
+<td style="text-align: center;">0.082</td>
+<td style="text-align: center;">0.1259</td>
+<td style="text-align: center;">1</td>
+<td style="text-align: center;">2</td>
+</tr>
+<tr>
+<td style="text-align: left;">NY</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: center;">0.650</td>
+<td style="text-align: center;">0.0038</td>
+<td style="text-align: center;">0.005</td>
+<td style="text-align: center;">0.0384</td>
+<td style="text-align: center;">6</td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td style="text-align: left;">OH</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: center;">0.846</td>
+<td style="text-align: center;">0.0041</td>
+<td style="text-align: center;">0.175</td>
+<td style="text-align: center;">0.0766</td>
+<td style="text-align: center;">10</td>
+<td style="text-align: center;">13</td>
+</tr>
+<tr>
+<td style="text-align: left;">OK</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: center;">0.730</td>
+<td style="text-align: center;">0.0236</td>
+<td style="text-align: center;">0.161</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;">PA</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: center;">0.767</td>
+<td style="text-align: center;">0.0070</td>
+<td style="text-align: center;">0.107</td>
+<td style="text-align: center;">0.0390</td>
+<td style="text-align: center;">9</td>
+<td style="text-align: center;">12</td>
+</tr>
+<tr>
+<td style="text-align: left;">RI</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.805</td>
+<td style="text-align: center;">0.0878</td>
+<td style="text-align: center;">0.288</td>
+<td style="text-align: center;">0.0000</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: left;">SC</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: center;">0.890</td>
+<td style="text-align: center;">0.0048</td>
+<td style="text-align: center;">0.169</td>
+<td style="text-align: center;">0.0712</td>
+<td style="text-align: center;">5</td>
+<td style="text-align: center;">6</td>
+</tr>
+<tr>
+<td style="text-align: left;">TN</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: center;">0.808</td>
+<td style="text-align: center;">0.0066</td>
+<td style="text-align: center;">0.082</td>
+<td style="text-align: center;">0.0440</td>
+<td style="text-align: center;">7</td>
+<td style="text-align: center;">8</td>
+</tr>
+<tr>
+<td style="text-align: left;">TX</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: center;">0.672</td>
+<td style="text-align: center;">0.0029</td>
+<td style="text-align: center;">0.061</td>
+<td style="text-align: center;">0.0119</td>
+<td style="text-align: center;">23</td>
+<td style="text-align: center;">24</td>
+</tr>
+<tr>
+<td style="text-align: left;">UT</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: center;">0.658</td>
+<td style="text-align: center;">0.0346</td>
+<td style="text-align: center;">0.025</td>
+<td style="text-align: center;">0.0196</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">3</td>
+</tr>
+<tr>
+<td style="text-align: left;">VA</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: center;">0.777</td>
+<td style="text-align: center;">0.0071</td>
+<td style="text-align: center;">0.113</td>
+<td style="text-align: center;">0.0256</td>
+<td style="text-align: center;">3</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;">WA</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: center;">0.690</td>
+<td style="text-align: center;">0.0060</td>
+<td style="text-align: center;">0.037</td>
+<td style="text-align: center;">0.0671</td>
+<td style="text-align: center;">2</td>
+<td style="text-align: center;">4</td>
+</tr>
+<tr>
+<td style="text-align: left;">WI</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: center;">0.704</td>
+<td style="text-align: center;">0.0047</td>
+<td style="text-align: center;">0.108</td>
+<td style="text-align: center;">0.0539</td>
+<td style="text-align: center;">4</td>
+<td style="text-align: center;">5</td>
+</tr>
+<tr>
+<td style="text-align: left;">WV</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: center;">0.906</td>
+<td style="text-align: center;">0.0420</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table>
+
+</div>
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 

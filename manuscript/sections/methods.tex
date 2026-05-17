@@ -228,15 +228,20 @@ The $0.5/0.5$ weighting makes the error a convex combination of the
 two mean deviations: each district is judged on representing roughly
 $1/N$ of the people \emph{and} roughly $1/N$ of the state's geography.
 The score reaches $1.0$ for a perfectly balanced plan and approaches
-$0$ as deviations grow without bound. The equal weighting is an
-explicit design choice. It treats population and area as co-equal
-extensive quantities, declining to make either the primary criterion
-within the same chamber. A weight of $1.0$ on population and $0.0$
-on area recovers population-only optimization; any asymmetric choice
-between these poles requires a principled argument for why one axis
-should subordinate the other. The $0.5/0.5$ symmetry point is the
-natural default for a criterion that is intended to be impartial
-between the two representational axes. Secondary metrics (Polsby-Popper compactness~\cite{polsbypopper1991}
+$0$ as deviations grow without bound. The equal weighting is an explicit design choice, pre-committed
+before any state-specific data are examined. The pre-commitment
+is the critical property: once a weighting is fixed publicly,
+neither the designer nor any adopting body can adjust it to favor
+a particular geographic outcome. The symmetric $0.5/0.5$ choice reflects an impartiality principle:
+a designer who did not know whether their state's geography would
+favor population-concentrated or area-concentrated outcomes would
+choose the weighting that gives neither axis an a priori advantage.
+A weight of $1.0$ on population and $0.0$ on area recovers
+population-only optimization; an asymmetric choice between these
+poles requires a principled justification for why one representational
+axis should subordinate the other within the same chamber. In the
+absence of such a justification, $0.5/0.5$ is the principled default
+pending democratic deliberation over the weighting itself. Secondary metrics (Polsby-Popper compactness~\cite{polsbypopper1991}
 and Reock~\cite{reock1961}) are computed alongside but not optimized
 against; the Phase~2 optimizer (\S\ref{sec:methods-tighten})
 hill-climbs DBS, not the compactness metrics. Radial slices have
@@ -366,9 +371,11 @@ only on the post-Phase-1 plan and only within the Reynolds-compliant
 feasible region.
 
 \paragraph{Determinism and engineering.}
-Both phases are pure functions of $(\mathrm{units},\,N,\,T)$. The only
-source of dependency beyond the core pipeline's $(\mathrm{units},\,N)$
-is the explicit tolerance $T$. The optimizer maintains a per-district
+Both phases are pure functions of $(\mathrm{units},\,N,\,T)$; the full
+pipeline including the rotation anchor is a pure function of
+$(\mathrm{units},\,N,\,\theta,\,T)$ where $\theta = 0$ in all
+results reported here. The only source of dependency beyond the core
+pipeline's $(\mathrm{units},\,N,\,\theta)$ is the explicit tolerance $T$. The optimizer maintains a per-district
 articulation-point cache via Tarjan's algorithm on CSR adjacency
 arrays~\cite{tarjan1972}, reducing the per-candidate contiguity check
 from $O(V+E)$ to $O(1)$; an incrementally tracked boundary-unit set

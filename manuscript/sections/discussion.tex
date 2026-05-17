@@ -62,10 +62,21 @@ attempt to disadvantage any group.
 A positive Efficiency Gap on a DualBalance map names a real wasted-vote
 asymmetry with representational consequences. State-court tests that
 treat EG as evidence of \emph{effect} still bind; tests that treat it
-as evidence of \emph{intent} do not. The cross-state data show that
-DualBalance's EG is smaller in magnitude than the enacted plan's on
-every state with a nonzero enacted EG, and the largest reductions are
-on the most-litigated maps (Figure~\ref{fig:headline-eg}).
+as evidence of \emph{intent} do not. Among the 20 states with
+composite or congressional election data, DualBalance reduces
+$|\mathrm{EG}|$ relative to enacted on 14 of 20 (sign test against
+equal-performance null: $p = 0.058$ one-tailed, $0.115$ two-tailed),
+and the largest reductions are on the most-litigated maps
+(Figure~\ref{fig:headline-eg}).
+
+A note on the DualBalance Score comparison: Phase~2 of the optimizer
+directly hill-climbs DBS, so the observation that DualBalance scores
+above enacted plans on 25 of 41 states is structurally expected. The
+more probative comparisons are on metrics the algorithm does not
+optimize: $|\mathrm{EG}|$ (wins 14/20 states) and majority-minority
+district counts (meets or exceeds enacted on most states). These carry
+the main evidentiary weight; the DBS comparison describes how well the
+algorithm achieves its own stated objective.
 
 \paragraph{Ensemble outlier tests lose their baseline.}
 The Duke and MGGG ensembles~\cite{mattinglyduke,recom2021} assess
@@ -133,11 +144,18 @@ intent-based: a race-blind algorithm that disperses a
 the same legal effect as a deliberate dilution.
 
 Figure~\ref{fig:race-scatter} identifies the states where DualBalance
-produces fewer majority-minority districts than the enacted plan. In
-any such state where the reduction eliminates a \textit{Gingles}-qualifying
-district, the DualBalance plan is legally non-adoptable under current
-doctrine without either a supplementary remedial pass (outside the
-present algorithm's scope) or legislative modification of the
+produces fewer majority-minority districts than the enacted plan. The
+labeled states below the diagonal in Figure~\ref{fig:race-scatter}
+include jurisdictions (Alabama, Louisiana, Mississippi, New Jersey,
+and others) where \textit{Gingles} preconditions have been actively
+litigated. In each such state, a determination is required --- outside
+the algorithm's scope --- of whether the reduction in MMD count crosses
+a \textit{Gingles}-qualifying threshold. Table~\ref{tab:multistate-dbs}
+provides enacted and DB MMD counts from which an adopting body can
+identify states requiring scrutiny. In any state where the reduction
+eliminates a \textit{Gingles}-qualifying district, the DualBalance
+plan is legally non-adoptable under current doctrine without either a
+supplementary remedial pass or legislative modification of the
 applicable VRA framework. Adopting bodies should conduct a
 state-by-state \textit{Gingles} precondition audit against any
 proposed DualBalance plan as a precondition for implementation.
@@ -256,10 +274,17 @@ algorithmic neutrality (see \S\ref{sec:discussion-compactness}).
 
 Fourth, that the conventional gerrymandering metrics retain their
 descriptive validity on a DualBalance map but lose their inferential
-validity. Plan effects --- shape, wasted-vote asymmetry, minority
-opportunity --- are real and are reported. The inference from those
-effects to a line-drawer's intent is not available when there is
-no line-drawer. This is the most contested framing claim in the paper.
+validity in a specific and bounded sense. The claim is narrow:
+\emph{the intent of the within-state line-drawer} is foreclosed,
+because no within-state line-drawer exists. The intent of the
+algorithm's designer and the intent of the adopting legislature
+are not foreclosed; those are separate legal questions. Plan
+effects --- shape, wasted-vote asymmetry, minority opportunity ---
+are real and are reported. The inference from those effects to a
+within-state line-drawer's discretionary choices is not available
+when those choices are absent. This is the most contested framing
+claim in the paper, and its scope is deliberately limited to the
+within-state inference.
 
 The paper does not claim that DBS is universally the right objective,
 that DualBalance dominates enacted plans on all states, or that the
