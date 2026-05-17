@@ -1,64 +1,34 @@
 ---
 abstract: |
-  Whether it is possible to draw congressional districts without
-  traditional human bias is both a practical and a philosophical
-  question. In most states the same legislators who benefit from
-  district boundaries draw them; federal courts cannot review
-  partisan-gerrymandering claims after *Rucho v. Common Cause*; and the
-  extensive toolkit of forensic metrics can measure manipulation after
-  the fact but cannot prevent it. This paper investigates one approach:
-  generate the map from a fully public, pre-committed rule that
-  eliminates within-state discretion entirely. *DualBalance Districting*
-  is a deterministic algorithm that computes congressional districts as
-  a pure function of state geometry, census population, and seat
-  count $`N`$, with no discretionary parameters and no political inputs.
-  Every design choice is pre-committed before any state’s data are
-  examined. Each district carries roughly $`1/N`$ of the state’s people
-  *and* $`1/N`$ of its land, weighted equally in the DualBalance Score
-  (DBS). Because no within-state line-drawer makes any choices, the
-  conventional forensic metrics (Efficiency Gap, shape compactness,
-  ensemble outlier tests) retain their descriptive validity on
-  DualBalance maps but lose their inferential role as evidence of
-  intent. The inference from shape to motive requires a line-drawer;
-  this construction has none.
+  Partisan gerrymandering is structurally entrenched. Federal courts
+  cannot review it after *Rucho v. Common Cause*, and forensic metrics
+  can document manipulation only after it has occurred. What if
+  congressional districts were drawn not by legislators, but by a fully
+  specified mathematical rule with no human discretion at any stage?
 
-  Validated on all 41 multi-seat states with TIGER 2020PL VTD data,
-  DualBalance achieves *Karcher*-compliant population balance
-  ($`\mathrm{pop\_dev\_max} \leq 0.05\,\%`$) on 26 states; three states
-  (Florida, New York, West Virginia) are known geometric failures
-  requiring multi-center seeding as a structural fix. On partisan
-  fairness, DualBalance reduces $`|\mathrm{EG}|`$ relative to the
-  enacted 119th-Congress plan on 14 of 20 states with precinct-level
-  election data (median $`|\mathrm{EG}|`$ 0.085 vs. enacted 0.133; sign
-  test $`p = 0.058`$ one-tailed). A rotation sensitivity sweep across 12
-  anchor angles per state finds DBS is stable across anchors
-  (cross-state median $`\sigma = 0.010`$) while projected seat counts
-  shift by 1–3 seats in 26 of 41 states, identifying a pre-committed
-  rotation-selection rule as the primary remaining open design question.
+  We propose and test *DualBalance Districting*: a deterministic
+  algorithm that computes districts as a pure function of state
+  geometry, census population, and seat count $`N`$, with no
+  discretionary parameters and no political inputs. Every design choice
+  is pre-committed before any state’s data are examined. Each district
+  carries roughly $`1/N`$ of the state’s people *and* $`1/N`$ of its
+  land, weighted equally in the DualBalance Score.
 
-  Three limits govern adoption. Compactness scores are substantially
-  below enacted plans (median Polsby-Popper 0.115 vs. 0.281), a
-  structural cost of spanning the full urban-rural gradient in each
-  district. Where Voting Rights Act §2 *Gingles* preconditions are met,
-  a state-specific minority-opportunity audit is required before
-  implementation; the algorithm does not guarantee minority-seat
-  preservation. And the procedural neutrality is symmetric: the rule
-  that forecloses partisan engineering equally forecloses race-conscious
-  remediation, a trade-off for legislatures to resolve. Within these
-  limits, DualBalance demonstrates that a transparent, reproducible
-  generation rule can satisfy population-balance law across most
-  U.S. states and substantially reduce partisan asymmetry, without
-  reading any political data. Whether the resulting districts would be
-  widely accepted as fair is a separate question this paper does not
-  resolve. What constitutes fair representation in a geographically
-  diverse democracy is genuinely contested: equal people and equal land
-  is one principled answer, but others would prioritize community
-  integrity, partisan proportionality, or geographic compactness, and
-  reasonable people disagree on which matters most. Some will find that
-  spanning urban cores to rural boundaries serves representation well;
-  others will not. This paper demonstrates feasibility and documents
-  properties. Whether the approach should be adopted is a normative and
-  political question the algorithm cannot answer.
+  Applied to all 41 multi-seat states with available VTD data, the
+  algorithm achieves *Karcher*-compliant population balance on 26
+  states; both deterministic baselines achieve it on zero. Districts are
+  substantially less compact than enacted plans (median Polsby-Popper
+  0.115 vs. 0.281), a structural cost of spanning the full urban-rural
+  gradient. A rotation sensitivity analysis finds the DualBalance Score
+  stable across anchor angles (cross-state median $`\sigma = 0.010`$)
+  while projected seat counts shift by 1–3 seats in 26 of 41 states,
+  identifying seed rotation as a consequential pre-committed design
+  choice requiring a legislatively specified rule.
+
+  This paper demonstrates feasibility and documents the properties of an
+  apolitical deterministic design. Whether such a rule constitutes fair
+  representation is a normative question the algorithm cannot answer;
+  that judgment belongs to legislatures, courts, and voters.
 author:
 - Steven Hart
 bibliography: references.bib
