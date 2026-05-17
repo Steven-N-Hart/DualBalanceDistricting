@@ -18,35 +18,37 @@
 \maketitle
 
 \begin{abstract}
-Most current work on gerrymandering tries to detect it: identify
-when a line-drawer has crossed from neutral redistricting into
-partisan or racial manipulation. We generate maps instead.
-\emph{DualBalance Districting} asks each congressional district to
-carry roughly $1/N$ of a state's people \emph{and} roughly $1/N$
-of its land, weighted equally. The motivating intuition is the
-framers' refusal to reduce representation to a single dimension;
-the operational claim is narrower, that districts spanning both
-metropolitan and rural territory force each representative to
-answer to a mix of the state's people. \emph{DualBalance}
-places $N$ seeds in a small circle around the state's
-population-weighted centroid and assigns each census unit to the
-nearest seed with capacity remaining. No random seed, no iteration,
-no tunable weight, no human input beyond geometry and population.
-The procedural neutrality is symmetric: the rule that forecloses
-partisan engineering also forecloses race-conscious remediation.
+Most current work on gerrymandering tries to detect it. We generate
+maps instead. \emph{DualBalance Districting} is a deterministic
+algorithm that draws congressional districts as a pure function of
+state geometry, census population, and seat count~$N$, with no free
+parameters, no randomness, and no human input at any stage. Each
+district carries roughly $1/N$ of the state's people \emph{and}
+roughly $1/N$ of its land, weighted equally in a single objective
+called the DualBalance Score (DBS). The procedural neutrality is
+symmetric: the rule that forecloses partisan engineering equally
+forecloses race-conscious remediation.
 
-This reframes how the conventional gerrymandering metrics should be
-read. Compactness scores, the efficiency gap, mean-median asymmetry,
-ensemble outlier tests, and majority-minority counts play two roles
-on enacted plans: they describe plan effects, and they support
+Validated on all 41 multi-seat states for which TIGER 2020PL voting
+tabulation district boundaries are available, DualBalance achieves
+\emph{Karcher}-compliant population balance ($\mathrm{pop\_dev\_max}
+\leq 0.05\,\%$) on 26 states and beats the enacted 119th-Congress
+plan on DBS on 26 states. Two deterministic baselines --- Cascade
+(Iowa-LSA county aggregation) and BDistricting (capacitated power
+diagrams) --- achieve \emph{Karcher} compliance on zero states and
+zero states, respectively. On every state with a nonzero enacted
+Efficiency Gap, all three deterministic algorithms reduce
+$|\mathrm{EG}|$ relative to the enacted plan; the largest reductions
+are on the most-litigated maps. A House-wide projection across the
+41 scored states (369 seats) gives DualBalance R\,190~/~D\,177
+versus enacted R\,196~/~D\,171.
+
+The conventional gerrymandering metrics --- compactness, Efficiency
+Gap, ensemble outlier tests, majority-minority counts --- play two
+roles on enacted plans: describing plan effects and supporting
 inferences about the line-drawer's intent. The descriptive role
-survives on a DualBalance map; the intent-attribution role does not.
-
-Validated against enacted 119\textsuperscript{th}-Congress plans across
-all available states using 2020 PL 94-171 data, DualBalance beats the
-enacted plan on the DualBalance Score in the large majority of states and
-achieves \emph{Karcher}-compliant population balance on nearly all of
-them. We report standard partisan and race diagnostics alongside, as
+survives on a DualBalance map; the intent-attribution role does not,
+because there is no line-drawer. We report these diagnostics as
 descriptions of the partition.
 \end{abstract}
 
