@@ -1,12 +1,12 @@
-\section{Discussion}
+﻿\section{Discussion}
 \label{sec:discussion}
 
 \subsection{What the evidence shows}
 
 Across 41 states with TIGER 2020PL VTD data, DualBalance achieves
-\emph{Karcher}-compliant population balance ($\mathrm{pop\_dev\_max}
+\textit{Karcher}-compliant population balance ($\mathrm{pop\_dev\_max}
 \leq 0.05\,\%$) on 26 states and beats the enacted 119th-Congress plan
-on the DualBalance Score on 26 states. Cascade achieves \emph{Karcher}
+on the DualBalance Score on 26 states. Cascade achieves \textit{Karcher}
 compliance on zero states; BDistricting on zero. On every state with
 a nonzero enacted Efficiency Gap, all three deterministic algorithms
 produce a smaller $|\mathrm{EG}|$ than the enacted plan. On
@@ -16,9 +16,9 @@ states (TX, FL, NC, NY); it produces fewer on states where the enacted
 plan constructed a majority-minority district that radial slicing
 disperses (Figure~\ref{fig:race-scatter}).
 
-The 15 states that fall short of \emph{Karcher} fall into two
+The 15 states that fall short of \textit{Karcher} fall into two
 qualitatively distinct groups. Twelve sit in an algorithmic-convergence
-gap, between the \emph{Karcher} threshold and roughly $1\,\%$, where
+gap, between the \textit{Karcher} threshold and roughly $1\,\%$, where
 the block-scale refinement stage is the designed path to completion.
 Three (Florida, New York, West Virginia) are geometric failure cases
 where single-center radial seeding produces deviations an order of
@@ -143,16 +143,15 @@ intent-based: a race-blind algorithm that disperses a
 \textit{Gingles}-eligible community through radial slicing produces
 the same legal effect as a deliberate dilution.
 
-Figure~\ref{fig:race-scatter} identifies the states where DualBalance
-produces fewer majority-minority districts than the enacted plan. The
-labeled states below the diagonal in Figure~\ref{fig:race-scatter}
+States where DualBalance produces fewer majority-minority districts
+than the enacted plan are visible below the diagonal
+(Figure~\ref{fig:race-scatter}). The labeled states in that region
 include jurisdictions (Alabama, Louisiana, Mississippi, New Jersey,
 and others) where \textit{Gingles} preconditions have been actively
-litigated. In each such state, a determination is required --- outside
-the algorithm's scope --- of whether the reduction in MMD count crosses
-a \textit{Gingles}-qualifying threshold. Table~\ref{tab:multistate-dbs}
-provides enacted and DB MMD counts from which an adopting body can
-identify states requiring scrutiny. In any state where the reduction
+litigated. In each such state, a determination is required, outside
+the algorithm's scope, of whether the reduction in MMD count crosses
+a \textit{Gingles}-qualifying threshold. Enacted and DB MMD counts for identifying states requiring scrutiny
+are provided (Table~\ref{tab:multistate-dbs}). In any state where the reduction
 eliminates a \textit{Gingles}-qualifying district, the DualBalance
 plan is legally non-adoptable under current doctrine without either a
 supplementary remedial pass or legislative modification of the
@@ -169,11 +168,11 @@ DualBalance is, to our knowledge, the only deterministic districting
 method with a bivariate objective (population \emph{and} area). The
 41-state benchmark makes the consequence of single-axis design
 concrete: Cascade, which maximizes county integrity and area balance,
-achieves \emph{Karcher} compliance on zero of 41 states because its
+achieves \textit{Karcher} compliance on zero of 41 states because its
 county-integrity constraint produces population deviations of
 10--76\,\% on any state with a dominant metropolitan county.
 BDistricting, which maximizes population balance and compactness,
-also achieves \emph{Karcher} compliance on zero of 41 states and
+also achieves \textit{Karcher} compliance on zero of 41 states and
 is middle-of-the-road on DBS because area balance is not part of
 its objective. Both algorithms reduce $|\mathrm{EG}|$ relative to
 enacted plans for the same structural reason DualBalance does: none
@@ -228,7 +227,7 @@ would close this remaining degree of freedom and strengthen the
 neutrality argument.
 
 \paragraph{Block-scale completion.} Full three-stage pipeline results
-for the 12 convergence-gap states not yet at \emph{Karcher} at VTD scale.
+for the 12 convergence-gap states not yet at \textit{Karcher} at VTD scale.
 
 \paragraph{Direct 2D transportation.} A single optimization minimizing
 DBS under contiguity constraints, replacing the two-stage
@@ -245,7 +244,7 @@ instability in low-seat states).
 The paper makes four claims.
 
 First, that a race-blind, partisan-blind deterministic algorithm
-with pre-committed design rules achieves \emph{Karcher}-compliant
+with pre-committed design rules achieves \textit{Karcher}-compliant
 population balance on the large majority of U.S.\ states and beats
 the enacted 119th-Congress plan on the DualBalance Score on 26 of
 41 available states, as a pure function of geometry, census
@@ -301,7 +300,7 @@ dense urban cores and remote rural areas may not experience that
 geometry as well-representing them, regardless of how the algorithm
 characterizes it. Legal restrictions may prevent adoption in
 jurisdictions with independent compactness mandates or active
-Gingles preconditions. And adopters who do not accept equal area as
+\textit{Gingles} preconditions. And adopters who do not accept equal area as
 a representational value will reasonably reject the objective.
 
 The contribution of this paper is to demonstrate that a fully
@@ -310,3 +309,17 @@ technically achievable at national scale, to measure its properties
 honestly, and to characterize when it would and would not survive
 legal scrutiny. Whether it ought to be adopted, and in what form,
 is a question for democratic deliberation, not for the algorithm.
+
+The aspiration behind the design is worth stating plainly. Districts
+drawn by a pre-committed mathematical rule reflect the interests of
+the state and its people as a whole rather than the electoral
+interests of whichever party controls the legislature at the time
+of drawing. A representative elected from a DualBalance district
+represents a defined share of both the state's population and its
+geography, with no debt to a map drawn to maximize their party's
+seats. Whether that aspiration is achievable in practice, and
+whether it is the right aspiration, are questions that go beyond
+this paper. But the evidence presented here suggests that the
+technical barrier is not the binding constraint; the binding
+constraint is the political will to adopt a rule that neither party
+can tune to its own advantage.

@@ -1,19 +1,15 @@
-\section{Results}
+﻿\section{Results}
 \label{sec:results}
 
 We evaluated DualBalance against the enacted 119th-Congress plan on all
 41 multi-seat states for which TIGER 2020PL VTD boundaries are available.
 California, Hawaii, and Oregon did not submit VTD data to the Census
 Bureau and are excluded throughout (marked $\dagger$ in figures and
-tables). The data pipeline is automated via \verb|scripts/prep_state_units.py|;
-for election data it selects the best available precinct-level source per
-state (see \S\ref{sec:methods-tighten}). Two additional deterministic
-algorithms serve as baselines: \emph{Cascade}
-(\verb|src/dualbalance/cascade.py|), an Iowa-LSA-flavored construction
-that aggregates VTDs to counties; and \emph{BDistricting}~\cite{olsonbd},
-Brian Olson's published 50-state maps ingested via Census 2020 Block
-Assignment Files (\verb|scripts/prep_bdistricting.py|). All algorithm
-outputs are byte-identical across repeated runs.
+tables). Two additional deterministic algorithms serve as baselines:
+\emph{Cascade}, an Iowa-LSA-flavored construction that aggregates
+VTDs to counties; and \emph{BDistricting}~\cite{olsonbd}, Brian
+Olson's published 50-state maps. All algorithm outputs are
+byte-identical across repeated runs.
 
 Results are reported on two tiers. \textbf{Non-partisan metrics}
 (DualBalance Score, population deviation, compactness, majority-minority
@@ -39,19 +35,19 @@ wasted-vote asymmetry that characterizes enacted gerrymanders.
 Cascade scores well on the DualBalance objective because county
 aggregation naturally produces units of similar area, but the
 county-integrity constraint yields population deviations far above the
-\emph{Karcher} threshold on any state with a dominant metropolitan county
-(Figure~\ref{fig:boxplots}, Panel B). DualBalance achieves \emph{Karcher} compliance on 26 of 41 states;
+\textit{Karcher} threshold on any state with a dominant metropolitan county
+(Figure~\ref{fig:boxplots}, Panel B). DualBalance achieves \textit{Karcher} compliance on 26 of 41 states;
 BDistricting and Cascade achieve it on zero states (Table~\ref{tab:aggregate-comparison}).
-Cascade clears \emph{Karcher} nowhere because the county-integrity constraint
+Cascade clears \textit{Karcher} nowhere because the county-integrity constraint
 produces large deviations whenever a county exceeds the per-district cap.
 BDistricting clears it nowhere because Lloyd iteration converges to
 centroidal districts that do not enforce strict population equality. A plan that wins on DBS but
-violates \emph{Reynolds v.~Sims} cannot legally be enacted.
+fails the \textit{Karcher} standard cannot legally be enacted.
 
 \paragraph{Population compliance tiers.}
-The 15 states that fall short of \emph{Karcher} divide into two
+The 15 states that fall short of \textit{Karcher} divide into two
 qualitatively distinct groups. Twelve sit in an
-algorithmic-convergence gap between the \emph{Karcher} threshold
+algorithmic-convergence gap between the \textit{Karcher} threshold
 and roughly $1\,\%$: the block-scale refinement stage
 (\S\ref{sec:methods-block}) is the designed path for closing this
 gap. Three states, Florida ($44.2\,\%$), New York ($13.3\,\%$), and
@@ -80,7 +76,7 @@ population-balance legal threshold on most states.
 \caption{Per-state DualBalance Score and maximum population
 deviation for all 41 states with TIGER 2020PL VTD data.
 \textbf{Bold} marks the highest DBS per row.
-$\ddagger$: Cascade $\mathrm{pop\_dev\_max} > 0.5\,\%$ (\emph{Reynolds} non-compliant).
+$\ddagger$: Cascade $\mathrm{pop\_dev\_max} > 0.5\,\%$; deviations of this magnitude fail the \textit{Karcher} standard for congressional maps.
 $\star$: Efficiency Gap for this state computed from 2020 presidential
 returns (composite/congressional data unavailable); EG not shown.}
 \label{tab:multistate-dbs}\\
@@ -150,9 +146,9 @@ West Virginia$^{\star}$ & 2 & \textbf{0.904} & 0.827$^{\ddagger}$ & 0.867 & 0.88
 Non-partisan rows use all 41 available states unless noted.
 $\star$ Efficiency Gap rows restricted to 20 states with composite or congressional
 election data.
-$\dagger$ Enacted $\mathrm{pop\_dev\_max}$ and \emph{Karcher} counts reflect
+$\dagger$ Enacted $\mathrm{pop\_dev\_max}$ and \textit{Karcher} counts reflect
 the VTD-layer spatial join (see \S\ref{sec:methods-data}), not block-accurate
-deviations; enacted plans meet \emph{Karcher} on block-accurate data by design.
+deviations; enacted plans meet \textit{Karcher} on block-accurate data by design.
 $\S$ Excludes the three geometric-failure states (FL, NY, WV).
 $\P$ DualBalance directly optimizes DBS in Phase~2; the DBS comparison is
 therefore self-referential. The more probative comparisons are $|\mathrm{EG}|$
@@ -166,7 +162,7 @@ Metric & DualBalance & Cascade & BDistricting & Enacted \\
 DBS (median, 41 states) & \textbf{0.753} & 0.730 & 0.716 & 0.741 \\
 DBS (median, 38 viable states$^{\S}$) & \textbf{0.758} & --- & --- & 0.742 \\
 $\mathrm{pop\_dev\_max}$ (median) & \textbf{0.05\%} & 64.0\% & 1.2\% & 0.7\%$^{\dagger}$ \\
-At \emph{Karcher} ($\leq 0.05\,\%$) & \textbf{26/41} & 0/41 & 0/41 & $\approx$41/41$^{\dagger}$ \\
+At \textit{Karcher} ($\leq 0.05\,\%$) & \textbf{26/41} & 0/41 & 0/41 & $\approx$41/41$^{\dagger}$ \\
 Beats enacted DBS (41 states; self-referential$^{\P}$) & 26/41 & 14/41 & 9/41 & --- \\
 Beats enacted DBS (38 viable states$^{\S}$) & 23/38 & --- & --- & --- \\
 $|\mathrm{EG}|$ median (20 states$^\star$) & \textbf{0.085} & 0.103 & 0.098 & 0.133 \\
@@ -200,7 +196,7 @@ lacked TIGER 2020PL VTD boundaries and are excluded ($\dagger$).}
 Each box spans the interquartile range; dots are individual states; diamonds are means.
 \textbf{Panel A}: DualBalance Score (higher = better).
 \textbf{Panel B}: maximum per-district population deviation, log scale;
-dashed line at the \emph{Karcher} threshold (0.05\,\%).
+dashed line at the \textit{Karcher} threshold (0.05\,\%).
 \textbf{Panel C}: $|\mathrm{EG}|$ (lower = fairer); dashed line at 0.07.
 \textbf{Panel D}: Polsby-Popper compactness (mean per state); DualBalance
 is structurally less compact than enacted plans because radial slices are
@@ -234,8 +230,8 @@ is geographic, not by design. States with large differences are labeled.}
 2020 PL 94-171). \textbf{Left:} enacted 119th-Congress plan, with the
 Efficiency Gap of $+0.20$ that gave rise to \textit{Rucho v.~Common Cause}~\cite{rucho2019}.
 \textbf{Center:} Cascade plan, which scores better on DBS ($0.811$ vs.\ $0.769$ enacted)
-but violates \emph{Karcher} at $\mathrm{pop\_dev\_max}=10.27\,\%$ and cannot legally be enacted.
-\textbf{Right:} DualBalance plan, \emph{Karcher}-compliant ($0.11\,\%$) and
+but violates \textit{Karcher} at $\mathrm{pop\_dev\_max}=10.27\,\%$ and cannot legally be enacted.
+\textbf{Right:} DualBalance plan, \textit{Karcher}-compliant ($0.11\,\%$) and
 reducing EG to $+0.063$ with no political input.}
 \label{fig:nc-maps}
 \end{figure}

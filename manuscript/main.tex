@@ -1,4 +1,4 @@
-\documentclass[11pt]{article}
+﻿\documentclass[11pt]{article}
 
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
@@ -20,36 +20,36 @@
 \maketitle
 
 \begin{abstract}
-Partisan gerrymandering is structurally entrenched. Federal courts
-cannot review it after \textit{Rucho v.~Common Cause}, and forensic
-metrics can document manipulation only after it has occurred. What
-if congressional districts were drawn not by legislators, but by a
-fully specified mathematical rule with no human discretion at any
-stage?
+Partisan gerrymandering is structurally entrenched, and detecting it
+after the fact (the goal of most forensic metrics) cannot substitute
+for preventing it, particularly after \textit{Rucho v.~Common Cause}
+withdrew federal courts from partisan-gerrymandering review. This
+paper asks what would happen if congressional districts were drawn
+not by legislators but by a fully specified mathematical rule, with
+no human discretion at any stage. The candidate rule,
+\emph{DualBalance Districting}, computes districts as a pure function
+of state geometry, census population, and seat count~$N$, with every
+design choice pre-committed before any state's data are examined;
+each district carries roughly $1/N$ of the state's people and $1/N$
+of its land, weighted equally in the DualBalance Score.
 
-We propose and test \emph{DualBalance Districting}: a deterministic
-algorithm that computes districts as a pure function of state
-geometry, census population, and seat count~$N$, with no
-discretionary parameters and no political inputs. Every design choice
-is pre-committed before any state's data are examined. Each district
-carries roughly $1/N$ of the state's people \emph{and} $1/N$ of its
-land, weighted equally in the DualBalance Score.
+Applied to all 41 multi-seat states with available VTD data,
+DualBalance achieves \textit{Karcher}-compliant population balance on
+26 states (both deterministic baselines achieve it on zero), at the
+cost of substantially lower compactness than enacted plans (median
+Polsby-Popper 0.115 vs.\ 0.281), a structural consequence of
+spanning the full urban-rural gradient in each district. A rotation
+sensitivity analysis across 12 anchor angles per state finds the
+DualBalance Score stable (cross-state median $\sigma = 0.010$) while
+projected seat counts shift by 1--3 seats in 26 of 41 states,
+identifying seed rotation as a consequential pre-committed choice
+that any legislative adoption would need to specify.
 
-Applied to all 41 multi-seat states with available VTD data, the
-algorithm achieves \emph{Karcher}-compliant population balance on 26
-states; both deterministic baselines achieve it on zero. Districts
-are substantially less compact than enacted plans (median
-Polsby-Popper 0.115 vs.\ 0.281), a structural cost of spanning the
-full urban-rural gradient. A rotation sensitivity analysis finds the
-DualBalance Score stable across anchor angles (cross-state median
-$\sigma = 0.010$) while projected seat counts shift by 1--3 seats in
-26 of 41 states, identifying seed rotation as a consequential
-pre-committed design choice requiring a legislatively specified rule.
-
-This paper demonstrates feasibility and documents the properties of
-an apolitical deterministic design. Whether such a rule constitutes
-fair representation is a normative question the algorithm cannot
-answer; that judgment belongs to legislatures, courts, and voters.
+The paper's contribution is to demonstrate feasibility and document
+the properties of an apolitical deterministic design; whether such
+a rule constitutes fair representation is a normative question the
+algorithm cannot answer, and that judgment belongs to legislatures,
+courts, and voters.
 \end{abstract}
 
 \input{sections/introduction}

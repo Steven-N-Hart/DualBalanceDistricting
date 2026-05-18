@@ -1,4 +1,4 @@
-\section{Methods}
+﻿\section{Methods}
 \label{sec:methods}
 
 \subsection{Data and inputs}
@@ -16,24 +16,23 @@ representative-point join against the TIGER 2024 \texttt{cd119}
 layer~\cite{tiger2024cd119}.
 
 \paragraph{Note on enacted-plan population deviations.}
-Enacted U.S. congressional plans are litigated to \emph{Karcher}
+Enacted U.S. congressional plans are litigated to \textit{Karcher}
 compliance at the census-block level. The enacted-plan deviations
 reported in this paper reflect the VTD-layer spatial join: a VTD
 that straddles a district boundary is assigned in full to one
 district, introducing apparent deviation where the legislative
 record shows none. DualBalance's reported deviations come from its
 own block-refined output and are directly comparable to the
-\emph{Karcher} threshold. Counts of enacted-plan Karcher compliance
+\textit{Karcher} threshold. Counts of enacted-plan Karcher compliance
 (Tables~\ref{tab:multistate-dbs}--\ref{tab:aggregate-comparison})
 should be read as a conservative lower bound on enacted compliance,
 not as legally cognizable deviations: the true enacted deviations
 are near zero on block-accurate data.
 
 \paragraph{Reproducibility.}
-The \texttt{dualbalance} Python package, per-state configuration
-files (\texttt{configs/}), and the data pipeline
-(\texttt{scripts/prep\_state\_units.py}) reproduce all tables and
-figures from publicly available TIGER and Census source files.
+The \texttt{dualbalance} Python package and per-state configuration
+files reproduce all tables and figures from publicly available
+TIGER and Census source files.
 Algorithm outputs are byte-identical across repeated runs on the
 same input data; the \texttt{votes\_source} field in each state's
 units file records which election data source was used.
@@ -164,9 +163,10 @@ Algorithm~\ref{alg:dualbalance} summarizes the full core pipeline.
 \begin{algorithmic}[1]
 \Require Atomic units $\mathcal{U}=\{u_1,\dots,u_M\}$ with populations
          $\{p_u\}$, centroids $\{x_u\}$, and areas $\{a_u\}$;
-         district count $N$
+         district count $N$; population tolerance $T$
 \Ensure  Assignment $\pi:\mathcal{U}\to\{1,\dots,N\}$;
-         every district contiguous and non-empty
+         every district contiguous, non-empty, with
+         $\max_i|\delta_i|/P^* \leq T$
 \vspace{4pt}
 \State $c \leftarrow \bigl(\sum_u p_u\,x_u\bigr)\big/\bigl(\sum_u p_u\bigr)$
        \Comment{population-weighted centroid}
@@ -207,6 +207,26 @@ Algorithm~\ref{alg:dualbalance} summarizes the full core pipeline.
     \State $\pi(u) \leftarrow \arg\min_j\;\mathrm{cost}(u,j)$ for each $u \in C$
            \Comment{ties: pop pen, area pen, dist, district id}
 \EndWhile
+\vspace{4pt}
+\Statex \hspace{-\algorithmicindent}\textbf{Phase 4\enspace L\textsuperscript{1} population tightening}
+\State $\delta_i \leftarrow P(D_i) - P^*$ for all $i$
+\Repeat
+    \For{each safe boundary move $(u,\,d_{\mathrm{dest}})$}
+        \State Compute $\Delta_{L^1}(u,d_{\mathrm{dest}})$ and max-norm priority
+               \Comment{priority 0 = max-reducing, 1 = $L^1$-only}
+    \EndFor
+    \State Accept safe top-ranked candidate; update $\pi$, $\delta$
+    \If{no improving 1-opt move \textbf{and} $\max_i|\delta_i|/P^* > T$}
+        \State Try chain escape of length $k=2$, then $k=3$
+    \EndIf
+\Until{$\max_i|\delta_i|/P^* \leq T$ \textbf{or} no improving move found}
+\vspace{4pt}
+\Statex \hspace{-\algorithmicindent}\textbf{Phase 5\enspace DBS hill-climb}
+\Repeat
+    \State Accept the safe boundary move $(u,\,d_{\mathrm{dest}})$ that
+           maximally improves $\mathrm{DBS}$~(eq.~\ref{eq:dbs})
+           subject to $\max_i|\delta_i|/P^* \leq$ achieved tolerance
+\Until{no improving safe move exists}
 \end{algorithmic}
 \end{algorithm}
 
@@ -266,9 +286,7 @@ threshold for a winning candidate. Then
   \label{eq:eg}
 \end{equation}
 where positive values indicate Republican advantage and negative
-values indicate Democratic advantage. EG is reported as a diagnostic
-and does not enter the generator; all partisan, racial, and demographic
-variables are excluded from the generator's inputs.
+values indicate Democratic advantage. EG is reported as a diagnostic.
 
 Vote inputs for EG are drawn from the best available precinct-level
 source per state, in priority order: (1)~DRA's 2016--22 composite
@@ -280,20 +298,20 @@ unavailable; (3)~2020 presidential returns (\texttt{E\_20\_PRES}) as a
 fallback. The composite is available for 18 of 41 states, the 2022
 House-only for 2 states, and the 2020 presidential for the remaining
 21. The \texttt{votes\_source} field in each state's units file records
-which source was used; Table~\ref{tab:multistate-dbs} marks rows where
-the fallback presidential source applies ($\star$).
+which source was used; rows where the fallback presidential source
+applies are marked $\star$ (Table~\ref{tab:multistate-dbs}).
 
 \subsection{\texorpdfstring{L\textsuperscript{1}}{L1} population tightening and DBS hill-climb}
 \label{sec:methods-tighten}
 \label{sec:methods-optimize}
 
 The radial pipeline produces per-district pop deviation in the
-5--15\% range on real census geometry, well above the
-\textasciitilde{}0.5\% threshold required by \textit{Reynolds v.~Sims}
-for U.S.~congressional districts~\cite{reynolds1964}. A deterministic
-two-phase local search of boundary-unit moves (activated via
-\verb|--tighten-pop|) closes this gap; all results reported in this
-paper use this pass. Let
+5--15\% range on real census geometry, far above the strict equality
+standard required for congressional districts under \textit{Wesberry
+v.~Sanders}~\cite{wesberry1964} and \textit{Karcher
+v.~Daggett}~\cite{karcher1983}. A deterministic two-phase local
+search of boundary-unit moves closes this gap; all results reported
+in this paper use this pass. Let
 $\delta_i = P(D_i) - P^{*}$ denote the signed population deviation of
 district $D_i$, let $T$ denote the user-supplied tolerance (default
 $0.005$), and call a move \emph{safe} if the source unit is not an
@@ -367,7 +385,7 @@ to $\max_i |\delta_i|/P^{*}$ not exceeding the value Phase 1 reached
 (equivalently, never crossing back above $T$). Phase 2 runs until no
 improving safe move exists. Whereas the core DualBalance pass does not
 directly minimize equation~\ref{eq:dbs}, this opt-in Phase 2 does, but
-only on the post-Phase-1 plan and only within the Reynolds-compliant
+only on the post-Phase-1 plan and only within the population-compliant
 feasible region.
 
 \paragraph{Determinism and engineering.}
@@ -383,33 +401,31 @@ restricts each scan to units that have a different-district neighbor.
 At VTD scale the speedup is modest; at block scale (tens of thousands
 of units per district) it is the difference between hours and minutes.
 
-The pass is off by default and gated by an explicit flag. Pure radial
-remains the principled algorithm; the two-phase optimizer is an opt-in
-concession to legal compliance, with Phase 2 providing the further
-courtesy of directly hill-climbing the project's stated objective once
-the Reynolds constraint is satisfied.
+The two-phase optimizer is a concession to legal compliance; Phase 2
+then directly hill-climbs the stated objective once the population
+tolerance is satisfied.
 
 \subsection{Multi-resolution refinement: VTD to Census block}
 \label{sec:methods-block}
 
-The hybrid Phase 1 + chain escape closes most of the Reynolds gap
-at VTD scale, but not all of it. Modern U.S. congressional plans
-must clear the much tighter \emph{Karcher v.~Daggett}~\cite{karcher1983}
+The hybrid Phase 1 + chain escape closes most of the population-balance
+gap at VTD scale, but not all of it. Modern U.S. congressional plans
+must clear the much tighter \textit{Karcher v.~Daggett}~\cite{karcher1983}
 practical threshold of $\sim 0.05\%$ total deviation, and at VTD
 granularity the residual gap is structural rather than
 algorithmic. The smallest single-unit move has the size of the
 smallest VTD's population. On real states the median VTD population
-is on the order of $10^3$, while the Karcher budget on a $\sim 800$k
+is on the order of $10^3$, while the \textit{Karcher} budget on a $\sim 800$k
 ideal district is $\sim 400$ people. Most candidate moves overshoot
 the budget on at least one endpoint, and Phase 2 starves: the
 running-max constraint admits few moves, and the algorithm settles
-above Karcher with most of the residual area-balance gain
-unrealized.
+above the \textit{Karcher} threshold with most of the residual
+area-balance gain unrealized.
 
 The fix is to refine at finer granularity. We re-run the optimizer
 on Census tabulation blocks (median population $\sim 20$ rather
-than $\sim 10^3$), initializing from the VTD-Karcher plan rather
-than re-seeding from scratch. The pipeline is:
+than $\sim 10^3$), initializing from the VTD-level \textit{Karcher}
+plan rather than re-seeding from scratch. The pipeline is:
 
 \begin{enumerate}
   \item Compute the VTD-level plan

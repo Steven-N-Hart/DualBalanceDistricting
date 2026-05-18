@@ -1,4 +1,4 @@
-\section{Introduction}
+﻿\section{Introduction}
 
 In most U.S. states, congressional district boundaries are drawn by
 the same legislators whose electoral prospects depend on where those
@@ -9,205 +9,207 @@ line-drawing decision to political actors. The consequences are
 well-documented: gerrymandered boundaries reduce electoral
 competition, dilute minority voting power, and produce seat
 allocations that diverge substantially from statewide vote
-totals~\cite{stephanopoulosmcghee2015,chenrodden2013}. Federal
-judicial oversight of these practices has progressively narrowed,
-as detailed in \S\ref{sec:intro-legal} below. This paper proposes
-and validates \emph{DualBalance Districting}: a deterministic
-algorithm that computes congressional district maps as a pure
-function of state geometry, census populations, and district count
-$N$, with no discretionary parameters, no randomness, and no human
-intervention at any stage. Each district is designed to carry
-approximately $1/N$ of the state's population and approximately
-$1/N$ of its land area, weighted equally in a single objective we
-call the DualBalance Score. A deterministic algorithm with
-pre-committed, publicly documented rules provides, by construction,
-a mathematical barrier against ad hoc map manipulation: every design
-choice is fixed before any specific state's data are examined, so no
-choice can be made after the fact to favor a party or candidate.
+totals~\cite{stephanopoulosmcghee2015,chenrodden2013}. If a
+procedural alternative is to succeed, it must navigate three distinct
+challenges: the shrinking legal landscape for judicial oversight
+(\S\ref{sec:intro-legal}), the geographic reality of what equal
+representation requires within a state (\S\ref{sec:intro-geo}), and
+the backward-looking nature of the existing measurement toolbox
+(\S\ref{sec:intro-forensic}). This paper investigates whether a
+single deterministic rule can satisfy all three at once.
 
-\subsection{Redistricting Without a Neutral Standard}
+\subsection{The Legal Landscape}
 \label{sec:intro-legal}
 
-The federal courts have largely withdrawn from gerrymandering review. In
-\emph{Rucho v.~Common Cause}~\cite{rucho2019}, the Supreme Court held
-5--4 that partisan-gerrymandering claims present nonjusticiable
+The federal courts have largely withdrawn from gerrymandering review.
+In \textit{Rucho v.~Common Cause}~\cite{rucho2019}, the Supreme Court
+held 5--4 that partisan-gerrymandering claims present nonjusticiable
 political questions; the Court conceded the practice is
 ``incompatible with democratic principles'' but found no manageable
-judicial standard. After \emph{Rucho}, the only federal channel for
+judicial standard. After \textit{Rucho}, the only federal channel for
 gerrymandering review is racial. That channel has since narrowed.
 Section~2 of the Voting Rights Act, as construed in
-\emph{Thornburg v.~Gingles}~\cite{gingles1986}, requires
-majority-minority districts where the three Gingles preconditions are
-met. The Court reaffirmed this in \emph{Allen v.~Milligan}~\cite{milligan2023}.
-One year later, \emph{Alexander v.~South Carolina Conf.~of the
+\textit{Thornburg v.~Gingles}~\cite{gingles1986}, requires
+majority-minority districts where the three \textit{Gingles} preconditions are
+met. The Court reaffirmed this in \textit{Allen v.~Milligan}~\cite{milligan2023}.
+One year later, \textit{Alexander v.~South Carolina Conf.~of the
 NAACP}~\cite{alexander2024} raised plaintiffs' evidentiary burden;
-\emph{Louisiana v.~Callais}~\cite{callais2026} held in April 2026
+\textit{Louisiana v.~Callais}~\cite{callais2026} held in April 2026
 that even a plan drawn to comply with a prior Section~2 order may
 violate the Equal Protection Clause if Section~2 did not in fact
-compel a race-based remedy. Together, \emph{Alexander} and
-\emph{Callais} leave race-conscious line-drawing in a narrower window
+compel a race-based remedy. Together, \textit{Alexander} and
+\textit{Callais} leave race-conscious line-drawing in a narrower window
 of constitutional safety than at any point since the VRA's adoption.
 
-State constitutional review under \emph{Moore v.~Harper}~\cite{moore2023}
-remains available but is uneven and politically contingent: roughly ten
-state supreme courts have recognized state-constitutional
+State constitutional review under \textit{Moore v.~Harper}~\cite{moore2023}
+remains available but is uneven and politically contingent: roughly
+ten state supreme courts have recognized state-constitutional
 partisan-gerrymandering claims~\cite{stateline2025}; the rest have
-not. Several states have already redrawn maps mid-decade in response to
-electoral results rather than census revision, shifting redistricting
-from a once-per-decade event into a recurring one. Reducing this
-discretionary intervention requires a procedure whose output is
-determined entirely by census data, with no human choices at the
-line-drawing stage.
+not. Several states have already redrawn maps mid-decade in response
+to electoral results rather than census revision, and calls for an
+explicit redistricting war to maximize partisan advantage have
+brought the practice into open national political
+strategy~\cite{trump2025redistrict}. Redistricting has shifted from
+a once-per-decade event into a recurring instrument of partisan
+competition. Any procedural alternative must therefore operate
+without relying on legal channels that are no longer available, and
+without producing inputs that trigger the narrowing doctrines
+described above.
 
-\subsection{Population and Geography as Dual Representational Axes}
+\subsection{Geography as the Instrument of Manipulation}
+\label{sec:intro-geo}
 
-The Constitution already encodes two theories of representation: the
-House apportions seats by population (Art.~I, \S2), the Senate by
-sovereign state regardless of population (Art.~I, \S3). Madison's
-defense in \emph{Federalist} Nos.~54--58~\cite{federalist54} frames
-the bicameral structure as a principled refusal to collapse
-representation onto a single dimension. Within the House, the existing
-framework uses only one extensive quantity, population, to define what
-a district should be. Geographic area is a second extensive quantity: it is well-defined,
-measurable from the same census geometry, and orthogonal to population
-density. Balancing area alongside population discourages concentration
-of districts exclusively within either dense metropolitan cores or
-sparse rural regions.
+Geography is the mechanism of partisan gerrymandering. When
+legislators draw district lines, they exploit the geographic sorting
+of partisan voters: packing opposition supporters into a small number
+of districts wastes their votes by producing unnecessary supermajorities,
+while cracking their communities across multiple districts wastes
+their votes by keeping them in permanent minority. No party
+affiliation need appear in the line-drawing software. The line-drawer
+needs only to know where each party's voters live, and geometry does
+the rest~\cite{chenrodden2013}. The result is a structural advantage
+that can persist for a decade regardless of shifts in public opinion.
 
-The Electoral College illustrates how the founders embedded both
-principles within a single institution. Each state's electoral vote
-total equals its House seats plus its two Senate seats
-(Art.~II, \S1), blending a population-proportional component with
-a geographic floor. The analogy operates at the level of
-constitutional design philosophy, not mechanical equivalence: the
-Electoral College combines the two principles \emph{across} states,
-allocating a fixed geographic bonus between them, while DualBalance
-applies them \emph{within} a single state's districts. The design
-logic is the same regardless, a constitutional order that declines
-to collapse representation onto a single extensive quantity.
+If geography is the instrument of manipulation, it can also be the
+basis of a principled rule. Any procedural alternative must choose,
+explicitly and in advance, what a district is \emph{for}. Current
+law answers with a single quantity: population.
+\textit{Wesberry v.~Sanders}~\cite{wesberry1964} established that
+congressional districts must hold roughly equal shares of people,
+and for sixty years that has been the only legally required design
+criterion.
 
-This is a mathematical challenge, not a free choice. A typical U.S.\
-state varies by two to three orders of magnitude between its densest
-census tract and its sparsest rural block. Equal population, equal
-area, contiguity, and shape compactness cannot all be satisfied
-simultaneously in general; some trade-off is unavoidable. The question
-is which trade-off to make, how transparently to make it, and whether
-the resulting procedure can be defended as impartial.
+This paper proposes adding a second: geographic land area, weighted
+equally with population. That is a radical departure. It implies
+that a congressional district should represent not just a people-share
+of the state but a land-share as well, a claim that has no precedent
+in redistricting law and will strike many readers as wrong on its
+face. The standard objection is straightforward: land does not vote.
+Giving area co-equal status with population arguably revives a
+geographic weighting of representation that \textit{Reynolds
+v.~Sims}~\cite{reynolds1964} abolished in state legislative
+apportionment.
 
-\subsection{Existing Metrics Are Forensic, Not Generative}
+We take that objection seriously. The case for investigating the
+criterion rests on three observations. First, the constitutional
+structure has never treated population as the only legitimate
+dimension of representation. The Senate apportions by sovereign state
+regardless of population (Art.~I, \S3); the Electoral College blends
+a population-proportional component with a geographic floor across
+states (Art.~II, \S1); Madison's defense in \emph{Federalist}
+Nos.~54--58~\cite{federalist54} frames bicameralism as a principled
+refusal to collapse representation onto a single dimension. Second,
+a district drawn only on population can concentrate entirely within
+a single metropolitan area, producing a representative with no
+practical engagement with rural or exurban constituents, and vice
+versa. Third, equal-area balance is a \emph{pre-committed} design
+choice: fixed before any state's data are examined, it cannot be
+applied selectively to favor one geography over another in a given
+cycle, which is precisely what makes it different from the geographic
+manipulation it is designed to displace.
+
+None of this resolves the normative question. The claim that land
+deserves representational standing alongside people is genuinely
+radical, and we are not asserting it as settled. We adopt it as a
+working assumption, test whether a rule built on it is technically
+achievable and legally characterizable, and report honestly what it
+produces. Whether it should be adopted is a question for legislatures
+and voters to answer.
+
+A typical U.S. state varies by two to three orders of magnitude
+between its densest census tract and its sparsest rural block. Equal
+population, equal area, contiguity, and shape compactness cannot all
+be satisfied simultaneously; some trade-off is unavoidable. Whatever
+criterion a rule adopts, it must commit to that trade-off explicitly
+and in advance, before any specific state's geometry is examined.
+
+\subsection{The Forensic Toolbox and Its Limits}
+\label{sec:intro-forensic}
 
 Quantitative tests for gerrymandering include shape-compactness
-measures (Polsby-Popper~\cite{polsbypopper1991}; Reock~\cite{reock1961}),
-partisan-asymmetry statistics~\cite{wang2016,warrington2018},
-the Efficiency Gap~\cite{stephanopoulosmcghee2015}, and ensemble
-outlier methods~\cite{mattinglyduke,recom2021}. We report
-Polsby-Popper, Reock, and the Efficiency Gap (EG) as comparative
-benchmarks in \S\ref{sec:results}. EG, defined formally in
-\S\ref{sec:methods}, measures the difference between the two parties'
-wasted-vote totals as a fraction of statewide turnout; it has
-received the widest adoption in federal redistricting litigation,
-serving as the central metric in \emph{Whitford v.~Gill}, with
-$|\mathrm{EG}| > 0.07$ proposed as a threshold for a plausible
-partisan-gerrymandering challenge~\cite{stephanopoulosmcghee2015}.
-All of these metrics are
+measures (Polsby-Popper~\cite{polsbypopper1991};
+Reock~\cite{reock1961}), partisan-asymmetry
+statistics~\cite{wang2016,warrington2018}, the Efficiency
+Gap~\cite{stephanopoulosmcghee2015}, and ensemble outlier
+methods~\cite{mattinglyduke,recom2021}. All of these are
 \emph{forensic} instruments: they take an enacted map as input and
-ask whether its observed properties (shape, vote efficiency, partisan
-asymmetry, the location of its seat--vote curve) are consistent with
-maps that some reference process (random redistricting, ensemble
-sampling under legal constraints) would have produced absent partisan
-intent. They compare the enacted plan against a counterfactual
-distribution to infer the line-drawer's motive, and were built for an
-adversarial context in which the question is ``did somebody do
-something here that they should not have done?''
+ask whether its observed properties are consistent with maps that
+some neutral reference process would have produced absent partisan
+intent. They compare an enacted plan against a counterfactual to
+infer the line-drawer's motive, and were built for an adversarial
+context in which the question is whether somebody did something they
+should not have done.
 
-A generative metric is a different object. It states, directly,
+A generative criterion is a different object. It states, directly,
 what a district \emph{should} look like, and is used as the
 objective of the line-drawing procedure rather than as evidence
 about the procedure. Population balance is the only generative
-metric U.S. redistricting law currently uses: \emph{Wesberry
-v.~Sanders}~\cite{wesberry1964} and \emph{Reynolds
-v.~Sims}~\cite{reynolds1964} require that each district hold
-roughly $1/N$ of the relevant population. Every other criterion
-(compactness, communities of interest, partisan fairness) enters
-the law as a forensic instrument or a discretionary guideline.
+criterion U.S. redistricting law currently uses:
+\textit{Wesberry v.~Sanders}~\cite{wesberry1964} and its
+congressional-district elaboration in \textit{Karcher
+v.~Daggett}~\cite{karcher1983} require that each congressional
+district hold as nearly equal a share of the population as
+practicable. Every other criterion (compactness,
+communities of interest, partisan fairness) enters the law as a
+forensic instrument or a discretionary guideline.
 
-The DualBalance Score (DBS; equation~\ref{eq:dbs} in
-\S\ref{sec:methods}) is a \emph{generative} criterion: it states
-what a district should be, one that carries roughly $1/N$ of the
-people and roughly $1/N$ of the land, and serves as the objective
-the algorithm pursues rather than a test applied after the fact.
+Forensic metrics also presuppose a line-drawer: the inference from a
+plan's shape or partisan asymmetry to manipulative intent requires
+that somebody exercised discretion that could, in principle, have
+gone differently. A procedure that eliminates that discretion severs
+the inference chain at its foundation. What is needed is not a better
+forensic test but a different kind of rule entirely, one that
+specifies what districts should look like rather than evaluating
+whether they were distorted.
 
-\subsection{The Iowa Model as a Reference Point}
+\subsection{A Candidate Procedural Framework}
+\label{sec:intro-contribution}
 
-Iowa's Legislative Services Agency~\cite{iowalsa} has operated
-under a written, publicly documented redistricting procedure since
-1980 -- one of the few U.S. examples of a formalized, procedural
-approach that has functioned without major legal challenge across
-multiple redistricting cycles. Its longevity and transparency make
-it a natural reference point for proposals to replace discretionary
-redistricting with an explicit algorithm. The open question is
-whether a procedure designed for Iowa's geographic and demographic
-conditions constitutes a legally defensible, impartial template for
-states with substantially different population distributions and
-geographic structure. We re-implement it as a structured baseline
-(referred to here as \emph{Cascade} to avoid confusion with the
-agency) and use it as a point of comparison throughout. Cascade
-captures the geographic-prioritization logic of the Iowa formula
-(county integrity first, then population balance, then compactness)
-but omits the institutional framework (the bipartisan advisory
-commission, multiple plan submissions, and legislative up-or-down
-vote) that is integral to Iowa's actual redistricting process. The
+Iowa's Legislative Services Agency~\cite{iowalsa} has operated under
+a written, publicly documented redistricting procedure since 1980,
+one of the few U.S. examples of formalized algorithmic redistricting
+that has functioned without major legal challenge across multiple
+cycles. Its longevity suggests that rule-based redistricting can be
+politically sustainable. The limiting question is whether a procedure
+designed for Iowa's relatively compact, monocentric geography
+generalizes to states with substantially different population
+distributions and geographic structures. We re-implement the Iowa
+formula as a structured baseline (referred to here as \emph{Cascade}
+to avoid confusion with the agency) and use it as a point of
+comparison. Cascade captures the geographic-prioritization logic of
+the Iowa procedure (county integrity first, then population balance,
+then compactness) but omits the institutional framework (the
+bipartisan advisory commission, multiple plan submissions, and
+legislative up-or-down vote) integral to Iowa's actual process; the
 comparison therefore isolates the algorithmic contribution of
-county-preservation, not the process surrounding it.
+county-preservation from the process surrounding it.
 
-\subsection{Contribution}
+The candidate we investigate beyond Iowa is \emph{DualBalance
+Districting}: a deterministic algorithm whose output is a pure
+function of state geometry, census populations, and seat count. It
+is designed to engage each of the three challenges identified above.
 
-We propose \emph{DualBalance Districting}: a deterministic
-multi-resolution pipeline whose output is a pure function of
-$(\text{state geometry}, \text{census populations}, N)$,
-formalized in \S\ref{sec:methods}.
+Against the \emph{legal challenge}: every design choice is
+pre-committed before any state's data are examined, producing a rule
+with no within-state discretionary parameters and no partisan,
+racial, or incumbent inputs. The intent-attribution chain that
+forensic metrics rely on is severed because there is no line-drawer
+exercising discretion within the state.
 
-\paragraph{Pipeline.} The algorithm runs in three stages: radial
-seed placement around the population-weighted centroid, followed by
-a two-phase greedy local search at VTD scale that closes
-per-district population deviation toward the \emph{Karcher}
-threshold~\cite{karcher1983}, followed by the same search re-run at
-census-block scale where finer granularity allows the DualBalance
-Score to make its largest gains. The full formalization is in
-\S\ref{sec:methods}.
+Against the \emph{geographic challenge}: each district explicitly
+carries both $1/N$ of the state's people and $1/N$ of its land,
+weighted equally. A radial seeding geometry naturally spans the full
+density gradient from urban core to rural boundary in each district,
+making the geographic trade-off a first-class design commitment
+rather than an afterthought.
 
-\paragraph{Empirical validation.} We evaluate the full pipeline on
-all 41 multi-seat states for which TIGER 2020PL VTD boundaries are
-available (California, Hawaii, and Oregon are excluded for lack of
-VTD data). DualBalance achieves \emph{Karcher}-compliant population
-balance ($\mathrm{pop\_dev\_max} \leq 0.05\,\%$) on 26 of 41
-states and exceeds the enacted 119th-Congress plan on the
-DualBalance Score on 26 of 41 states. On partisan fairness,
-DualBalance reduces $|\mathrm{EG}|$ relative to the enacted plan on
-14 of the 20 states with composite or congressional election data
-(median $|\mathrm{EG}|$ 0.085 vs.\ enacted 0.133). On
-minority-majority district counts, DualBalance produces at least as
-many as the enacted plan on most states and more on several
-high-minority states, including TX (22 vs.~19 enacted) and NC (2
-vs.~1 enacted).
+Against the \emph{forensic limitation}: the DualBalance Score is a
+\emph{generative} criterion. It states what a district should be,
+one that represents both a people-share and a land-share, and serves
+as the objective the algorithm pursues rather than a test applied
+after the fact. Conventional metrics (Polsby-Popper, Efficiency Gap,
+majority-minority counts) are computed and reported, but as
+descriptions of the partition, not as the basis for design.
 
-\paragraph{Claims.} The procedure contains no explicit partisan,
-racial, or incumbent-aware optimization criteria: its inputs are
-census geometry and population totals, and its output is a pure
-function of those inputs. Every design choice, including seed
-geometry, objective weighting, tolerance, and tie-breaking, is
-pre-committed and fixed before any specific state is examined.
-There are no in-session discretionary parameters that a line-drawer
-could adjust to affect electoral or demographic outcomes. Adopting a generative criterion
-as the design objective, rather than a forensic instrument, is a
-natural response to a setting in which no line-drawer is present
-to investigate. Scope limits and further qualifications appear in
-\S\ref{sec:discussion}.
-
-\paragraph{Roadmap.} Section~\ref{sec:methods} formalizes the
-algorithm. Section~\ref{sec:results} reports the 41-state empirical
-validation. Section~\ref{sec:discussion} discusses limits,
-trade-offs, and legal exposure.
-
-
-
+Whether this candidate succeeds, and where it falls short, is what
+this paper documents.
