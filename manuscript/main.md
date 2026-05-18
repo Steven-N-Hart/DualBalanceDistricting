@@ -749,7 +749,7 @@ states are marked $`\dagger`$ in figures and tables. Two additional
 deterministic algorithms serve as baselines: *Cascade*, an
 Iowa-LSA-flavored construction that aggregates VTDs to counties; and
 *BDistricting* (Olson 2007--2024), Brian Olson’s published 50-state
-maps. All algorithm outputs are byte-identical across repeated runs.
+maps.
 
 Results are reported on two tiers. **Non-partisan metrics** (DualBalance
 Score, population deviation, compactness, majority-minority districts)
@@ -1677,13 +1677,11 @@ an attempt to disadvantage any group.
 A positive Efficiency Gap on a DualBalance map names a real wasted-vote
 asymmetry with representational consequences. State-court tests that
 treat EG as evidence of *effect* still bind; tests that treat it as
-evidence of *intent* do not. Among the 20 states with composite or
-congressional election data, DualBalance reduces $`|\mathrm{EG}|`$
-relative to enacted on 14 of 20 (sign test against equal-performance
-null: $`p = 0.058`$ one-tailed, $`0.115`$ two-tailed), and the largest
-reductions are on the most-litigated maps
-(Figure <a href="#fig:headline-eg" data-reference-type="ref"
-data-reference="fig:headline-eg">1</a>).
+evidence of *intent* do not. The cross-state EG results are in
+§<a href="#sec:results" data-reference-type="ref"
+data-reference="sec:results">3</a>; the legal point is that the same
+number carries different inferential weight depending on whether a human
+drew the map.
 
 A note on the DualBalance Score comparison: Phase 2 of the optimizer
 directly hill-climbs DBS, so the observation that DualBalance scores
