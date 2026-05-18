@@ -21,25 +21,32 @@ single deterministic rule can satisfy all three at once.
 \subsection{The Legal Landscape}
 \label{sec:intro-legal}
 
-The federal courts have largely withdrawn from gerrymandering review.
-In \textit{Rucho v.~Common Cause}~\cite{rucho2019}, the Supreme Court
-held 5--4 that partisan-gerrymandering claims present nonjusticiable
-political questions; the Court conceded the practice is
-``incompatible with democratic principles'' but found no manageable
-judicial standard. After \textit{Rucho}, the only federal channel for
-gerrymandering review is racial. That channel has since narrowed.
-Section~2 of the Voting Rights Act, as construed in
-\textit{Thornburg v.~Gingles}~\cite{gingles1986}, requires
-majority-minority districts where the three \textit{Gingles} preconditions are
-met. The Court reaffirmed this in \textit{Allen v.~Milligan}~\cite{milligan2023}.
-One year later, \textit{Alexander v.~South Carolina Conf.~of the
-NAACP}~\cite{alexander2024} raised plaintiffs' evidentiary burden;
-\textit{Louisiana v.~Callais}~\cite{callais2026} held in April 2026
-that even a plan drawn to comply with a prior Section~2 order may
-violate the Equal Protection Clause if Section~2 did not in fact
-compel a race-based remedy. Together, \textit{Alexander} and
-\textit{Callais} leave race-conscious line-drawing in a narrower window
-of constitutional safety than at any point since the VRA's adoption.
+The federal courts have largely withdrawn from gerrymandering review,
+in two stages. Section~2 of the Voting Rights Act, as construed in
+\textit{Thornburg v.~Gingles}~\cite{gingles1986}, established the
+primary federal channel for challenging discriminatory maps: where a
+minority community is sufficiently large and compact, politically
+cohesive, and subject to majority bloc voting, majority-minority
+districts are required. For decades, that racial channel coexisted
+with the possibility of partisan-gerrymandering claims. In
+\textit{Rucho v.~Common Cause}~\cite{rucho2019}, the Supreme Court
+closed the partisan channel entirely, holding 5--4 that such claims
+present nonjusticiable political questions; the Court conceded the
+practice is ``incompatible with democratic principles'' but found no
+manageable judicial standard. After \textit{Rucho}, the \textit{Gingles}
+framework remained the only federal route for gerrymandering review.
+That channel has since narrowed as well. \textit{Allen
+v.~Milligan}~\cite{milligan2023} reaffirmed in 2023 that Section~2
+requires majority-minority districts where the \textit{Gingles}
+preconditions are met. One year later, \textit{Alexander
+v.~South Carolina Conf.~of the NAACP}~\cite{alexander2024} raised
+plaintiffs' evidentiary burden; \textit{Louisiana
+v.~Callais}~\cite{callais2026} held in April 2026 that even a plan
+drawn to comply with a prior Section~2 order may violate the Equal
+Protection Clause if Section~2 did not in fact compel a race-based
+remedy. Together, \textit{Alexander} and \textit{Callais} leave
+race-conscious line-drawing in a narrower window of constitutional
+safety than at any point since the VRA's adoption.
 
 State constitutional review under \textit{Moore v.~Harper}~\cite{moore2023}
 remains available but is uneven and politically contingent: roughly
@@ -79,42 +86,71 @@ congressional districts must hold roughly equal shares of people,
 and for sixty years that has been the only legally required design
 criterion.
 
-This paper proposes adding a second: geographic land area, weighted
-equally with population. That is a radical departure. It implies
-that a congressional district should represent not just a people-share
-of the state but a land-share as well, a claim that has no precedent
-in redistricting law and will strike many readers as wrong on its
-face. The standard objection is straightforward: land does not vote.
-Giving area co-equal status with population arguably revives a
-geographic weighting of representation that \textit{Reynolds
-v.~Sims}~\cite{reynolds1964} abolished in state legislative
-apportionment.
+This paper proposes adding a second criterion: each district should
+also carry roughly $1/N$ of the state's geographic area. That is a
+radical departure from current law, and the motivation requires care.
+The argument is not that land votes. It is that when districts
+optimize only for population, they naturally cluster within the
+state's densest areas. In a heavily urbanized state, all districts
+can plausibly sit inside a handful of metropolitan counties, producing
+representatives who have no rural or exurban constituents and no
+practical reason to engage with them. The rural population becomes
+an afterthought of every district rather than the primary concern of
+any. Requiring each district to also carry a share of the state's
+geographic extent forces every district to span the full density
+gradient, from urban core to rural boundary, so that every
+representative is accountable to both. The question is not whether
+land votes; it is whether rural and urban populations alike deserve
+representatives who must engage with both.
 
-We take that objection seriously. The case for investigating the
-criterion rests on three observations. First, the constitutional
-structure has never treated population as the only legitimate
-dimension of representation. The Senate apportions by sovereign state
-regardless of population (Art.~I, \S3); the Electoral College blends
-a population-proportional component with a geographic floor across
-states (Art.~II, \S1); Madison's defense in \emph{Federalist}
-Nos.~54--58~\cite{federalist54} frames bicameralism as a principled
-refusal to collapse representation onto a single dimension. Second,
-a district drawn only on population can concentrate entirely within
-a single metropolitan area, producing a representative with no
-practical engagement with rural or exurban constituents, and vice
-versa. Third, equal-area balance is a \emph{pre-committed} design
-choice: fixed before any state's data are examined, it cannot be
-applied selectively to favor one geography over another in a given
-cycle, which is precisely what makes it different from the geographic
-manipulation it is designed to displace.
+The need is empirically grounded. American voters have increasingly
+sorted geographically by political values, clustering with others
+who share their outlook in ways that have intensified over the past
+generation~\cite{bishop2008}. Urban and rural communities differ
+systematically not only in partisan affiliation but in underlying
+policy priorities: land use, infrastructure, the role of government
+services, and the relationship between local economies and federal
+policy are experienced very differently at different population
+densities~\cite{rodden2019}. When districts are drawn to contain
+only one type of community, representatives have no electoral
+incentive to engage with the other. The geographic concentration of
+urban voters in particular has produced structural partisan
+asymmetries that persist regardless of statewide vote
+totals~\cite{chenrodden2013}. A district drawn to span both
+environments does not eliminate these differences, but it does
+require the representative to be accountable to constituents who
+hold them.
 
-None of this resolves the normative question. The claim that land
-deserves representational standing alongside people is genuinely
-radical, and we are not asserting it as settled. We adopt it as a
-working assumption, test whether a rule built on it is technically
-achievable and legally characterizable, and report honestly what it
-produces. Whether it should be adopted is a question for legislatures
-and voters to answer.
+That framing does not resolve every objection. The one-person-one-vote
+principle is satisfied by \textit{Karcher} compliance: every district
+holds an equal share of the population, and every person's vote
+carries identical population weight. Area balance is layered on top
+of that constraint, not in place of it. The more precise objection
+is normative rather than constitutional: adding geographic area as a
+second criterion encodes a preference for distributing districts
+across the density landscape, which gives communities spread across
+large areas a structural feature that dense communities do not share.
+Whether that is a desirable feature of a representative system, or
+an unjustified advantage for lower-density communities, is a
+question this paper does not resolve.
+
+The case for investigating it rests on three observations. First,
+the constitutional structure has never treated population as the
+only legitimate dimension of representation: the Senate apportions
+by state regardless of population (Art.~I, \S3); Madison's defense
+in \emph{Federalist} Nos.~54--58~\cite{federalist54} frames
+bicameralism as a principled refusal to collapse representation onto
+a single dimension. Second, a district that must span the full
+density gradient cannot be deliberately packed into or cracked across
+a single demographic community, which limits the geographic levers
+available to a line-drawer. Third, the equal-area criterion is
+\emph{pre-committed}: fixed before any state's data are examined,
+it cannot be tuned to favor one community over another in a given cycle.
+
+We adopt this as a working assumption, test whether a rule built on
+it is technically achievable and legally characterizable, and report
+honestly what it produces. Whether it should be adopted is a question
+for legislatures and voters to answer.
 
 A typical U.S. state varies by two to three orders of magnitude
 between its densest census tract and its sparsest rural block. Equal

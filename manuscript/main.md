@@ -65,25 +65,31 @@ whether a single deterministic rule can satisfy all three at once.
 
 ## The Legal Landscape
 
-The federal courts have largely withdrawn from gerrymandering review. In
-*Rucho v. Common Cause* (Supreme Court of the United States 2019), the
-Supreme Court held 5–4 that partisan-gerrymandering claims present
-nonjusticiable political questions; the Court conceded the practice is
-“incompatible with democratic principles” but found no manageable
-judicial standard. After *Rucho*, the only federal channel for
-gerrymandering review is racial. That channel has since narrowed.
-Section 2 of the Voting Rights Act, as construed in *Thornburg
-v. Gingles* (Supreme Court of the United States 1986), requires
-majority-minority districts where the three *Gingles* preconditions are
-met. The Court reaffirmed this in *Allen v. Milligan* (Supreme Court of
-the United States 2023a). One year later, *Alexander v. South Carolina
-Conf. of the NAACP* (Supreme Court of the United States 2024) raised
-plaintiffs’ evidentiary burden; *Louisiana v. Callais* (Supreme Court of
-the United States 2026) held in April 2026 that even a plan drawn to
-comply with a prior Section 2 order may violate the Equal Protection
-Clause if Section 2 did not in fact compel a race-based remedy.
-Together, *Alexander* and *Callais* leave race-conscious line-drawing in
-a narrower window of constitutional safety than at any point since the
+The federal courts have largely withdrawn from gerrymandering review, in
+two stages. Section 2 of the Voting Rights Act, as construed in
+*Thornburg v. Gingles* (Supreme Court of the United States 1986),
+established the primary federal channel for challenging discriminatory
+maps: where a minority community is sufficiently large and compact,
+politically cohesive, and subject to majority bloc voting,
+majority-minority districts are required. For decades, that racial
+channel coexisted with the possibility of partisan-gerrymandering
+claims. In *Rucho v. Common Cause* (Supreme Court of the United States
+2019), the Supreme Court closed the partisan channel entirely, holding
+5–4 that such claims present nonjusticiable political questions; the
+Court conceded the practice is “incompatible with democratic principles”
+but found no manageable judicial standard. After *Rucho*, the *Gingles*
+framework remained the only federal route for gerrymandering review.
+That channel has since narrowed as well. *Allen v. Milligan* (Supreme
+Court of the United States 2023a) reaffirmed in 2023 that Section 2
+requires majority-minority districts where the *Gingles* preconditions
+are met. One year later, *Alexander v. South Carolina Conf. of the
+NAACP* (Supreme Court of the United States 2024) raised plaintiffs’
+evidentiary burden; *Louisiana v. Callais* (Supreme Court of the United
+States 2026) held in April 2026 that even a plan drawn to comply with a
+prior Section 2 order may violate the Equal Protection Clause if
+Section 2 did not in fact compel a race-based remedy. Together,
+*Alexander* and *Callais* leave race-conscious line-drawing in a
+narrower window of constitutional safety than at any point since the
 VRA’s adoption.
 
 State constitutional review under *Moore v. Harper* (Supreme Court of
@@ -118,44 +124,71 @@ If geography is the instrument of manipulation, it can also be the basis
 of a principled rule. Any procedural alternative must choose, explicitly
 and in advance, what a district is *for*. Current law answers with a
 single quantity: population. *Wesberry v. Sanders* (Supreme Court of the
-United States 1964b) established that congressional districts must hold
+United States 1964) established that congressional districts must hold
 roughly equal shares of people, and for sixty years that has been the
 only legally required design criterion.
 
-This paper proposes adding a second: geographic land area, weighted
-equally with population. That is a radical departure. It implies that a
-congressional district should represent not just a people-share of the
-state but a land-share as well, a claim that has no precedent in
-redistricting law and will strike many readers as wrong on its face. The
-standard objection is straightforward: land does not vote. Giving area
-co-equal status with population arguably revives a geographic weighting
-of representation that *Reynolds v. Sims* (Supreme Court of the United
-States 1964a) abolished in state legislative apportionment.
+This paper proposes adding a second criterion: each district should also
+carry roughly $`1/N`$ of the state’s geographic area. That is a radical
+departure from current law, and the motivation requires care. The
+argument is not that land votes. It is that when districts optimize only
+for population, they naturally cluster within the state’s densest areas.
+In a heavily urbanized state, all districts can plausibly sit inside a
+handful of metropolitan counties, producing representatives who have no
+rural or exurban constituents and no practical reason to engage with
+them. The rural population becomes an afterthought of every district
+rather than the primary concern of any. Requiring each district to also
+carry a share of the state’s geographic extent forces every district to
+span the full density gradient, from urban core to rural boundary, so
+that every representative is accountable to both. The question is not
+whether land votes; it is whether rural and urban populations alike
+deserve representatives who must engage with both.
 
-We take that objection seriously. The case for investigating the
-criterion rests on three observations. First, the constitutional
-structure has never treated population as the only legitimate dimension
-of representation. The Senate apportions by sovereign state regardless
-of population (Art. I, §3); the Electoral College blends a
-population-proportional component with a geographic floor across states
-(Art. II, §1); Madison’s defense in *Federalist* Nos. 54–58 (Madison
-1788) frames bicameralism as a principled refusal to collapse
-representation onto a single dimension. Second, a district drawn only on
-population can concentrate entirely within a single metropolitan area,
-producing a representative with no practical engagement with rural or
-exurban constituents, and vice versa. Third, equal-area balance is a
-*pre-committed* design choice: fixed before any state’s data are
-examined, it cannot be applied selectively to favor one geography over
-another in a given cycle, which is precisely what makes it different
-from the geographic manipulation it is designed to displace.
+The need is empirically grounded. American voters have increasingly
+sorted geographically by political values, clustering with others who
+share their outlook in ways that have intensified over the past
+generation (Bishop 2008). Urban and rural communities differ
+systematically not only in partisan affiliation but in underlying policy
+priorities: land use, infrastructure, the role of government services,
+and the relationship between local economies and federal policy are
+experienced very differently at different population densities (Rodden
+2019). When districts are drawn to contain only one type of community,
+representatives have no electoral incentive to engage with the other.
+The geographic concentration of urban voters in particular has produced
+structural partisan asymmetries that persist regardless of statewide
+vote totals (Chen and Rodden 2013). A district drawn to span both
+environments does not eliminate these differences, but it does require
+the representative to be accountable to constituents who hold them.
 
-None of this resolves the normative question. The claim that land
-deserves representational standing alongside people is genuinely
-radical, and we are not asserting it as settled. We adopt it as a
-working assumption, test whether a rule built on it is technically
-achievable and legally characterizable, and report honestly what it
-produces. Whether it should be adopted is a question for legislatures
-and voters to answer.
+That framing does not resolve every objection. The one-person-one-vote
+principle is satisfied by *Karcher* compliance: every district holds an
+equal share of the population, and every person’s vote carries identical
+population weight. Area balance is layered on top of that constraint,
+not in place of it. The more precise objection is normative rather than
+constitutional: adding geographic area as a second criterion encodes a
+preference for distributing districts across the density landscape,
+which gives communities spread across large areas a structural feature
+that dense communities do not share. Whether that is a desirable feature
+of a representative system, or an unjustified advantage for
+lower-density communities, is a question this paper does not resolve.
+
+The case for investigating it rests on three observations. First, the
+constitutional structure has never treated population as the only
+legitimate dimension of representation: the Senate apportions by state
+regardless of population (Art. I, §3); Madison’s defense in *Federalist*
+Nos. 54–58 (Madison 1788) frames bicameralism as a principled refusal to
+collapse representation onto a single dimension. Second, a district that
+must span the full density gradient cannot be deliberately packed into
+or cracked across a single demographic community, which limits the
+geographic levers available to a line-drawer. Third, the equal-area
+criterion is *pre-committed*: fixed before any state’s data are
+examined, it cannot be tuned to favor one community over another in a
+given cycle.
+
+We adopt this as a working assumption, test whether a rule built on it
+is technically achievable and legally characterizable, and report
+honestly what it produces. Whether it should be adopted is a question
+for legislatures and voters to answer.
 
 A typical U.S. state varies by two to three orders of magnitude between
 its densest census tract and its sparsest rural block. Equal population,
@@ -184,7 +217,7 @@ a district *should* look like, and is used as the objective of the
 line-drawing procedure rather than as evidence about the procedure.
 Population balance is the only generative criterion U.S. redistricting
 law currently uses: *Wesberry v. Sanders* (Supreme Court of the United
-States 1964b) and its congressional-district elaboration in *Karcher
+States 1964) and its congressional-district elaboration in *Karcher
 v. Daggett* (Supreme Court of the United States 1983) require that each
 congressional district hold as nearly equal a share of the population as
 practicable. Every other criterion (compactness, communities of
@@ -542,7 +575,7 @@ data-reference="tab:multistate-dbs">1</a>).
 The radial pipeline produces per-district pop deviation in the 5–15%
 range on real census geometry, far above the strict equality standard
 required for congressional districts under *Wesberry
-v. Sanders* (Supreme Court of the United States 1964b) and *Karcher
+v. Sanders* (Supreme Court of the United States 1964) and *Karcher
 v. Daggett* (Supreme Court of the United States 1983). A deterministic
 two-phase local search of boundary-unit moves closes this gap; all
 results reported in this paper use this pass. Let
@@ -1719,75 +1752,78 @@ multi-state baseline — and is not benchmarked here.
 
 ## Limitations
 
-#### VTD data availability.
-
+Three boundaries on the current analysis should be kept in mind.
 California, Hawaii, and Oregon did not submit VTD data to the Census
-Bureau for the 2020 redistricting cycle and are excluded from all tables
-and figures ($`\dagger`$). Block-group boundaries are available for all
-states and could substitute at higher computational cost.
+Bureau for the 2020 redistricting cycle and are excluded throughout;
+their omission leaves approximately 60 House seats unscored, and
+block-group boundaries could substitute at higher computational cost in
+future work.
 
-#### Peninsula and polycentric geometries.
+More consequential is the failure of single-center radial seeding on
+states whose population is distributed across multiple distinct centers
+or extended peninsulas. Florida, with a maximum population deviation of
+$`44.2\,\%`$ at VTD scale, is the clearest case in the validation set,
+but New York ($`13.3\,\%`$) and West Virginia ($`10.4\,\%`$) reflect the
+same structural problem from different geometries. The block-scale
+refinement pass recovers area balance within a narrow Reynolds envelope
+but cannot compensate for a seed geometry that fundamentally mismatches
+the state’s population distribution. These three states represent not a
+failure of optimization but a design boundary: single-center seeding is
+the wrong model for polycentric geographies, and the fix requires a
+different seeding strategy rather than a more aggressive optimizer.
 
-Single-center radial seeding fails in states whose geometry places large
-populations far from any single centroid. Florida
-($`\mathrm{pop\_dev\_max}
-= 44.2\,\%`$ at VTD scale) is the clearest case in the validation set.
-The block-scale refinement pass
-(§<a href="#sec:methods-block" data-reference-type="ref"
-data-reference="sec:methods-block">2.8</a>) reduces this gap;
-multi-center seeding is the structural fix
-(§<a href="#sec:future-work" data-reference-type="ref"
-data-reference="sec:future-work">4.6</a>).
+Finally, the cross-state median Polsby-Popper for DualBalance (0.115) is
+substantially below the enacted median (0.281). As discussed in
+§<a href="#sec:discussion-compactness" data-reference-type="ref"
+data-reference="sec:discussion-compactness">4.3</a>, this is a
+structural consequence of spanning the density gradient rather than a
+defect in execution. In jurisdictions where state constitutions impose
+compactness as a standalone requirement, however, it represents a
+practical ceiling on adoptability that cannot be argued away by noting
+the absence of manipulative intent.
 
-#### Compactness floor.
+## Open questions
 
-The cross-state median Polsby-Popper for DualBalance (0.115) is
-substantially below the enacted median (0.281). Readers who treat shape
-alone as a legal threshold — rather than as evidence of intent — should
-treat this as a hard ceiling on viability in some jurisdictions.
+Several extensions would materially strengthen the case for or against
+adoption.
 
-#### Single-unit optimizer.
+The most important is multi-center radial seeding: placing seeds on
+circles around each of $`k`$ deterministically chosen population centers
+rather than a single centroid. This is the structural fix for peninsula
+and polycentric states and would bring Florida, New York, and the other
+geometric failure cases within the *Karcher* envelope. The challenge is
+choosing the $`k`$ centers deterministically and without any political
+input, a problem with multiple defensible solutions (population-weighted
+$`k`$-means initialized from a fixed seed, for instance) but no obvious
+unique answer.
 
-The `--tighten-pop` pass is a greedy single-unit boundary swap. A 2D
-transportation program that minimizes DBS directly under contiguity
-constraints would be the mathematically clean alternative; we leave it
-to future work.
-
-## Future work
-
-#### Multi-center radial seeding.
-
-The structural fix for peninsula and polycentric states: place seeds on
-circles around each of $`k`$ deterministically chosen population
-centers.
-
-#### Principled rotation-selection rule.
-
-The rotation sensitivity analysis in
-§<a href="#sec:results-rotation" data-reference-type="ref"
+Rotation sensitivity has been measured here but not resolved. The
+analysis in §<a href="#sec:results-rotation" data-reference-type="ref"
 data-reference="sec:results-rotation">3.1</a> shows that the due-east
-anchor produces seat-count swings of 1–3 seats in 26 of 41 states.
-Formalizing a pre-committed rotation-selection rule (e.g., the anchor
-minimizing $`|\mathrm{EG}|`$ on the most recent composite election,
-chosen before any redistricting cycle begins) would close this remaining
-degree of freedom and strengthen the neutrality argument.
+anchor is one draw from a distribution with material consequences for
+seat counts in 26 of 41 states. A pre-committed rotation-selection rule,
+such as the anchor that minimizes $`|\mathrm{EG}|`$ on the most recent
+available composite election, chosen before the redistricting cycle
+begins, would close this remaining degree of freedom. Whether that rule
+should be uniform across states or state-specific, and whether
+minimizing EG is the right criterion for a procedure that otherwise
+reads no political data, are design questions that require deliberation
+beyond this paper.
 
-#### Block-scale completion.
+The 12 convergence-gap states that cleared the *Reynolds* envelope at
+VTD scale but not the *Karcher* threshold are in principle solvable
+within the current architecture through full block-scale refinement;
+completing that pipeline for all 12 would confirm whether the gap is
+algorithmic or structural.
 
-Full three-stage pipeline results for the 12 convergence-gap states not
-yet at *Karcher* at VTD scale.
-
-#### Direct 2D transportation.
-
-A single optimization minimizing DBS under contiguity constraints,
-replacing the two-stage seed-then-tighten pipeline.
-
-#### Additional partisan symmetry metrics.
-
-Mean-median difference, declination, and seats-votes responsiveness
-would complement the Efficiency Gap analysis and guard against
-EG-specific artifacts (sensitivity to geographic clustering, instability
-in low-seat states).
+On the measurement side, the Efficiency Gap is the most widely litigated
+partisan fairness metric but not the only informative one. Mean-median
+difference, declination, and seats-votes responsiveness each capture
+different aspects of partisan symmetry and are less sensitive to the
+geographic clustering artifacts that affect EG in states with highly
+concentrated partisan populations. Adding these to the evaluation would
+give a more complete picture of what DualBalance’s apolitical geometry
+produces in practice.
 
 ## What this paper claims, and what it does not
 
@@ -1871,6 +1907,27 @@ questions that go beyond this paper. But the evidence presented here
 suggests that the technical barrier is not the binding constraint; the
 binding constraint is the political will to adopt a rule that neither
 party can tune to its own advantage.
+
+A less examined implication concerns the quality of representation
+itself. Geographic sorting has produced districts that are increasingly
+homogeneous in political values, enabling representatives to win and
+govern by responding exclusively to one constituency type, urban or
+rural, with no electoral need to bridge the other (Bishop 2008; Rodden
+2019). The result is a structural reinforcement of echo-chamber
+politics: urban representatives hear only urban concerns; rural
+representatives hear only rural concerns; and the policy positions that
+emerge from each reflect only one slice of the state’s actual value
+diversity. DualBalance districts, by construction, span the full density
+gradient, placing urban cores and rural hinterlands within the same
+district. A representative who cannot rely on a single homogeneous base
+faces electoral incentives to engage with a broader range of values and
+to seek positions that can attract support across the divide. This does
+not guarantee moderation or eliminate polarization, but it does remove a
+structural feature of current districting that sustains it. Whether
+spanning the density gradient in this way produces better
+representation, or merely more complicated campaigns, is an empirical
+question this paper cannot answer but that the design was built to
+invite.
 
 # Supplementary Tables
 
@@ -2350,6 +2407,13 @@ style="text-align: left;"><span>3-4</span>(lr)<span>5-6</span>(lr)<span>7-8</spa
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 
+<div id="ref-bishop2008" class="csl-entry">
+
+Bishop, Bill. 2008. *The Big Sort: Why the Clustering of Like-Minded
+America Is Tearing Us Apart*. Houghton Mifflin.
+
+</div>
+
 <div id="ref-chenrodden2013" class="csl-entry">
 
 Chen, Jowei, and Jonathan Rodden. 2013. “Unintentional Gerrymandering:
@@ -2443,6 +2507,13 @@ of Legislative Apportionment.” *Midwest Journal of Political Science* 5:
 
 </div>
 
+<div id="ref-rodden2019" class="csl-entry">
+
+Rodden, Jonathan A. 2019. *Why Cities Lose: The Deep Roots of the
+Urban-Rural Political Divide*. Basic Books.
+
+</div>
+
 <div id="ref-smithsplit" class="csl-entry">
 
 Smith, Warren D. 2007. *The Shortest Splitline Algorithm for Political
@@ -2459,16 +2530,9 @@ Review* 82: 831–900.
 
 </div>
 
-<div id="ref-reynolds1964" class="csl-entry">
-
-Supreme Court of the United States. 1964a. *Reynolds v. Sims*. 377 U.S.
-533.
-
-</div>
-
 <div id="ref-wesberry1964" class="csl-entry">
 
-Supreme Court of the United States. 1964b. *Wesberry v. Sanders*. 376
+Supreme Court of the United States. 1964. *Wesberry v. Sanders*. 376
 U.S. 1.
 
 </div>

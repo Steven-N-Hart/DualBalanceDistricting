@@ -185,59 +185,78 @@ a deployed multi-state baseline --- and is not benchmarked here.
 \subsection{Limitations}
 \label{sec:discussion-limitations}
 
-\paragraph{VTD data availability.} California, Hawaii, and Oregon
-did not submit VTD data to the Census Bureau for the 2020
-redistricting cycle and are excluded from all tables and figures
-($\dagger$). Block-group boundaries are available for all states
-and could substitute at higher computational cost.
+Three boundaries on the current analysis should be kept in mind.
+California, Hawaii, and Oregon did not submit VTD data to the Census
+Bureau for the 2020 redistricting cycle and are excluded throughout;
+their omission leaves approximately 60 House seats unscored, and
+block-group boundaries could substitute at higher computational cost
+in future work.
 
-\paragraph{Peninsula and polycentric geometries.} Single-center
-radial seeding fails in states whose geometry places large
-populations far from any single centroid. Florida ($\mathrm{pop\_dev\_max}
-= 44.2\,\%$ at VTD scale) is the clearest case in the validation set.
-The block-scale refinement pass (\S\ref{sec:methods-block}) reduces
-this gap; multi-center seeding is the structural fix
-(\S\ref{sec:future-work}).
+More consequential is the failure of single-center radial seeding
+on states whose population is distributed across multiple distinct
+centers or extended peninsulas. Florida, with a maximum population
+deviation of $44.2\,\%$ at VTD scale, is the clearest case in the
+validation set, but New York ($13.3\,\%$) and West Virginia
+($10.4\,\%$) reflect the same structural problem from different
+geometries. The block-scale refinement pass recovers area balance
+within a narrow Reynolds envelope but cannot compensate for a
+seed geometry that fundamentally mismatches the state's population
+distribution. These three states represent not a failure of
+optimization but a design boundary: single-center seeding is the
+wrong model for polycentric geographies, and the fix requires a
+different seeding strategy rather than a more aggressive optimizer.
 
-\paragraph{Compactness floor.} The cross-state median Polsby-Popper
-for DualBalance (0.115) is substantially below the enacted median (0.281).
-Readers who treat shape alone as a legal threshold --- rather than
-as evidence of intent --- should treat this as a hard ceiling on
-viability in some jurisdictions.
+Finally, the cross-state median Polsby-Popper for DualBalance
+(0.115) is substantially below the enacted median (0.281). As
+discussed in \S\ref{sec:discussion-compactness}, this is a
+structural consequence of spanning the density gradient rather than
+a defect in execution. In jurisdictions where state constitutions
+impose compactness as a standalone requirement, however, it
+represents a practical ceiling on adoptability that cannot be
+argued away by noting the absence of manipulative intent.
 
-\paragraph{Single-unit optimizer.} The \texttt{--tighten-pop} pass
-is a greedy single-unit boundary swap. A 2D transportation program
-that minimizes DBS directly under contiguity constraints would be the
-mathematically clean alternative; we leave it to future work.
-
-\subsection{Future work}
+\subsection{Open questions}
 \label{sec:future-work}
 
-\paragraph{Multi-center radial seeding.} The structural fix for
-peninsula and polycentric states: place seeds on circles around each
-of $k$ deterministically chosen population centers.
+Several extensions would materially strengthen the case for or
+against adoption.
 
-\paragraph{Principled rotation-selection rule.} The rotation
-sensitivity analysis in \S\ref{sec:results-rotation} shows that
-the due-east anchor produces seat-count swings of 1--3 seats in 26
-of 41 states. Formalizing a pre-committed rotation-selection rule
-(e.g., the anchor minimizing $|\mathrm{EG}|$ on the most recent
-composite election, chosen before any redistricting cycle begins)
-would close this remaining degree of freedom and strengthen the
-neutrality argument.
+The most important is multi-center radial seeding: placing seeds on
+circles around each of $k$ deterministically chosen population
+centers rather than a single centroid. This is the structural fix
+for peninsula and polycentric states and would bring Florida, New
+York, and the other geometric failure cases within the \textit{Karcher}
+envelope. The challenge is choosing the $k$ centers deterministically
+and without any political input, a problem with multiple defensible
+solutions (population-weighted $k$-means initialized from a fixed
+seed, for instance) but no obvious unique answer.
 
-\paragraph{Block-scale completion.} Full three-stage pipeline results
-for the 12 convergence-gap states not yet at \textit{Karcher} at VTD scale.
+Rotation sensitivity has been measured here but not resolved. The
+analysis in \S\ref{sec:results-rotation} shows that the due-east
+anchor is one draw from a distribution with material consequences
+for seat counts in 26 of 41 states. A pre-committed rotation-selection
+rule, such as the anchor that minimizes $|\mathrm{EG}|$ on the most
+recent available composite election, chosen before the redistricting
+cycle begins, would close this remaining degree of freedom. Whether
+that rule should be uniform across states or state-specific, and
+whether minimizing EG is the right criterion for a procedure that
+otherwise reads no political data, are design questions that require
+deliberation beyond this paper.
 
-\paragraph{Direct 2D transportation.} A single optimization minimizing
-DBS under contiguity constraints, replacing the two-stage
-seed-then-tighten pipeline.
+The 12 convergence-gap states that cleared the \textit{Reynolds}
+envelope at VTD scale but not the \textit{Karcher} threshold are
+in principle solvable within the current architecture through
+full block-scale refinement; completing that pipeline for all 12
+would confirm whether the gap is algorithmic or structural.
 
-\paragraph{Additional partisan symmetry metrics.} Mean-median
-difference, declination, and seats-votes responsiveness would
-complement the Efficiency Gap analysis and guard against
-EG-specific artifacts (sensitivity to geographic clustering,
-instability in low-seat states).
+On the measurement side, the Efficiency Gap is the most widely
+litigated partisan fairness metric but not the only informative
+one. Mean-median difference, declination, and seats-votes
+responsiveness each capture different aspects of partisan symmetry
+and are less sensitive to the geographic clustering artifacts that
+affect EG in states with highly concentrated partisan populations.
+Adding these to the evaluation would give a more complete picture
+of what DualBalance's apolitical geometry produces in practice.
 
 \subsection{What this paper claims, and what it does not}
 
@@ -323,3 +342,25 @@ this paper. But the evidence presented here suggests that the
 technical barrier is not the binding constraint; the binding
 constraint is the political will to adopt a rule that neither party
 can tune to its own advantage.
+
+A less examined implication concerns the quality of representation
+itself. Geographic sorting has produced districts that are
+increasingly homogeneous in political values, enabling
+representatives to win and govern by responding exclusively to one
+constituency type, urban or rural, with no electoral need to
+bridge the other~\cite{bishop2008,rodden2019}. The result is a
+structural reinforcement of echo-chamber politics: urban
+representatives hear only urban concerns; rural representatives
+hear only rural concerns; and the policy positions that emerge
+from each reflect only one slice of the state's actual value
+diversity. DualBalance districts, by construction, span the full
+density gradient, placing urban cores and rural hinterlands within
+the same district. A representative who cannot rely on a single
+homogeneous base faces electoral incentives to engage with a
+broader range of values and to seek positions that can attract
+support across the divide. This does not guarantee moderation or
+eliminate polarization, but it does remove a structural feature of
+current districting that sustains it. Whether spanning the density
+gradient in this way produces better representation, or merely more
+complicated campaigns, is an empirical question this paper cannot
+answer but that the design was built to invite.
