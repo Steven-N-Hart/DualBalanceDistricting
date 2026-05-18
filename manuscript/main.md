@@ -1644,9 +1644,9 @@ line-drawer departed from neutral (Pildes 2004). Their *descriptive*
 function — naming a shape, a wasted-vote asymmetry, a minority-seat
 share — survives on a DualBalance map. Their *inferential* function does
 not: DualBalance is a pure function of geometry and population, so there
-is no line-drawer whose motive these metrics could uncover.
-
-Three practical consequences follow.
+is no line-drawer whose motive these metrics could uncover. Three
+practical consequences follow: Shape vs. intent, effects vs. choices,
+and the loss of the ensemble baseline.
 
 #### Shape is not evidence of intent.
 
@@ -1702,7 +1702,8 @@ single density regime (producing area imbalance). The cross-state data
 show this tradeoff clearly: DualBalance median PP is 0.115 versus
 enacted 0.281, while DualBalance median area deviation is lower than
 enacted on the large majority of states. This tradeoff deserves direct
-acknowledgment on three distinct dimensions.
+acknowledgment on three distinct dimensions, namely, practical costs,
+federal legal exposure, and state constitutional mandates.
 
 #### Practical costs.
 
@@ -1787,10 +1788,6 @@ and is middle-of-the-road on DBS because area balance is not part of its
 objective. Both algorithms reduce $`|\mathrm{EG}|`$ relative to enacted
 plans for the same structural reason DualBalance does: none of them read
 political data.
-
-Shortest Splitline (Smith 2007) is included for structural completeness
-— it is a proof of deterministic feasibility without a deployed
-multi-state baseline — and is not benchmarked here.
 
 ## Limitations
 
@@ -1928,25 +1925,25 @@ The comparisons in this paper also require careful interpretation. The
 Efficiency Gap comparison pits DualBalance against enacted plans, many
 of which were deliberately optimized for partisan advantage. Any
 apolitical rule, whether radial seeding, random assignment, or shortest
-splitline, would tend to produce lower partisan asymmetry than an
-intentionally gerrymandered map. The EG reduction reported here does not
-distinguish DualBalance from other apolitical approaches, and the effect
-does not clear conventional significance thresholds ($`p = 0.058`$). The
-DBS comparison is self-referential: DualBalance is designed to maximize
-DBS, so outperforming enacted plans on that metric is an expected
-consequence of the objective function, not evidence of broader
-representational superiority. The *Karcher* count of 28/40 reflects the
-completed pipeline: all 40 states were carried through full block-scale
-refinement, and 28 verified compliance. The nine structural-failure
-states are a known ceiling of the current algorithm under the greedy
-single-unit optimizer; they are not pipeline-completion gaps. Cascade’s
-0/40 *Karcher* result reflects a mathematical impossibility at county
-granularity, not a failure relative to DualBalance’s approach. What this
-paper does not provide, and what would be needed to establish genuine
-superiority, is a comparison against other apolitical methods evaluated
-under a consistent pipeline: commission-drawn plans, ensemble medians,
-or alternative deterministic generators run to the same block-scale
-completion.
+splitline (Smith 2007), would tend to produce lower partisan asymmetry
+than an intentionally gerrymandered map. The EG reduction reported here
+does not distinguish DualBalance from other apolitical approaches, and
+the effect does not clear conventional significance thresholds
+($`p = 0.058`$). The DBS comparison is self-referential: DualBalance is
+designed to maximize DBS, so outperforming enacted plans on that metric
+is an expected consequence of the objective function, not evidence of
+broader representational superiority. The *Karcher* count of 28/40
+reflects the completed pipeline: all 40 states were carried through full
+block-scale refinement, and 28 verified compliance. The nine
+structural-failure states are a known ceiling of the current algorithm
+under the greedy single-unit optimizer; they are not pipeline-completion
+gaps. Cascade’s 0/40 *Karcher* result reflects a mathematical
+impossibility at county granularity, not a failure relative to
+DualBalance’s approach. What this paper does not provide, and what would
+be needed to establish genuine superiority, is a comparison against
+other apolitical methods evaluated under a consistent pipeline:
+commission-drawn plans, ensemble medians, or alternative deterministic
+generators run to the same block-scale completion.
 
 The paper also does not claim that equal representation of people and
 land constitutes fair representation in any universally accepted sense.
