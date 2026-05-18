@@ -66,7 +66,12 @@ def _cmd_generate(args: argparse.Namespace, defaults: dict[str, Any]) -> int:
         county_column=args.county_column,
         extra_columns=args.extra_columns,
     )
-    plan = generate_plan(units, args.districts, geography=geography.cli_name)
+    plan = generate_plan(
+        units,
+        args.districts,
+        geography=geography.cli_name,
+        seed_method=args.seed_method,
+    )
     if args.tighten_pop:
         plan = tighten_population(plan, units, pop_tolerance=args.pop_tolerance)
     metrics = score_plan(plan, units)
@@ -253,6 +258,18 @@ def build_parser() -> tuple[argparse.ArgumentParser, dict[str, dict[str, Any]]]:
         help=argparse.SUPPRESS,
     )
     generate.add_argument("--out", type=Path, help="Output directory.")
+    generate.add_argument(
+        "--seed-method",
+        dest="seed_method",
+        default="radial",
+        choices=["radial", "angular-quantile", "hilbert", "recursive-bisection"],
+        help=(
+            "Seed placement strategy (default: radial). "
+            "'radial': equally-spaced angles 2π·d/N. "
+            "'angular-quantile': angles that divide the cumulative angular "
+            "population into N equal slices, compressing seeds into dense sectors."
+        ),
+    )
     generate.add_argument(
         "--tighten-pop",
         dest="tighten_pop",

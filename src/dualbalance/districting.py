@@ -26,7 +26,12 @@ import networkx as nx
 import numpy as np
 from gerrychain import Graph as DualGraph
 
-from dualbalance.seeds import place_seeds
+from dualbalance.seeds import (
+    place_seeds,
+    place_seeds_angular_quantile,
+    place_seeds_hilbert,
+    place_seeds_recursive_bisection,
+)
 from dualbalance.types import Plan, Seed, Targets
 
 
@@ -99,6 +104,7 @@ def generate_plan(
     *,
     geography: str = "unknown",
     rotation_offset: float = 0.0,
+    seed_method: str = "radial",
 ) -> Plan:
     """Generate a deterministic DualBalance plan.
 
@@ -131,7 +137,19 @@ def generate_plan(
     pops = np.asarray(units_sorted["population"], dtype=float)
     unit_ids: list[str] = units_sorted["unit_id"].tolist()
 
-    seeds = place_seeds(units_sorted, n_districts, rotation_offset=rotation_offset)
+    if seed_method == "angular-quantile":
+        seeds = place_seeds_angular_quantile(units_sorted, n_districts, rotation_offset=rotation_offset)
+    elif seed_method == "hilbert":
+        seeds = place_seeds_hilbert(units_sorted, n_districts)
+    elif seed_method == "recursive-bisection":
+        seeds = place_seeds_recursive_bisection(units_sorted, n_districts)
+    elif seed_method == "radial":
+        seeds = place_seeds(units_sorted, n_districts, rotation_offset=rotation_offset)
+    else:
+        raise ValueError(
+            f"unknown seed_method {seed_method!r}; "
+            "choose 'radial', 'angular-quantile', 'hilbert', or 'recursive-bisection'"
+        )
     assignment = _assign(cx, cy, pops, unit_ids, seeds, targets, norm)
     assignment, repair_iters, contiguous = _repair_contiguity(
         assignment,
@@ -147,6 +165,7 @@ def generate_plan(
         n_districts=n_districts,
         geography=geography,
         metadata={
+            "seed_method": seed_method,
             "repair_iterations": repair_iters,
             "contiguous": contiguous,
             "targets": {

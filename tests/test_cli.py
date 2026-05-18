@@ -42,17 +42,14 @@ def test_generate_rejects_unknown_geography() -> None:
 
 
 def test_generate_has_no_core_algorithm_knobs() -> None:
-    # The CLI exposes only data-plumbing flags plus the opt-in
-    # --tighten-pop / --pop-tolerance pair (see test_generate_supports_tighten_pop_flag).
-    # The core radial generator itself takes no tuning knobs (no --max-iter,
-    # --seed-method, --alpha, --reynolds-tighten, --enforce-area,
-    # --score-variant, etc).
+    # The CLI exposes data-plumbing flags, the opt-in --tighten-pop /
+    # --pop-tolerance pair, and --seed-method (added on angular-quantile-seeding
+    # branch for exploration). All numeric tuning knobs remain forbidden.
     _, defaults = build_parser()
     forbidden = {
         "alpha",
         "beta",
         "max_iter",
-        "seed_method",
         "capacity_slack",
         "reynolds_tighten",
         "no_area_reduction",
