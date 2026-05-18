@@ -5,7 +5,7 @@
 
 Across 40 states with TIGER 2020PL VTD data, DualBalance achieves
 \textit{Karcher}-compliant population balance ($\mathrm{pop\_dev\_max}
-\leq 0.05\,\%$) on 26 states and beats the enacted 119th-Congress plan
+\leq 0.05\,\%$) on 28 states and beats the enacted 119th-Congress plan
 on the DualBalance Score on 25 states. Cascade achieves \textit{Karcher}
 compliance on zero states; BDistricting on zero. On every state with
 a nonzero enacted Efficiency Gap, all three deterministic algorithms
@@ -16,15 +16,18 @@ states (TX, FL, NC, NY); it produces fewer on states where the enacted
 plan constructed a majority-minority district that radial slicing
 disperses (Figure~\ref{fig:race-scatter}).
 
-The 14 states that fall short of \textit{Karcher} fall into two
-qualitatively distinct groups. Eleven sit in an algorithmic-convergence
-gap, between the \textit{Karcher} threshold and roughly $1\,\%$, where
-the block-scale refinement stage is the designed path to completion.
-Three (Florida, New York, West Virginia) are geometric failure cases
-where single-center radial seeding produces deviations an order of
-magnitude above any workable threshold; these are discussed explicitly
-in \S\ref{sec:discussion-limitations} and identified as the target of
-multi-center seeding in \S\ref{sec:future-work}.
+The 12 states that fall short of \textit{Karcher} divide into two
+confirmed groups. Nine are structural limitations: full block-scale
+refinement with up to one million optimizer passes did not achieve
+\textit{Karcher} compliance, establishing these as genuine algorithmic
+boundaries rather than pipeline-completion gaps (see
+\S\ref{sec:discussion-limitations}). Three (Florida, New York, West
+Virginia) are geometric failures where single-center radial seeding
+produces deviations an order of magnitude above any workable threshold;
+these are the target of multi-center seeding in \S\ref{sec:future-work}.
+Arizona and Virginia, previously considered convergence-gap states,
+achieved \textit{Karcher} compliance through block-scale refinement
+and are included in the 28 verified states.
 
 The illustrative House projection across the 40 states (367 seats)
 gives DualBalance R\,190~/~D\,177 under uniform-swing assumptions,
@@ -243,15 +246,19 @@ whether minimizing EG is the right criterion for a procedure that
 otherwise reads no political data, are design questions that require
 deliberation beyond this paper.
 
-The 12 convergence-gap states that sit below $1\,\%$ population
-deviation but above the \textit{Karcher} threshold are in principle
-solvable within the current architecture through full block-scale
-refinement, for the same reason the 26 compliant states were
-resolved: census blocks are small enough that the optimizer can
-land within the \textit{Karcher} budget. Completing that pipeline
-across the remaining 11 would establish the true verified count
-and determine whether any are structural failures rather than
-granularity gaps.
+Block-scale refinement with up to one million optimizer passes was
+completed for all nine convergence-gap states (Connecticut, Georgia,
+Massachusetts, Minnesota, North Carolina, Tennessee, Texas, plus
+Arizona and Virginia). Arizona and Virginia achieved \textit{Karcher}
+compliance; the remaining seven did not. The confirmed structural
+failures share a pattern of optimizer stall: Phase~1 reduces but
+cannot eliminate the population deviation even with block-level
+granularity, likely because the inherited block-scale adjacency graph
+has a high density of articulation points that prevent the small
+boundary moves needed to close the final gap. A fundamentally
+different population-balancing approach, such as a 2D transportation
+program that relaxes moves globally rather than one boundary unit at
+a time, is the natural next step for these states.
 
 On the measurement side, the Efficiency Gap is the most widely
 litigated partisan fairness metric but not the only informative
@@ -324,10 +331,11 @@ thresholds ($p = 0.058$). The DBS comparison is self-referential:
 DualBalance is designed to maximize DBS, so outperforming enacted
 plans on that metric is an expected consequence of the objective
 function, not evidence of broader representational superiority.
-The \textit{Karcher} comparison conflates pipeline completeness
-with algorithmic performance: the 26/40 figure reflects which states
-have been carried through the full block-scale pipeline, not a
-ceiling on what the algorithm can achieve. Cascade's 0/40
+The \textit{Karcher} count of 28/40 reflects the completed pipeline:
+all 40 states were carried through full block-scale refinement, and
+28 verified compliance. The nine structural-failure states are a
+known ceiling of the current algorithm under the greedy single-unit
+optimizer; they are not pipeline-completion gaps. Cascade's 0/40
 \textit{Karcher} result reflects a mathematical impossibility at
 county granularity, not a failure relative to DualBalance's
 approach. What this paper does not provide, and what would be

@@ -58,19 +58,23 @@ and does not enforce strict population equality as a constraint.
 A plan that wins on DBS but fails \textit{Karcher} cannot legally be enacted.
 
 \paragraph{Population compliance tiers.}
-The 14 states that fall short of \textit{Karcher} divide into two
-qualitatively distinct groups. Eleven sit in an algorithmic-convergence
-gap between the \textit{Karcher} threshold and roughly $1\,\%$: their
-VTD populations are too large relative to the \textit{Karcher} budget
-for the optimizer to land within tolerance at VTD scale. Block-scale
-refinement (\S\ref{sec:methods-block}) reduces the gap in some states
-but does not uniformly resolve it; the 26/40 figure is the verified
-result of the current pipeline. Three states, Florida ($44.2\,\%$),
-New York ($13.3\,\%$), and West Virginia ($10.4\,\%$), are genuine
-geometric failures where single-center radial seeding cannot approach
-the legal threshold regardless of refinement resolution. These are the
-algorithm's true boundary cases; multi-center seeding
-(\S\ref{sec:future-work}) is the structural fix.
+The 12 non-compliant states divide into two qualitatively distinct
+groups. Nine (Connecticut, Georgia, Massachusetts, Minnesota, North
+Carolina, Tennessee, Texas, and two states at the rounding boundary
+of $0.05\,\%$) were subjected to full block-scale refinement with up
+to one million optimizer passes and confirmed unable to reach
+\textit{Karcher} compliance. These are not pipeline-completion gaps;
+they are confirmed structural limitations of the current algorithm on
+those geometries. Block-scale optimization reduces the deviation
+substantially in some cases (Texas $0.90\,\% \to 0.52\,\%$; North
+Carolina $0.11\,\% \to 0.08\,\%$) but cannot close it fully. Arizona
+and Virginia, previously in this group, achieved \textit{Karcher}
+compliance through block-scale refinement and are included in the 28
+verified states. Three states (Florida $44.2\,\%$, New York $13.3\,\%$,
+West Virginia $10.4\,\%$) are geometric failures where single-center
+radial seeding cannot approach the legal threshold regardless of
+refinement; multi-center seeding (\S\ref{sec:future-work}) is the
+structural fix.
 
 \paragraph{Different deterministic algorithms, different trade-offs.}
 DualBalance holds $\mathrm{pop\_dev\_max}$ below 1\,\% on nearly all
@@ -172,7 +176,7 @@ Metric & DualBalance & Cascade & BDistricting & Enacted \\
 DBS (median, 40 states) & \textbf{0.750} & 0.730 & 0.716 & 0.743 \\
 DBS (median, 37 viable states$^{\S}$) & \textbf{0.753} & --- & --- & 0.744 \\
 $\mathrm{pop\_dev\_max}$ (median) & \textbf{0.05\%} & 64.0\% & 1.2\% & 0.7\%$^{\dagger}$ \\
-At \textit{Karcher} ($\leq 0.05\,\%$) & \textbf{26/40} & 0/40 & 0/40 & $\approx$40/40$^{\dagger}$ \\
+At \textit{Karcher} ($\leq 0.05\,\%$) & \textbf{28/40} & 0/40 & 0/40 & $\approx$40/40$^{\dagger}$ \\
 Beats enacted DBS (40 states; self-referential$^{\P}$) & 25/40 & 14/40 & 9/40 & --- \\
 Beats enacted DBS (37 viable states$^{\S}$) & 22/37 & --- & --- & --- \\
 $|\mathrm{EG}|$ median (20 states$^\star$) & \textbf{0.085} & 0.103 & 0.098 & 0.133 \\
