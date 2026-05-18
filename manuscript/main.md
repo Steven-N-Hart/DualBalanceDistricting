@@ -84,15 +84,15 @@ but found no manageable judicial standard. After *Rucho*, the *Gingles*
 framework remained the only federal route for gerrymandering review.
 That channel has since narrowed as well. *Allen v. Milligan* (Supreme
 Court of the United States 2023a) reaffirmed in 2023 that Section 2
-requires majority-minority districts where the *Gingles* preconditions
-are met. One year later, *Alexander v. South Carolina Conf. of the
-NAACP* (Supreme Court of the United States 2024) raised plaintiffs’
-evidentiary burden; *Louisiana v. Callais* (Supreme Court of the United
-States 2026) held in April 2026 that even a plan drawn to comply with a
-prior Section 2 order may violate the Equal Protection Clause if
-Section 2 did not in fact compel a race-based remedy. Together,
-*Alexander* and *Callais* leave race-conscious line-drawing in a
-narrower window of constitutional safety than at any point since the
+requires majority-minority districts (MMDs) where the *Gingles*
+preconditions are met. One year later, *Alexander v. South Carolina
+Conf. of the NAACP* (Supreme Court of the United States 2024) raised
+plaintiffs’ evidentiary burden; *Louisiana v. Callais* (Supreme Court of
+the United States 2026) held in April 2026 that even a plan drawn to
+comply with a prior Section 2 order may violate the Equal Protection
+Clause if Section 2 did not in fact compel a race-based remedy.
+Together, *Alexander* and *Callais* leave race-conscious line-drawing in
+a narrower window of constitutional safety than at any point since the
 VRA’s adoption.
 
 State constitutional review under *Moore v. Harper* (Supreme Court of
@@ -827,12 +827,12 @@ pipeline-completion gaps; they are confirmed structural limitations of
 the current algorithm on those geometries. Block-scale optimization
 reduces the deviation substantially in some cases (Texas
 $`0.90\,\% \to 0.52\,\%`$; North Carolina $`0.11\,\% \to 0.08\,\%`$) but
-cannot close it fully. Arizona and Virginia, previously in this group,
-achieved *Karcher* compliance through block-scale refinement and are
-included in the 28 verified states. Three states (Florida $`44.2\,\%`$,
-New York $`13.3\,\%`$, West Virginia $`10.4\,\%`$) are geometric
-failures where single-center radial seeding cannot approach the legal
-threshold regardless of refinement; multi-center seeding
+cannot close it fully. Arizona and Virginia required block-scale
+refinement to reach *Karcher* compliance and are included in the 28
+verified states. Three states (Florida $`44.2\,\%`$, New York
+$`13.3\,\%`$, West Virginia $`10.4\,\%`$) are geometric failures where
+single-center radial seeding cannot approach the legal threshold
+regardless of refinement; multi-center seeding
 (§<a href="#sec:future-work" data-reference-type="ref"
 data-reference="sec:future-work">4.6</a>) is the structural fix.
 
@@ -1633,9 +1633,8 @@ New York, West Virginia) are geometric failures where single-center
 radial seeding produces deviations an order of magnitude above any
 workable threshold; these are the target of multi-center seeding in
 §<a href="#sec:future-work" data-reference-type="ref"
-data-reference="sec:future-work">4.6</a>. Arizona and Virginia,
-previously considered convergence-gap states, achieved *Karcher*
-compliance through block-scale refinement and are included in the 28
+data-reference="sec:future-work">4.6</a>. Arizona and Virginia required
+block-scale refinement to reach compliance and are included in the 28
 verified states.
 
 The illustrative House projection across the 40 states (367 seats) gives
@@ -1861,19 +1860,19 @@ minimizing EG is the right criterion for a procedure that otherwise
 reads no political data, are design questions that require deliberation
 beyond this paper.
 
-Block-scale refinement with up to one million optimizer passes was
-completed for all nine convergence-gap states (Connecticut, Georgia,
-Massachusetts, Minnesota, North Carolina, Tennessee, Texas, plus Arizona
-and Virginia). Arizona and Virginia achieved *Karcher* compliance; the
-remaining seven did not. The confirmed structural failures share a
-pattern of optimizer stall: Phase 1 reduces but cannot eliminate the
-population deviation even with block-level granularity, likely because
-the inherited block-scale adjacency graph has a high density of
-articulation points that prevent the small boundary moves needed to
-close the final gap. A fundamentally different population-balancing
-approach, such as a 2D transportation program that relaxes moves
-globally rather than one boundary unit at a time, is the natural next
-step for these states.
+Block-scale refinement with up to one million optimizer passes was run
+on nine states that did not achieve *Karcher* compliance at VTD scale
+(Connecticut, Georgia, Massachusetts, Minnesota, North Carolina,
+Tennessee, Texas, Arizona, and Virginia). Arizona and Virginia reached
+compliance; the remaining seven did not. The confirmed structural
+failures share a pattern of optimizer stall: Phase 1 reduces but cannot
+eliminate the population deviation even with block-level granularity,
+likely because the inherited block-scale adjacency graph has a high
+density of articulation points that prevent the small boundary moves
+needed to close the final gap. A fundamentally different
+population-balancing approach, such as a 2D transportation program that
+relaxes moves globally rather than one boundary unit at a time, is the
+natural next step for these states.
 
 On the measurement side, the Efficiency Gap is the most widely litigated
 partisan fairness metric but not the only informative one. Mean-median

@@ -25,9 +25,8 @@ boundaries rather than pipeline-completion gaps (see
 Virginia) are geometric failures where single-center radial seeding
 produces deviations an order of magnitude above any workable threshold;
 these are the target of multi-center seeding in \S\ref{sec:future-work}.
-Arizona and Virginia, previously considered convergence-gap states,
-achieved \textit{Karcher} compliance through block-scale refinement
-and are included in the 28 verified states.
+Arizona and Virginia required block-scale refinement to reach
+compliance and are included in the 28 verified states.
 
 The illustrative House projection across the 40 states (367 seats)
 gives DualBalance R\,190~/~D\,177 under uniform-swing assumptions,
@@ -244,10 +243,10 @@ otherwise reads no political data, are design questions that require
 deliberation beyond this paper.
 
 Block-scale refinement with up to one million optimizer passes was
-completed for all nine convergence-gap states (Connecticut, Georgia,
-Massachusetts, Minnesota, North Carolina, Tennessee, Texas, plus
-Arizona and Virginia). Arizona and Virginia achieved \textit{Karcher}
-compliance; the remaining seven did not. The confirmed structural
+run on nine states that did not achieve \textit{Karcher} compliance
+at VTD scale (Connecticut, Georgia, Massachusetts, Minnesota, North
+Carolina, Tennessee, Texas, Arizona, and Virginia). Arizona and
+Virginia reached compliance; the remaining seven did not. The confirmed structural
 failures share a pattern of optimizer stall: Phase~1 reduces but
 cannot eliminate the population deviation even with block-level
 granularity, likely because the inherited block-scale adjacency graph
