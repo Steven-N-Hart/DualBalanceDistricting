@@ -59,8 +59,8 @@ def main(state: str, n_districts: int) -> int:
     log("OPT(vtd) with Karcher tolerance…")
     vtd_opt = optimize_dbs(
         vtd_prism, vtd_units,
-        pop_dev_max_tolerance=KARCHER_TOL, max_passes=100000,
-        progress_every=100,
+        pop_dev_max_tolerance=KARCHER_TOL, max_passes=1_000_000,
+        progress_every=1000,
     )
     log(f"OPT(vtd): in {time.time() - t:.1f}s")
     vtd_metrics = score_plan(vtd_opt, vtd_units)
@@ -150,8 +150,8 @@ def main(state: str, n_districts: int) -> int:
     log("OPT(block) with Karcher tolerance, from VTD-Karcher init…")
     block_opt = optimize_dbs(
         init_plan, block_units,
-        pop_dev_max_tolerance=KARCHER_TOL, max_passes=100000,
-        progress_every=100,
+        pop_dev_max_tolerance=KARCHER_TOL, max_passes=1_000_000,
+        progress_every=1000,
     )
     log(f"OPT(block): in {time.time() - t:.1f}s")
 
