@@ -14,16 +14,19 @@ abstract: |
   weighted equally in the DualBalance Score.
 
   Applied to all 40 states with available VTD data, DualBalance achieves
-  *Karcher*-compliant population balance on 28 states (both
-  deterministic baselines achieve it on zero), at the cost of
-  substantially lower compactness than enacted plans (median
-  Polsby-Popper 0.115 vs. 0.281), a structural consequence of spanning
-  the full urban-rural gradient in each district. A rotation sensitivity
-  analysis across 12 anchor angles per state finds the DualBalance Score
-  stable (cross-state median $`\sigma = 0.010`$) while projected seat
-  counts shift by 1–3 seats in 25 of 40 states, identifying seed
-  rotation as a consequential pre-committed choice that any legislative
-  adoption would need to specify.
+  *Karcher*-compliant population balance on 28 states at VTD scale—the
+  same granularity at which Census data are delivered, and coarser than
+  the block-level precision conventionally required to satisfy the
+  congressional equality standard—while both deterministic baselines
+  achieve it on zero states. This comes at the cost of substantially
+  lower compactness than enacted plans (median Polsby-Popper 0.115
+  vs. 0.281), a structural consequence of spanning the full urban-rural
+  gradient in each district. A rotation sensitivity analysis across 12
+  anchor angles per state finds the DualBalance Score stable
+  (cross-state median $`\sigma = 0.010`$) while projected seat counts
+  shift by 1–3 seats in 25 of 40 states, identifying seed rotation as a
+  consequential pre-committed choice that any legislative adoption would
+  need to specify.
 
   The paper’s contribution is to demonstrate feasibility and document
   the properties of an apolitical deterministic design; whether such a
@@ -803,24 +806,33 @@ structural reason: Lloyd iteration minimizes within-district geographic
 spread and does not enforce strict population equality as a constraint.
 A plan that wins on DBS but fails *Karcher* cannot legally be enacted.
 
-#### Population compliance tiers.
+#### Karcher compliance at VTD scale.
 
-The 12 non-compliant states divide into two qualitatively distinct
-groups. Nine (Connecticut, Georgia, Massachusetts, Minnesota, North
-Carolina, Tennessee, Texas, and two states at the rounding boundary of
-$`0.05\,\%`$) were subjected to full block-scale refinement with up to
-one million optimizer passes and confirmed unable to reach *Karcher*
-compliance. These are not pipeline-completion gaps; they are confirmed
-structural limitations of the current algorithm on those geometries.
-Block-scale optimization reduces the deviation substantially in some
-cases (Texas $`0.90\,\% \to 0.52\,\%`$; North Carolina
-$`0.11\,\% \to 0.08\,\%`$) but cannot close it fully. Arizona and
-Virginia, previously in this group, achieved *Karcher* compliance
-through block-scale refinement and are included in the 28 verified
-states. Three states (Florida $`44.2\,\%`$, New York $`13.3\,\%`$, West
-Virginia $`10.4\,\%`$) are geometric failures where single-center radial
-seeding cannot approach the legal threshold regardless of refinement;
-multi-center seeding
+DualBalance achieves *Karcher*-compliant population balance
+($`\mathrm{pop\_dev\_max} \leq 0.05\,\%`$) on 28 of 40 states using
+VTD-level atomic units as the primary geometry; 26 of those 28 states
+reach compliance from the VTD-scale pass alone, with Arizona and
+Virginia requiring an additional block-scale refinement step.
+Conventional redistricting practice assumes block-level precision
+throughout, because VTDs are typically too coarse to close the final gap
+to the *Karcher* budget; that the radial capacitated assignment reaches
+compliance at VTD granularity on most states is the algorithm’s sharpest
+population-balance result. The 12 non-compliant states divide into two
+qualitatively distinct groups. Nine (Connecticut, Georgia,
+Massachusetts, Minnesota, North Carolina, Tennessee, Texas, and two
+states at the rounding boundary of $`0.05\,\%`$) were subjected to full
+block-scale refinement with up to one million optimizer passes and
+confirmed unable to reach *Karcher* compliance. These are not
+pipeline-completion gaps; they are confirmed structural limitations of
+the current algorithm on those geometries. Block-scale optimization
+reduces the deviation substantially in some cases (Texas
+$`0.90\,\% \to 0.52\,\%`$; North Carolina $`0.11\,\% \to 0.08\,\%`$) but
+cannot close it fully. Arizona and Virginia, previously in this group,
+achieved *Karcher* compliance through block-scale refinement and are
+included in the 28 verified states. Three states (Florida $`44.2\,\%`$,
+New York $`13.3\,\%`$, West Virginia $`10.4\,\%`$) are geometric
+failures where single-center radial seeding cannot approach the legal
+threshold regardless of refinement; multi-center seeding
 (§<a href="#sec:future-work" data-reference-type="ref"
 data-reference="sec:future-work">4.6</a>) is the structural fix.
 

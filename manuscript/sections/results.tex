@@ -57,7 +57,17 @@ reason: Lloyd iteration minimizes within-district geographic spread
 and does not enforce strict population equality as a constraint.
 A plan that wins on DBS but fails \textit{Karcher} cannot legally be enacted.
 
-\paragraph{Population compliance tiers.}
+\paragraph{Karcher compliance at VTD scale.}
+DualBalance achieves \textit{Karcher}-compliant population balance
+($\mathrm{pop\_dev\_max} \leq 0.05\,\%$) on 28 of 40 states using
+VTD-level atomic units as the primary geometry; 26 of those 28 states
+reach compliance from the VTD-scale pass alone, with Arizona and
+Virginia requiring an additional block-scale refinement step.
+Conventional redistricting practice assumes block-level precision
+throughout, because VTDs are typically too coarse to close the final
+gap to the \textit{Karcher} budget; that the radial capacitated
+assignment reaches compliance at VTD granularity on most states is
+the algorithm's sharpest population-balance result.
 The 12 non-compliant states divide into two qualitatively distinct
 groups. Nine (Connecticut, Georgia, Massachusetts, Minnesota, North
 Carolina, Tennessee, Texas, and two states at the rounding boundary
