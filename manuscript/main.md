@@ -669,12 +669,11 @@ $`(\mathrm{units},\,N,\,\theta,\,T)`$ where $`\theta = 0`$ in all
 results reported here. The only source of dependency beyond the core
 pipeline’s $`(\mathrm{units},\,N,\,\theta)`$ is the explicit tolerance
 $`T`$. The optimizer maintains a per-district articulation-point cache
-via Tarjan’s algorithm on CSR adjacency arrays (Tarjan 1972), reducing
-the per-candidate contiguity check from $`O(V+E)`$ to $`O(1)`$; an
-incrementally tracked boundary-unit set restricts each scan to units
-that have a different-district neighbor. At VTD scale the speedup is
-modest; at block scale (tens of thousands of units per district) it is
-the difference between hours and minutes.
+and an incrementally tracked boundary-unit set, restricting each scan to
+units that have a different-district neighbor (details and performance
+impact at block scale in
+§<a href="#sec:methods-block" data-reference-type="ref"
+data-reference="sec:methods-block">2.8</a>).
 
 The two-phase optimizer is a concession to legal compliance; Phase 2
 then directly hill-climbs the stated objective once the population
@@ -818,21 +817,23 @@ throughout, because VTDs are typically too coarse to close the final gap
 to the *Karcher* budget; that the radial capacitated assignment reaches
 compliance at VTD granularity on most states is the algorithm’s sharpest
 population-balance result. The 12 non-compliant states divide into two
-qualitatively distinct groups. Nine (Connecticut, Georgia,
-Massachusetts, Minnesota, North Carolina, Tennessee, Texas, and two
-states at the rounding boundary of $`0.05\,\%`$) were subjected to full
-block-scale refinement with up to one million optimizer passes and
-confirmed unable to reach *Karcher* compliance. These are not
-pipeline-completion gaps; they are confirmed structural limitations of
-the current algorithm on those geometries. Block-scale optimization
-reduces the deviation substantially in some cases (Texas
-$`0.90\,\% \to 0.52\,\%`$; North Carolina $`0.11\,\% \to 0.08\,\%`$) but
-cannot close it fully. Arizona and Virginia required block-scale
-refinement to reach *Karcher* compliance and are included in the 28
-verified states. Three states (Florida $`44.2\,\%`$, New York
-$`13.3\,\%`$, West Virginia $`10.4\,\%`$) are geometric failures where
-single-center radial seeding cannot approach the legal threshold
-regardless of refinement; multi-center seeding
+qualitatively distinct groups. Nine structural failures (Connecticut,
+Georgia, Massachusetts, Minnesota, North Carolina, Pennsylvania,
+Tennessee, Texas, and Maryland) were subjected to full block-scale
+refinement with up to one million optimizer passes and confirmed unable
+to reach *Karcher* compliance. Pennsylvania ($`0.053\,\%`$) and Maryland
+($`0.053\,\%`$) display as $`0.05\,\%`$ in
+Table <a href="#tab:multistate-dbs" data-reference-type="ref"
+data-reference="tab:multistate-dbs">1</a> but fall just above the legal
+threshold; block-scale refinement reduced but did not close the gap.
+These are confirmed structural limitations, not pipeline-completion
+gaps. Block-scale optimization reduces the deviation in some cases
+(Texas $`0.90\,\% \to 0.52\,\%`$; North Carolina
+$`0.11\,\% \to 0.08\,\%`$) but cannot close it fully. Three states
+(Florida $`44.2\,\%`$, New York $`13.3\,\%`$, West Virginia
+$`10.4\,\%`$) are geometric failures where single-center radial seeding
+cannot approach the legal threshold regardless of refinement;
+multi-center seeding
 (§<a href="#sec:future-work" data-reference-type="ref"
 data-reference="sec:future-work">4.6</a>) is the structural fix.
 

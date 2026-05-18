@@ -393,13 +393,10 @@ Both phases are pure functions of $(\mathrm{units},\,N,\,T)$; the full
 pipeline including the rotation anchor is a pure function of
 $(\mathrm{units},\,N,\,\theta,\,T)$ where $\theta = 0$ in all
 results reported here. The only source of dependency beyond the core
-pipeline's $(\mathrm{units},\,N,\,\theta)$ is the explicit tolerance $T$. The optimizer maintains a per-district
-articulation-point cache via Tarjan's algorithm on CSR adjacency
-arrays~\cite{tarjan1972}, reducing the per-candidate contiguity check
-from $O(V+E)$ to $O(1)$; an incrementally tracked boundary-unit set
-restricts each scan to units that have a different-district neighbor.
-At VTD scale the speedup is modest; at block scale (tens of thousands
-of units per district) it is the difference between hours and minutes.
+pipeline's $(\mathrm{units},\,N,\,\theta)$ is the explicit tolerance $T$. The optimizer maintains a per-district articulation-point cache and
+an incrementally tracked boundary-unit set, restricting each scan to
+units that have a different-district neighbor (details and performance
+impact at block scale in \S\ref{sec:methods-block}).
 
 The two-phase optimizer is a concession to legal compliance; Phase 2
 then directly hill-climbs the stated objective once the population
