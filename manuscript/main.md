@@ -13,15 +13,15 @@ abstract: |
   carries roughly $`1/N`$ of the state’s people and $`1/N`$ of its land,
   weighted equally in the DualBalance Score.
 
-  Applied to all 41 multi-seat states with available VTD data,
-  DualBalance achieves *Karcher*-compliant population balance on 26
-  states (both deterministic baselines achieve it on zero), at the cost
-  of substantially lower compactness than enacted plans (median
+  Applied to all 40 states with available VTD data, DualBalance achieves
+  *Karcher*-compliant population balance on 26 states (both
+  deterministic baselines achieve it on zero), at the cost of
+  substantially lower compactness than enacted plans (median
   Polsby-Popper 0.115 vs. 0.281), a structural consequence of spanning
   the full urban-rural gradient in each district. A rotation sensitivity
   analysis across 12 anchor angles per state finds the DualBalance Score
   stable (cross-state median $`\sigma = 0.010`$) while projected seat
-  counts shift by 1–3 seats in 26 of 41 states, identifying seed
+  counts shift by 1–3 seats in 25 of 40 states, identifying seed
   rotation as a consequential pre-committed choice that any legislative
   adoption would need to specify.
 
@@ -738,22 +738,23 @@ is what makes the block-scale stage tractable on commodity hardware.
 
 # Results
 
-We evaluated DualBalance against the enacted 119th-Congress plan on all
-41 multi-seat states for which TIGER 2020PL VTD boundaries are
-available. California, Hawaii, and Oregon did not submit VTD data to the
-Census Bureau and are excluded throughout (marked $`\dagger`$ in figures
-and tables). Two additional deterministic algorithms serve as baselines:
-*Cascade*, an Iowa-LSA-flavored construction that aggregates VTDs to
-counties; and *BDistricting* (Olson 2007--2024), Brian Olson’s published
-50-state maps. All algorithm outputs are byte-identical across repeated
-runs.
+We evaluated DualBalance against the enacted 119th-Congress plan on 40
+multi-seat states. California, Hawaii, and Oregon did not submit VTD
+data to the Census Bureau. Maine submitted VTD boundaries for only 6 of
+its 16 counties, covering 61% of the state’s population; results based
+on that incomplete coverage are invalid and Maine is excluded. All four
+states are marked $`\dagger`$ in figures and tables. Two additional
+deterministic algorithms serve as baselines: *Cascade*, an
+Iowa-LSA-flavored construction that aggregates VTDs to counties; and
+*BDistricting* (Olson 2007--2024), Brian Olson’s published 50-state
+maps. All algorithm outputs are byte-identical across repeated runs.
 
 Results are reported on two tiers. **Non-partisan metrics** (DualBalance
 Score, population deviation, compactness, majority-minority districts)
-use all 41 states. **Partisan-fairness metrics** (Efficiency Gap) are
+use all 40 states. **Partisan-fairness metrics** (Efficiency Gap) are
 restricted to the 20 states for which DRA composite or 2022
 congressional election returns are available at VTD scale; the remaining
-21 states use 2020 presidential returns as a proxy and are marked
+20 states use 2020 presidential returns as a proxy and are marked
 $`\star`$ in
 Table <a href="#tab:multistate-dbs" data-reference-type="ref"
 data-reference="tab:multistate-dbs">1</a>.
@@ -775,41 +776,49 @@ data-reference="sec:discussion-forensic">4.2</a>: a generator that reads
 no political data cannot reproduce the systematic wasted-vote asymmetry
 that characterizes enacted gerrymanders.
 
-#### Cascade wins on DBS but is legally non-viable on most states.
+#### Cascade wins on DBS but cannot satisfy Karcher at county granularity.
 
 Cascade scores well on the DualBalance objective because county
-aggregation naturally produces units of similar area, but the
-county-integrity constraint yields population deviations far above the
-*Karcher* threshold on any state with a dominant metropolitan county
+aggregation naturally produces units of similar area, but it achieves
+*Karcher* compliance on zero of 40 states, including Iowa, the model
+state for the algorithm
 (Figure <a href="#fig:boxplots" data-reference-type="ref"
-data-reference="fig:boxplots">2</a>, Panel B). DualBalance achieves
-*Karcher* compliance on 26 of 41 states; BDistricting and Cascade
-achieve it on zero states
-(Table <a href="#tab:aggregate-comparison" data-reference-type="ref"
-data-reference="tab:aggregate-comparison">2</a>). Cascade clears
-*Karcher* nowhere because the county-integrity constraint produces large
-deviations whenever a county exceeds the per-district cap. BDistricting
-clears it nowhere because Lloyd iteration converges to centroidal
-districts that do not enforce strict population equality. A plan that
-wins on DBS but fails the *Karcher* standard cannot legally be enacted.
+data-reference="fig:boxplots">2</a>, Panel B;
+Table <a href="#tab:aggregate-comparison" data-reference-type="ref"
+data-reference="tab:aggregate-comparison">2</a>). This is not an
+optimization failure. The *Karcher* budget for Iowa’s four congressional
+districts is approximately 399 people (0.05% of the 797,592 ideal
+district size). The smallest county in Iowa has 3,704 residents, nine
+times that budget. No county-level algorithm can achieve *Karcher*
+compliance regardless of how well it optimizes within the
+county-aggregation constraint, because the smallest possible boundary
+move overshoots the legal tolerance by an order of magnitude. The actual
+Iowa redistricting process achieves *Karcher* compliance through
+sub-county refinement as a final step, a capability that county-level
+aggregation alone cannot provide and that our Cascade reimplementation
+does not include. The same arithmetic applies to every state: *Karcher*
+compliance requires sub-county granularity for any algorithm.
+BDistricting achieves *Karcher* on zero states for a different
+structural reason: Lloyd iteration minimizes within-district geographic
+spread and does not enforce strict population equality as a constraint.
+A plan that wins on DBS but fails *Karcher* cannot legally be enacted.
 
 #### Population compliance tiers.
 
-The 15 states that fall short of *Karcher* divide into two qualitatively
-distinct groups. Twelve sit in an algorithmic-convergence gap between
-the *Karcher* threshold and roughly $`1\,\%`$: the block-scale
-refinement stage
+The 14 states that fall short of *Karcher* divide into two qualitatively
+distinct groups. Eleven sit in an algorithmic-convergence gap between
+the *Karcher* threshold and roughly $`1\,\%`$: their VTD populations are
+too large relative to the *Karcher* budget for the optimizer to land
+within tolerance at VTD scale. Block-scale refinement
 (§<a href="#sec:methods-block" data-reference-type="ref"
-data-reference="sec:methods-block">2.8</a>) is the designed path for
-closing this gap. Three states, Florida ($`44.2\,\%`$), New York
-($`13.3\,\%`$), and West Virginia ($`10.4\,\%`$), are geometric failure
-cases where single-center radial seeding cannot approach the legal
-threshold regardless of refinement: Florida and New York have
-polycentric population distributions that a single centroid cannot span,
-and West Virginia has a narrow panhandle geometry that forces the
-optimizer into a structural dead end. These states are included in
-aggregate statistics for completeness but are non-viable under the
-current pipeline; multi-center seeding
+data-reference="sec:methods-block">2.8</a>) reduces the gap in some
+states but does not uniformly resolve it; the 26/40 figure is the
+verified result of the current pipeline. Three states, Florida
+($`44.2\,\%`$), New York ($`13.3\,\%`$), and West Virginia
+($`10.4\,\%`$), are genuine geometric failures where single-center
+radial seeding cannot approach the legal threshold regardless of
+refinement resolution. These are the algorithm’s true boundary cases;
+multi-center seeding
 (§<a href="#sec:future-work" data-reference-type="ref"
 data-reference="sec:future-work">4.6</a>) is the structural fix.
 
@@ -829,13 +838,14 @@ but fails the population-balance legal threshold on most states.
 
 <table>
 <caption>Per-state DualBalance Score and maximum population deviation
-for all 41 states with TIGER 2020PL VTD data. <strong>Bold</strong>
-marks the highest DBS per row. <span class="math inline">‡</span>:
-Cascade <span class="math inline">pop_dev_max &gt; 0.5 %</span>;
-deviations of this magnitude fail the <em>Karcher</em> standard for
-congressional maps. <span class="math inline">⋆</span>: Efficiency Gap
-for this state computed from 2020 presidential returns
-(composite/congressional data unavailable); EG not shown.</caption>
+for all 40 states with complete TIGER 2020PL VTD data.
+<strong>Bold</strong> marks the highest DBS per row. <span
+class="math inline">‡</span>: Cascade <span
+class="math inline">pop_dev_max &gt; 0.5 %</span>; deviations of this
+magnitude fail the <em>Karcher</em> standard for congressional maps.
+<span class="math inline">⋆</span>: Efficiency Gap for this state
+computed from 2020 presidential returns (composite/congressional data
+unavailable); EG not shown.</caption>
 <thead>
 <tr>
 <th style="text-align: left;">State</th>
@@ -1077,19 +1087,6 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: center;">0.688</td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>71.88%</em><span
-class="math inline"><sup>‡</sup></span></td>
-</tr>
-<tr>
-<td style="text-align: left;">Maine<span
-class="math inline"><sup>⋆</sup></span></td>
-<td style="text-align: right;">2</td>
-<td style="text-align: center;"><strong>0.932</strong></td>
-<td style="text-align: center;">0.688<span
-class="math inline"><sup>‡</sup></span></td>
-<td style="text-align: center;">0.721</td>
-<td style="text-align: center;">0.731</td>
-<td style="text-align: right;">0.10%</td>
-<td style="text-align: right;"><em>60.48%</em><span
 class="math inline"><sup>‡</sup></span></td>
 </tr>
 <tr>
@@ -1399,18 +1396,18 @@ class="math inline"><sup>‡</sup></span></td>
 
 | Metric | DualBalance | Cascade | BDistricting | Enacted |
 |:---|---:|---:|---:|---:|
-| DBS (median, 41 states) | **0.753** | 0.730 | 0.716 | 0.741 |
-| DBS (median, 38 viable states$`^{\S}`$) | **0.758** | — | — | 0.742 |
+| DBS (median, 40 states) | **0.750** | 0.730 | 0.716 | 0.743 |
+| DBS (median, 37 viable states$`^{\S}`$) | **0.753** | — | — | 0.744 |
 | $`\mathrm{pop\_dev\_max}`$ (median) | **0.05%** | 64.0% | 1.2% | 0.7%$`^{\dagger}`$ |
-| At *Karcher* ($`\leq 0.05\,\%`$) | **26/41** | 0/41 | 0/41 | $`\approx`$<!-- -->41/41$`^{\dagger}`$ |
-| Beats enacted DBS (41 states; self-referential$`^{\P}`$) | 26/41 | 14/41 | 9/41 | — |
-| Beats enacted DBS (38 viable states$`^{\S}`$) | 23/38 | — | — | — |
+| At *Karcher* ($`\leq 0.05\,\%`$) | **26/40** | 0/40 | 0/40 | $`\approx`$<!-- -->40/40$`^{\dagger}`$ |
+| Beats enacted DBS (40 states; self-referential$`^{\P}`$) | 25/40 | 14/40 | 9/40 | — |
+| Beats enacted DBS (37 viable states$`^{\S}`$) | 22/37 | — | — | — |
 | $`|\mathrm{EG}|`$ median (20 states$`^\star`$) | **0.085** | 0.103 | 0.098 | 0.133 |
 | Beats enacted $`|\mathrm{EG}|`$ (20 states$`^\star`$, $`p{=}0.058`$) | **14/20** | 10/20 | **14/20** | — |
 | Polsby-Popper mean (median) | 0.115 | 0.275 | **0.315** | 0.281 |
 
 Aggregate algorithm comparison. **Bold** marks the best value per row.
-Non-partisan rows use all 41 available states unless noted. $`\star`$
+Non-partisan rows use all 40 available states unless noted. $`\star`$
 Efficiency Gap rows restricted to 20 states with composite or
 congressional election data. $`\dagger`$ Enacted
 $`\mathrm{pop\_dev\_max}`$ and *Karcher* counts reflect the VTD-layer
@@ -1440,7 +1437,7 @@ class="math inline">†</span>).</figcaption>
 
 <figure id="fig:boxplots" data-latex-placement="htbp">
 <img src="boxplots_panel.png" />
-<figcaption>Cross-state comparison of four algorithms on key metrics (41
+<figcaption>Cross-state comparison of four algorithms on key metrics (40
 states). Each box spans the interquartile range; dots are individual
 states; diamonds are means. <strong>Panel A</strong>: DualBalance Score
 (higher = better). <strong>Panel B</strong>: maximum per-district
@@ -1487,7 +1484,7 @@ input.</figcaption>
 The due-east seed anchor ($`\theta = 0`$) is a pre-committed design
 choice. To quantify how much it matters, we swept 12 equally-spaced
 rotation offsets $`\theta_k = 2\pi k / 12`$ for $`k = 0, \ldots, 11`$
-across all 41 states, running the core radial pipeline (seed placement +
+across all 40 states, running the core radial pipeline (seed placement +
 capacitated assignment, without the population-tightening pass) at each
 anchor. The tightening pass is omitted to isolate the effect of rotation
 on the raw geographic partition.
@@ -1504,7 +1501,7 @@ the dual-balance property is approximately rotation-invariant.
 
 Efficiency Gap shows more variation: the cross-state median within-state
 standard deviation of $`|\mathrm{EG}|`$ is 0.0431 (range 0.0000–0.1772).
-On 26 of the 41 states, the projected Republican seat count varies by at
+On 25 of the 40 states, the projected Republican seat count varies by at
 least one seat across the 12 anchors; among those states the swing
 ranges from 1 to 3 seats. The largest seat swings occur in Florida
 (17–20 R, 3-seat swing), Ohio (10–13 R), Pennsylvania (9–12 R), and
@@ -1530,8 +1527,8 @@ provided in Supplementary Table S2.
 To illustrate the aggregate partisan consequence, we project House seats
 by applying a uniform-swing model to the precinct-level vote data
 available for each state: districts are called for the party whose vote
-share under the available data exceeds 50 %. Across the 41 states with
-TIGER 2020PL VTD data, totalling 369 of the 435 House seats (California,
+share under the available data exceeds 50 %. Across the 40 states with
+TIGER 2020PL VTD data, totalling 367 of the 435 House seats (California,
 Hawaii, and Oregon are excluded), DualBalance produces 190 R seats and
 177 D seats under this model. The enacted 119<sup>th</sup>-Congress plan
 produces 196 R and 171 D on the same states. A proportional baseline
@@ -1557,10 +1554,10 @@ Table S1.
 
 ## What the evidence shows
 
-Across 41 states with TIGER 2020PL VTD data, DualBalance achieves
+Across 40 states with TIGER 2020PL VTD data, DualBalance achieves
 *Karcher*-compliant population balance ($`\mathrm{pop\_dev\_max}
 \leq 0.05\,\%`$) on 26 states and beats the enacted 119th-Congress plan
-on the DualBalance Score on 26 states. Cascade achieves *Karcher*
+on the DualBalance Score on 25 states. Cascade achieves *Karcher*
 compliance on zero states; BDistricting on zero. On every state with a
 nonzero enacted Efficiency Gap, all three deterministic algorithms
 produce a smaller $`|\mathrm{EG}|`$ than the enacted plan. On
@@ -1571,8 +1568,8 @@ constructed a majority-minority district that radial slicing disperses
 (Figure <a href="#fig:race-scatter" data-reference-type="ref"
 data-reference="fig:race-scatter">3</a>).
 
-The 15 states that fall short of *Karcher* fall into two qualitatively
-distinct groups. Twelve sit in an algorithmic-convergence gap, between
+The 14 states that fall short of *Karcher* fall into two qualitatively
+distinct groups. Eleven sit in an algorithmic-convergence gap, between
 the *Karcher* threshold and roughly $`1\,\%`$, where the block-scale
 refinement stage is the designed path to completion. Three (Florida, New
 York, West Virginia) are geometric failure cases where single-center
@@ -1584,7 +1581,7 @@ the target of multi-center seeding in
 §<a href="#sec:future-work" data-reference-type="ref"
 data-reference="sec:future-work">4.6</a>.
 
-The illustrative House projection across the 41 states (369 seats) gives
+The illustrative House projection across the 40 states (367 seats) gives
 DualBalance R 190 / D 177 under uniform-swing assumptions, against
 enacted R 196 / D 171 and a statewide-proportional baseline of
 approximately R 182. Full caveats appear in
@@ -1633,7 +1630,7 @@ data-reference="fig:headline-eg">1</a>).
 
 A note on the DualBalance Score comparison: Phase 2 of the optimizer
 directly hill-climbs DBS, so the observation that DualBalance scores
-above enacted plans on 26 of 41 states is structurally expected. The
+above enacted plans on 25 of 40 states is structurally expected. The
 more probative comparisons are on metrics the algorithm does not
 optimize: $`|\mathrm{EG}|`$ (wins 14/20 states) and majority-minority
 district counts (meets or exceeds enacted on most states). These carry
@@ -1734,13 +1731,13 @@ that the algorithm cannot satisfy on its own.
 ## Relationship to prior deterministic methods
 
 DualBalance is, to our knowledge, the only deterministic districting
-method with a bivariate objective (population *and* area). The 41-state
+method with a bivariate objective (population *and* area). The 40-state
 benchmark makes the consequence of single-axis design concrete: Cascade,
 which maximizes county integrity and area balance, achieves *Karcher*
-compliance on zero of 41 states because its county-integrity constraint
+compliance on zero of 40 states because its county-integrity constraint
 produces population deviations of 10–76 % on any state with a dominant
 metropolitan county. BDistricting, which maximizes population balance
-and compactness, also achieves *Karcher* compliance on zero of 41 states
+and compactness, also achieves *Karcher* compliance on zero of 40 states
 and is middle-of-the-road on DBS because area balance is not part of its
 objective. Both algorithms reduce $`|\mathrm{EG}|`$ relative to enacted
 plans for the same structural reason DualBalance does: none of them read
@@ -1801,7 +1798,7 @@ Rotation sensitivity has been measured here but not resolved. The
 analysis in §<a href="#sec:results-rotation" data-reference-type="ref"
 data-reference="sec:results-rotation">3.1</a> shows that the due-east
 anchor is one draw from a distribution with material consequences for
-seat counts in 26 of 41 states. A pre-committed rotation-selection rule,
+seat counts in 25 of 40 states. A pre-committed rotation-selection rule,
 such as the anchor that minimizes $`|\mathrm{EG}|`$ on the most recent
 available composite election, chosen before the redistricting cycle
 begins, would close this remaining degree of freedom. Whether that rule
@@ -1810,11 +1807,14 @@ minimizing EG is the right criterion for a procedure that otherwise
 reads no political data, are design questions that require deliberation
 beyond this paper.
 
-The 12 convergence-gap states that cleared the *Reynolds* envelope at
-VTD scale but not the *Karcher* threshold are in principle solvable
-within the current architecture through full block-scale refinement;
-completing that pipeline for all 12 would confirm whether the gap is
-algorithmic or structural.
+The 12 convergence-gap states that sit below $`1\,\%`$ population
+deviation but above the *Karcher* threshold are in principle solvable
+within the current architecture through full block-scale refinement, for
+the same reason the 26 compliant states were resolved: census blocks are
+small enough that the optimizer can land within the *Karcher* budget.
+Completing that pipeline across the remaining 11 would establish the
+true verified count and determine whether any are structural failures
+rather than granularity gaps.
 
 On the measurement side, the Efficiency Gap is the most widely litigated
 partisan fairness metric but not the only informative one. Mean-median
@@ -1832,7 +1832,7 @@ The paper makes four claims.
 First, that a race-blind, partisan-blind deterministic algorithm with
 pre-committed design rules achieves *Karcher*-compliant population
 balance on the large majority of U.S. states and beats the enacted
-119th-Congress plan on the DualBalance Score on 26 of 41 available
+119th-Congress plan on the DualBalance Score on 25 of 40 available
 states, as a pure function of geometry, census population, and seat
 count.
 
@@ -1873,6 +1873,29 @@ that DualBalance dominates enacted plans on all states, or that the
 metric toolkit developed over the past thirty years is wrong. The narrow
 claim is that the intent reading of those metrics presupposes a
 line-drawer who is not present in this construction.
+
+The comparisons in this paper also require careful interpretation. The
+Efficiency Gap comparison pits DualBalance against enacted plans, many
+of which were deliberately optimized for partisan advantage. Any
+apolitical rule, whether radial seeding, random assignment, or shortest
+splitline, would tend to produce lower partisan asymmetry than an
+intentionally gerrymandered map. The EG reduction reported here does not
+distinguish DualBalance from other apolitical approaches, and the effect
+does not clear conventional significance thresholds ($`p = 0.058`$). The
+DBS comparison is self-referential: DualBalance is designed to maximize
+DBS, so outperforming enacted plans on that metric is an expected
+consequence of the objective function, not evidence of broader
+representational superiority. The *Karcher* comparison conflates
+pipeline completeness with algorithmic performance: the 26/40 figure
+reflects which states have been carried through the full block-scale
+pipeline, not a ceiling on what the algorithm can achieve. Cascade’s
+0/40 *Karcher* result reflects a mathematical impossibility at county
+granularity, not a failure relative to DualBalance’s approach. What this
+paper does not provide, and what would be needed to establish genuine
+superiority, is a comparison against other apolitical methods evaluated
+under a consistent pipeline: commission-drawn plans, ensemble medians,
+or alternative deterministic generators run to the same block-scale
+completion.
 
 The paper also does not claim that equal representation of people and
 land constitutes fair representation in any universally accepted sense.
@@ -2149,16 +2172,6 @@ style="text-align: left;"><span>3-4</span>(lr)<span>5-6</span>(lr)<span>7-8</spa
 <td style="text-align: center;">0.1651</td>
 <td style="text-align: center;">0</td>
 <td style="text-align: center;">3</td>
-</tr>
-<tr>
-<td style="text-align: left;">ME</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: center;">0.877</td>
-<td style="text-align: center;">0.0120</td>
-<td style="text-align: center;">0.234</td>
-<td style="text-align: center;">0.1772</td>
-<td style="text-align: center;">0</td>
-<td style="text-align: center;">1</td>
 </tr>
 <tr>
 <td style="text-align: left;">MI</td>

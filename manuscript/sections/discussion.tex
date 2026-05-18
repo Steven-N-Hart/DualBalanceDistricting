@@ -3,10 +3,10 @@
 
 \subsection{What the evidence shows}
 
-Across 41 states with TIGER 2020PL VTD data, DualBalance achieves
+Across 40 states with TIGER 2020PL VTD data, DualBalance achieves
 \textit{Karcher}-compliant population balance ($\mathrm{pop\_dev\_max}
 \leq 0.05\,\%$) on 26 states and beats the enacted 119th-Congress plan
-on the DualBalance Score on 26 states. Cascade achieves \textit{Karcher}
+on the DualBalance Score on 25 states. Cascade achieves \textit{Karcher}
 compliance on zero states; BDistricting on zero. On every state with
 a nonzero enacted Efficiency Gap, all three deterministic algorithms
 produce a smaller $|\mathrm{EG}|$ than the enacted plan. On
@@ -16,8 +16,8 @@ states (TX, FL, NC, NY); it produces fewer on states where the enacted
 plan constructed a majority-minority district that radial slicing
 disperses (Figure~\ref{fig:race-scatter}).
 
-The 15 states that fall short of \textit{Karcher} fall into two
-qualitatively distinct groups. Twelve sit in an algorithmic-convergence
+The 14 states that fall short of \textit{Karcher} fall into two
+qualitatively distinct groups. Eleven sit in an algorithmic-convergence
 gap, between the \textit{Karcher} threshold and roughly $1\,\%$, where
 the block-scale refinement stage is the designed path to completion.
 Three (Florida, New York, West Virginia) are geometric failure cases
@@ -26,7 +26,7 @@ magnitude above any workable threshold; these are discussed explicitly
 in \S\ref{sec:discussion-limitations} and identified as the target of
 multi-center seeding in \S\ref{sec:future-work}.
 
-The illustrative House projection across the 41 states (369 seats)
+The illustrative House projection across the 40 states (367 seats)
 gives DualBalance R\,190~/~D\,177 under uniform-swing assumptions,
 against enacted R\,196~/~D\,171 and a statewide-proportional baseline
 of approximately R\,182. Full caveats appear in
@@ -71,7 +71,7 @@ and the largest reductions are on the most-litigated maps
 
 A note on the DualBalance Score comparison: Phase~2 of the optimizer
 directly hill-climbs DBS, so the observation that DualBalance scores
-above enacted plans on 26 of 41 states is structurally expected. The
+above enacted plans on 25 of 40 states is structurally expected. The
 more probative comparisons are on metrics the algorithm does not
 optimize: $|\mathrm{EG}|$ (wins 14/20 states) and majority-minority
 district counts (meets or exceeds enacted on most states). These carry
@@ -166,13 +166,13 @@ a precondition that the algorithm cannot satisfy on its own.
 
 DualBalance is, to our knowledge, the only deterministic districting
 method with a bivariate objective (population \emph{and} area). The
-41-state benchmark makes the consequence of single-axis design
+40-state benchmark makes the consequence of single-axis design
 concrete: Cascade, which maximizes county integrity and area balance,
-achieves \textit{Karcher} compliance on zero of 41 states because its
+achieves \textit{Karcher} compliance on zero of 40 states because its
 county-integrity constraint produces population deviations of
 10--76\,\% on any state with a dominant metropolitan county.
 BDistricting, which maximizes population balance and compactness,
-also achieves \textit{Karcher} compliance on zero of 41 states and
+also achieves \textit{Karcher} compliance on zero of 40 states and
 is middle-of-the-road on DBS because area balance is not part of
 its objective. Both algorithms reduce $|\mathrm{EG}|$ relative to
 enacted plans for the same structural reason DualBalance does: none
@@ -234,7 +234,7 @@ seed, for instance) but no obvious unique answer.
 Rotation sensitivity has been measured here but not resolved. The
 analysis in \S\ref{sec:results-rotation} shows that the due-east
 anchor is one draw from a distribution with material consequences
-for seat counts in 26 of 41 states. A pre-committed rotation-selection
+for seat counts in 25 of 40 states. A pre-committed rotation-selection
 rule, such as the anchor that minimizes $|\mathrm{EG}|$ on the most
 recent available composite election, chosen before the redistricting
 cycle begins, would close this remaining degree of freedom. Whether
@@ -243,11 +243,15 @@ whether minimizing EG is the right criterion for a procedure that
 otherwise reads no political data, are design questions that require
 deliberation beyond this paper.
 
-The 12 convergence-gap states that cleared the \textit{Reynolds}
-envelope at VTD scale but not the \textit{Karcher} threshold are
-in principle solvable within the current architecture through
-full block-scale refinement; completing that pipeline for all 12
-would confirm whether the gap is algorithmic or structural.
+The 12 convergence-gap states that sit below $1\,\%$ population
+deviation but above the \textit{Karcher} threshold are in principle
+solvable within the current architecture through full block-scale
+refinement, for the same reason the 26 compliant states were
+resolved: census blocks are small enough that the optimizer can
+land within the \textit{Karcher} budget. Completing that pipeline
+across the remaining 11 would establish the true verified count
+and determine whether any are structural failures rather than
+granularity gaps.
 
 On the measurement side, the Efficiency Gap is the most widely
 litigated partisan fairness metric but not the only informative
@@ -265,8 +269,8 @@ The paper makes four claims.
 First, that a race-blind, partisan-blind deterministic algorithm
 with pre-committed design rules achieves \textit{Karcher}-compliant
 population balance on the large majority of U.S.\ states and beats
-the enacted 119th-Congress plan on the DualBalance Score on 26 of
-41 available states, as a pure function of geometry, census
+the enacted 119th-Congress plan on the DualBalance Score on 25 of
+40 available states, as a pure function of geometry, census
 population, and seat count.
 
 Second, that the algorithm's procedural neutrality is symmetric: the
@@ -307,6 +311,30 @@ that DualBalance dominates enacted plans on all states, or that the
 metric toolkit developed over the past thirty years is wrong. The
 narrow claim is that the intent reading of those metrics presupposes
 a line-drawer who is not present in this construction.
+
+The comparisons in this paper also require careful interpretation.
+The Efficiency Gap comparison pits DualBalance against enacted plans,
+many of which were deliberately optimized for partisan advantage.
+Any apolitical rule, whether radial seeding, random assignment, or
+shortest splitline, would tend to produce lower partisan asymmetry
+than an intentionally gerrymandered map. The EG reduction reported
+here does not distinguish DualBalance from other apolitical
+approaches, and the effect does not clear conventional significance
+thresholds ($p = 0.058$). The DBS comparison is self-referential:
+DualBalance is designed to maximize DBS, so outperforming enacted
+plans on that metric is an expected consequence of the objective
+function, not evidence of broader representational superiority.
+The \textit{Karcher} comparison conflates pipeline completeness
+with algorithmic performance: the 26/40 figure reflects which states
+have been carried through the full block-scale pipeline, not a
+ceiling on what the algorithm can achieve. Cascade's 0/40
+\textit{Karcher} result reflects a mathematical impossibility at
+county granularity, not a failure relative to DualBalance's
+approach. What this paper does not provide, and what would be
+needed to establish genuine superiority, is a comparison against
+other apolitical methods evaluated under a consistent pipeline:
+commission-drawn plans, ensemble medians, or alternative
+deterministic generators run to the same block-scale completion.
 
 The paper also does not claim that equal representation of people
 and land constitutes fair representation in any universally accepted
