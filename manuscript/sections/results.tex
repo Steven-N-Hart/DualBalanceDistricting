@@ -87,69 +87,68 @@ Cascade maximizes county integrity and area balance but fails the
 population-balance legal threshold on most states.
 
 % -----------------------------------------------------------------------
-\begin{longtable}{l r cccc rr}
+\begin{longtable}{l r cccc rrr}
 \caption{Per-state DualBalance Score and maximum population
 deviation for all 40 states with complete TIGER 2020PL VTD data.
 \textbf{Bold} marks the highest DBS per row.
 $\ddagger$: Cascade $\mathrm{pop\_dev\_max} > 0.5\,\%$; deviations of this magnitude fail the \textit{Karcher} standard for congressional maps.
-$\star$: Efficiency Gap for this state computed from 2020 presidential
-returns (composite/congressional data unavailable); EG not shown.}
+$\star$: EG computed from 2020 presidential returns; EG not shown.}
 \label{tab:multistate-dbs}\\
 \toprule
-State & $N$ & \multicolumn{4}{c}{DualBalance Score} & \multicolumn{2}{c}{$\mathrm{pop\_dev\_max}$} \\
-\cmidrule(lr){3-6}\cmidrule(lr){7-8}
- & & DB & Cascade & BDist & Enacted & DB & Cascade \\
+State & $N$ & \multicolumn{4}{c}{DualBalance Score} & \multicolumn{3}{c}{$\mathrm{pop\_dev\_max}$} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-9}
+ & & DB & Cascade & BDist & Enacted & DB & Cascade & BDist \\
 \midrule
 \endfirsthead
-\multicolumn{8}{c}{\small\textit{(continued from previous page)}}\\[2pt]
+\multicolumn{9}{c}{\small\textit{(continued from previous page)}}\\[2pt]
 \toprule
-State & $N$ & \multicolumn{4}{c}{DualBalance Score} & \multicolumn{2}{c}{$\mathrm{pop\_dev\_max}$} \\
-\cmidrule(lr){3-6}\cmidrule(lr){7-8}
- & & DB & Cascade & BDist & Enacted & DB & Cascade \\
+State & $N$ & \multicolumn{4}{c}{DualBalance Score} & \multicolumn{3}{c}{$\mathrm{pop\_dev\_max}$} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-9}
+ & & DB & Cascade & BDist & Enacted & DB & Cascade & BDist \\
 \midrule
 \endhead
-\midrule\multicolumn{8}{r}{\small\textit{(continued on next page)}}\\\endfoot
+\midrule\multicolumn{9}{r}{\small\textit{(continued on next page)}}\\\endfoot
 \bottomrule\endlastfoot
-Alabama & 7 & 0.828 & 0.741$^{\ddagger}$ & 0.816 & \textbf{0.880} & 0.04\% & \textit{93.73\%}$^{\ddagger}$ \\
-Arkansas$^{\star}$ & 4 & \textbf{0.890} & 0.799$^{\ddagger}$ & 0.755 & 0.759 & 0.05\% & \textit{55.50\%}$^{\ddagger}$ \\
-Arizona & 9 & \textbf{0.678} & 0.637$^{\ddagger}$ & 0.628 & 0.651 & 0.07\% & \textit{50.08\%}$^{\ddagger}$ \\
-Colorado$^{\star}$ & 8 & 0.624 & \textbf{0.791}$^{\ddagger}$ & 0.634 & 0.648 & 0.05\% & \textit{98.50\%}$^{\ddagger}$ \\
-Connecticut$^{\star}$ & 5 & 0.799 & --- & 0.784 & \textbf{0.806} & 0.14\% & --- \\
-Florida & 28 & \textbf{0.734} & 0.675$^{\ddagger}$ & 0.689 & 0.716 & 44.20\% & \textit{88.06\%}$^{\ddagger}$ \\
-Georgia & 14 & 0.700 & 0.703$^{\ddagger}$ & 0.715 & \textbf{0.717} & 0.13\% & \textit{99.09\%}$^{\ddagger}$ \\
-Iowa$^{\star}$ & 4 & 0.858 & \textbf{0.899} & 0.788 & 0.883 & 0.05\% & 0.29\% \\
-Idaho$^{\star}$ & 2 & 0.866 & 0.638$^{\ddagger}$ & 0.804 & \textbf{0.977} & 0.04\% & \textit{48.77\%}$^{\ddagger}$ \\
-Illinois & 17 & \textbf{0.664} & 0.642$^{\ddagger}$ & 0.636 & 0.645 & 0.05\% & \textit{74.52\%}$^{\ddagger}$ \\
-Indiana & 9 & \textbf{0.807} & 0.786$^{\ddagger}$ & 0.785 & 0.801 & 0.04\% & \textit{64.45\%}$^{\ddagger}$ \\
-Kansas & 4 & 0.708 & 0.679$^{\ddagger}$ & 0.695 & \textbf{0.737} & 0.05\% & \textit{82.83\%}$^{\ddagger}$ \\
-Kentucky$^{\star}$ & 6 & \textbf{0.806} & 0.789$^{\ddagger}$ & 0.760 & 0.784 & 0.03\% & \textit{42.54\%}$^{\ddagger}$ \\
-Louisiana & 6 & \textbf{0.838} & 0.822$^{\ddagger}$ & 0.817 & 0.836 & 0.05\% & \textit{54.67\%}$^{\ddagger}$ \\
-Massachusetts$^{\star}$ & 9 & \textbf{0.790} & 0.718$^{\ddagger}$ & 0.716 & 0.725 & 0.12\% & \textit{41.56\%}$^{\ddagger}$ \\
-Maryland$^{\star}$ & 8 & 0.697 & \textbf{0.762}$^{\ddagger}$ & 0.664 & 0.688 & 0.05\% & \textit{71.88\%}$^{\ddagger}$ \\
-Michigan$^{\star}$ & 13 & 0.646 & \textbf{0.677}$^{\ddagger}$ & 0.630 & 0.636 & 0.04\% & \textit{84.22\%}$^{\ddagger}$ \\
-Minnesota & 8 & 0.661 & \textbf{0.696}$^{\ddagger}$ & 0.649 & 0.639 & 0.06\% & \textit{76.14\%}$^{\ddagger}$ \\
-Missouri$^{\star}$ & 8 & \textbf{0.771} & 0.734$^{\ddagger}$ & 0.724 & 0.716 & 0.04\% & \textit{92.35\%}$^{\ddagger}$ \\
-Mississippi & 4 & 0.884 & 0.822$^{\ddagger}$ & \textbf{0.910} & 0.884 & 0.04\% & \textit{31.40\%}$^{\ddagger}$ \\
-Montana & 2 & \textbf{0.861} & 0.759$^{\ddagger}$ & 0.820 & 0.819 & 0.02\% & \textit{15.57\%}$^{\ddagger}$ \\
-North Carolina & 14 & 0.753 & \textbf{0.811}$^{\ddagger}$ & 0.760 & 0.769 & 0.11\% & \textit{10.27\%}$^{\ddagger}$ \\
-Nebraska$^{\star}$ & 3 & \textbf{0.776} & 0.616$^{\ddagger}$ & 0.646 & 0.634 & 0.00\% & \textit{89.37\%}$^{\ddagger}$ \\
-New Hampshire$^{\star}$ & 2 & 0.747 & 0.763$^{\ddagger}$ & 0.731 & \textbf{0.803} & 0.01\% & \textit{55.95\%}$^{\ddagger}$ \\
-New Jersey$^{\star}$ & 12 & \textbf{0.732} & 0.643$^{\ddagger}$ & 0.693 & 0.725 & 0.04\% & \textit{67.97\%}$^{\ddagger}$ \\
-New Mexico & 3 & 0.762 & 0.654$^{\ddagger}$ & 0.754 & \textbf{0.840} & 0.03\% & \textit{92.55\%}$^{\ddagger}$ \\
-Nevada & 4 & \textbf{0.711} & 0.674$^{\ddagger}$ & 0.671 & 0.678 & 0.05\% & \textit{6.27\%}$^{\ddagger}$ \\
-New York & 26 & \textbf{0.630} & 0.586$^{\ddagger}$ & 0.626 & 0.611 & 13.25\% & \textit{74.03\%}$^{\ddagger}$ \\
-Ohio & 15 & \textbf{0.766} & 0.754$^{\ddagger}$ & 0.716 & 0.744 & 0.05\% & \textit{63.52\%}$^{\ddagger}$ \\
-Oklahoma$^{\star}$ & 5 & \textbf{0.748} & 0.726$^{\ddagger}$ & 0.745 & 0.717 & 0.05\% & \textit{84.51\%}$^{\ddagger}$ \\
-Pennsylvania$^{\star}$ & 17 & \textbf{0.728} & 0.681$^{\ddagger}$ & 0.687 & 0.680 & 0.05\% & \textit{74.42\%}$^{\ddagger}$ \\
-Rhode Island$^{\star}$ & 2 & \textbf{0.958} & 0.849$^{\ddagger}$ & 0.712 & 0.853 & 0.01\% & \textit{10.66\%}$^{\ddagger}$ \\
-South Carolina & 7 & \textbf{0.902} & 0.768$^{\ddagger}$ & 0.819 & 0.848 & 0.04\% & \textit{71.80\%}$^{\ddagger}$ \\
-Tennessee$^{\star}$ & 9 & 0.815 & 0.759$^{\ddagger}$ & 0.761 & \textbf{0.816} & 0.55\% & \textit{92.20\%}$^{\ddagger}$ \\
-Texas & 38 & 0.692 & \textbf{0.694}$^{\ddagger}$ & 0.635 & 0.666 & 0.90\% & \textit{24.58\%}$^{\ddagger}$ \\
-Utah$^{\star}$ & 4 & 0.742 & 0.694$^{\ddagger}$ & 0.658 & \textbf{0.761} & 0.05\% & \textit{79.77\%}$^{\ddagger}$ \\
-Virginia$^{\star}$ & 11 & 0.741 & 0.741$^{\ddagger}$ & 0.704 & \textbf{0.746} & 0.19\% & \textit{61.26\%}$^{\ddagger}$ \\
-Washington & 10 & 0.697 & 0.702$^{\ddagger}$ & 0.698 & \textbf{0.716} & 0.02\% & \textit{54.03\%}$^{\ddagger}$ \\
-Wisconsin & 8 & 0.695 & \textbf{0.802} & 0.742 & 0.741 & 0.04\% & 0.50\% \\
-West Virginia$^{\star}$ & 2 & \textbf{0.904} & 0.827$^{\ddagger}$ & 0.867 & 0.880 & 10.44\% & \textit{6.48\%}$^{\ddagger}$ \\
+Alabama & 7 & 0.828 & 0.741$^{\ddagger}$ & 0.816 & \textbf{0.880} & 0.04\% & \textit{93.73\%}$^{\ddagger}$ & 3.34\% \\
+Arkansas$^{\star}$ & 4 & \textbf{0.890} & 0.799$^{\ddagger}$ & 0.755 & 0.759 & 0.05\% & \textit{55.50\%}$^{\ddagger}$ & 0.92\% \\
+Arizona & 9 & \textbf{0.678} & 0.637$^{\ddagger}$ & 0.628 & 0.651 & 0.07\% & \textit{50.08\%}$^{\ddagger}$ & 2.07\% \\
+Colorado$^{\star}$ & 8 & 0.624 & \textbf{0.791}$^{\ddagger}$ & 0.634 & 0.648 & 0.05\% & \textit{98.50\%}$^{\ddagger}$ & 0.76\% \\
+Connecticut$^{\star}$ & 5 & 0.799 & --- & 0.784 & \textbf{0.806} & 0.14\% & --- & 1.01\% \\
+Florida & 28 & \textbf{0.734} & 0.675$^{\ddagger}$ & 0.689 & 0.716 & 44.20\% & \textit{88.06\%}$^{\ddagger}$ & 5.32\% \\
+Georgia & 14 & 0.700 & 0.703$^{\ddagger}$ & 0.715 & \textbf{0.717} & 0.13\% & \textit{99.09\%}$^{\ddagger}$ & 3.16\% \\
+Iowa$^{\star}$ & 4 & 0.858 & \textbf{0.899} & 0.788 & 0.883 & 0.05\% & 0.29\% & 0.69\% \\
+Idaho$^{\star}$ & 2 & 0.866 & 0.638$^{\ddagger}$ & 0.804 & \textbf{0.977} & 0.04\% & \textit{48.77\%}$^{\ddagger}$ & 0.18\% \\
+Illinois & 17 & \textbf{0.664} & 0.642$^{\ddagger}$ & 0.636 & 0.645 & 0.05\% & \textit{74.52\%}$^{\ddagger}$ & 1.04\% \\
+Indiana & 9 & \textbf{0.807} & 0.786$^{\ddagger}$ & 0.785 & 0.801 & 0.04\% & \textit{64.45\%}$^{\ddagger}$ & 1.23\% \\
+Kansas & 4 & 0.708 & 0.679$^{\ddagger}$ & 0.695 & \textbf{0.737} & 0.05\% & \textit{82.83\%}$^{\ddagger}$ & 0.31\% \\
+Kentucky$^{\star}$ & 6 & \textbf{0.806} & 0.789$^{\ddagger}$ & 0.760 & 0.784 & 0.03\% & \textit{42.54\%}$^{\ddagger}$ & 0.58\% \\
+Louisiana & 6 & \textbf{0.838} & 0.822$^{\ddagger}$ & 0.817 & 0.836 & 0.05\% & \textit{54.67\%}$^{\ddagger}$ & 1.26\% \\
+Massachusetts$^{\star}$ & 9 & \textbf{0.790} & 0.718$^{\ddagger}$ & 0.716 & 0.725 & 0.12\% & \textit{41.56\%}$^{\ddagger}$ & 1.61\% \\
+Maryland$^{\star}$ & 8 & 0.697 & \textbf{0.762}$^{\ddagger}$ & 0.664 & 0.688 & 0.05\% & \textit{71.88\%}$^{\ddagger}$ & 2.64\% \\
+Michigan$^{\star}$ & 13 & 0.646 & \textbf{0.677}$^{\ddagger}$ & 0.630 & 0.636 & 0.04\% & \textit{84.22\%}$^{\ddagger}$ & 1.65\% \\
+Minnesota & 8 & 0.661 & \textbf{0.696}$^{\ddagger}$ & 0.649 & 0.639 & 0.06\% & \textit{76.14\%}$^{\ddagger}$ & 1.97\% \\
+Missouri$^{\star}$ & 8 & \textbf{0.771} & 0.734$^{\ddagger}$ & 0.724 & 0.716 & 0.04\% & \textit{92.35\%}$^{\ddagger}$ & 1.48\% \\
+Mississippi & 4 & 0.884 & 0.822$^{\ddagger}$ & \textbf{0.910} & 0.884 & 0.04\% & \textit{31.40\%}$^{\ddagger}$ & 1.07\% \\
+Montana & 2 & \textbf{0.861} & 0.759$^{\ddagger}$ & 0.820 & 0.819 & 0.02\% & \textit{15.57\%}$^{\ddagger}$ & 0.16\% \\
+North Carolina & 14 & 0.753 & \textbf{0.811}$^{\ddagger}$ & 0.760 & 0.769 & 0.11\% & \textit{10.27\%}$^{\ddagger}$ & 3.30\% \\
+Nebraska$^{\star}$ & 3 & \textbf{0.776} & 0.616$^{\ddagger}$ & 0.646 & 0.634 & 0.00\% & \textit{89.37\%}$^{\ddagger}$ & 0.33\% \\
+New Hampshire$^{\star}$ & 2 & 0.747 & 0.763$^{\ddagger}$ & 0.731 & \textbf{0.803} & 0.01\% & \textit{55.95\%}$^{\ddagger}$ & 0.20\% \\
+New Jersey$^{\star}$ & 12 & \textbf{0.732} & 0.643$^{\ddagger}$ & 0.693 & 0.725 & 0.04\% & \textit{67.97\%}$^{\ddagger}$ & 1.10\% \\
+New Mexico & 3 & 0.762 & 0.654$^{\ddagger}$ & 0.754 & \textbf{0.840} & 0.03\% & \textit{92.55\%}$^{\ddagger}$ & 0.49\% \\
+Nevada & 4 & \textbf{0.711} & 0.674$^{\ddagger}$ & 0.671 & 0.678 & 0.05\% & \textit{6.27\%}$^{\ddagger}$ & 0.70\% \\
+New York & 26 & \textbf{0.630} & 0.586$^{\ddagger}$ & 0.626 & 0.611 & 13.25\% & \textit{74.03\%}$^{\ddagger}$ & 1.18\% \\
+Ohio & 15 & \textbf{0.766} & 0.754$^{\ddagger}$ & 0.716 & 0.744 & 0.05\% & \textit{63.52\%}$^{\ddagger}$ & 0.77\% \\
+Oklahoma$^{\star}$ & 5 & \textbf{0.748} & 0.726$^{\ddagger}$ & 0.745 & 0.717 & 0.05\% & \textit{84.51\%}$^{\ddagger}$ & 2.90\% \\
+Pennsylvania$^{\star}$ & 17 & \textbf{0.728} & 0.681$^{\ddagger}$ & 0.687 & 0.680 & 0.05\% & \textit{74.42\%}$^{\ddagger}$ & 1.41\% \\
+Rhode Island$^{\star}$ & 2 & \textbf{0.958} & 0.849$^{\ddagger}$ & 0.712 & 0.853 & 0.01\% & \textit{10.66\%}$^{\ddagger}$ & 1.62\% \\
+South Carolina & 7 & \textbf{0.902} & 0.768$^{\ddagger}$ & 0.819 & 0.848 & 0.04\% & \textit{71.80\%}$^{\ddagger}$ & 0.48\% \\
+Tennessee$^{\star}$ & 9 & 0.815 & 0.759$^{\ddagger}$ & 0.761 & \textbf{0.816} & 0.55\% & \textit{92.20\%}$^{\ddagger}$ & 0.97\% \\
+Texas & 38 & 0.692 & \textbf{0.694}$^{\ddagger}$ & 0.635 & 0.666 & 0.90\% & \textit{24.58\%}$^{\ddagger}$ & 2.72\% \\
+Utah$^{\star}$ & 4 & 0.742 & 0.694$^{\ddagger}$ & 0.658 & \textbf{0.761} & 0.05\% & \textit{79.77\%}$^{\ddagger}$ & 1.33\% \\
+Virginia$^{\star}$ & 11 & 0.741 & 0.741$^{\ddagger}$ & 0.704 & \textbf{0.746} & 0.19\% & \textit{61.26\%}$^{\ddagger}$ & 2.11\% \\
+Washington & 10 & 0.697 & 0.702$^{\ddagger}$ & 0.698 & \textbf{0.716} & 0.02\% & \textit{54.03\%}$^{\ddagger}$ & 1.13\% \\
+Wisconsin & 8 & 0.695 & \textbf{0.802} & 0.742 & 0.741 & 0.04\% & 0.50\% & 0.88\% \\
+West Virginia$^{\star}$ & 2 & \textbf{0.904} & 0.827$^{\ddagger}$ & 0.867 & 0.880 & 10.44\% & \textit{6.48\%}$^{\ddagger}$ & 14.38\% \\
 \end{longtable}
 
 
@@ -245,7 +244,8 @@ is geographic, not by design. States with large differences are labeled.}
 Efficiency Gap of $+0.20$ that gave rise to \textit{Rucho v.~Common Cause}~\cite{rucho2019}.
 \textbf{Center:} Cascade plan, which scores better on DBS ($0.811$ vs.\ $0.769$ enacted)
 but violates \textit{Karcher} at $\mathrm{pop\_dev\_max}=10.27\,\%$ and cannot legally be enacted.
-\textbf{Right:} DualBalance plan, \textit{Karcher}-compliant ($0.11\,\%$) and
+\textbf{Right:} DualBalance plan ($\mathrm{pop\_dev\_max}=0.11\,\%$,
+a confirmed structural limitation; see \S\ref{sec:discussion-limitations}),
 reducing EG to $+0.063$ with no political input.}
 \label{fig:nc-maps}
 \end{figure}
@@ -284,7 +284,7 @@ and Nebraska (0.153) show the largest EG variation;
 Illinois, Iowa, Kentucky, and Missouri show near-zero EG variation
 ($\leq 0.003$) because their partisan geography is robust to
 the anchor choice.
-The full cross-state distribution is in Supplementary Table~S2.
+The full cross-state distribution is in Supplementary Table~S1.
 
 These results confirm that rotation is a consequential pre-committed
 choice for some states, and that any legislative adoption of
@@ -294,7 +294,7 @@ analogous to using prime meridian longitude as a universal reference,
 or (2) a state-specific rotation that minimizes $|\mathrm{EG}|$ on
 the most recent available composite election (pre-committed before
 any redistricting cycle begins). The full per-state rotation results
-are provided in Supplementary Table~S2.
+are provided in Supplementary Table~S1.
 
 \subsection{Illustrative House projection under uniform-swing assumptions}
 \label{sec:results-congress}
@@ -324,4 +324,4 @@ DRA composite returns, 2 use 2022 congressional returns, and 21 use
 2020 presidential returns as a proxy. Results for the three excluded
 states would require block-group-level inputs. The full per-state
 breakdown (seats R/D, statewide R share, all four algorithms)
-appears in Supplementary Table~S1.
+is available in the replication materials.

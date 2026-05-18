@@ -845,22 +845,21 @@ for all 40 states with complete TIGER 2020PL VTD data.
 class="math inline">‡</span>: Cascade <span
 class="math inline">pop_dev_max &gt; 0.5 %</span>; deviations of this
 magnitude fail the <em>Karcher</em> standard for congressional maps.
-<span class="math inline">⋆</span>: Efficiency Gap for this state
-computed from 2020 presidential returns (composite/congressional data
-unavailable); EG not shown.</caption>
+<span class="math inline">⋆</span>: EG computed from 2020 presidential
+returns; EG not shown.</caption>
 <thead>
 <tr>
 <th style="text-align: left;">State</th>
 <th style="text-align: right;"><span
 class="math inline"><em>N</em></span></th>
 <th colspan="4" style="text-align: center;">DualBalance Score</th>
-<th colspan="2" style="text-align: center;"><span
+<th colspan="3" style="text-align: center;"><span
 class="math inline">pop_dev_max</span></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><span>3-6</span>(lr)<span>7-8</span></td>
+<td style="text-align: left;"><span>3-6</span>(lr)<span>7-9</span></td>
 <td style="text-align: right;"></td>
 <td style="text-align: center;">DB</td>
 <td style="text-align: center;">Cascade</td>
@@ -868,9 +867,10 @@ class="math inline">pop_dev_max</span></th>
 <td style="text-align: center;">Enacted</td>
 <td style="text-align: right;">DB</td>
 <td style="text-align: right;">Cascade</td>
+<td style="text-align: right;">BDist</td>
 </tr>
 <tr>
-<td colspan="8" style="text-align: center;"><em>(continued from previous
+<td colspan="9" style="text-align: center;"><em>(continued from previous
 page)</em></td>
 </tr>
 <tr>
@@ -878,11 +878,11 @@ page)</em></td>
 <td style="text-align: right;"><span
 class="math inline"><em>N</em></span></td>
 <td colspan="4" style="text-align: center;">DualBalance Score</td>
-<td colspan="2" style="text-align: center;"><span
+<td colspan="3" style="text-align: center;"><span
 class="math inline">pop_dev_max</span></td>
 </tr>
 <tr>
-<td style="text-align: left;"><span>3-6</span>(lr)<span>7-8</span></td>
+<td style="text-align: left;"><span>3-6</span>(lr)<span>7-9</span></td>
 <td style="text-align: right;"></td>
 <td style="text-align: center;">DB</td>
 <td style="text-align: center;">Cascade</td>
@@ -890,9 +890,10 @@ class="math inline">pop_dev_max</span></td>
 <td style="text-align: center;">Enacted</td>
 <td style="text-align: right;">DB</td>
 <td style="text-align: right;">Cascade</td>
+<td style="text-align: right;">BDist</td>
 </tr>
 <tr>
-<td colspan="8" style="text-align: right;"><em>(continued on next
+<td colspan="9" style="text-align: right;"><em>(continued on next
 page)</em></td>
 </tr>
 <tr>
@@ -906,6 +907,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>93.73%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">3.34%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Arkansas<span
@@ -919,6 +921,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>55.50%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.92%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Arizona</td>
@@ -931,6 +934,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.07%</td>
 <td style="text-align: right;"><em>50.08%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">2.07%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Colorado<span
@@ -944,6 +948,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>98.50%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.76%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Connecticut<span
@@ -955,6 +960,7 @@ class="math inline"><sup>⋆</sup></span></td>
 <td style="text-align: center;"><strong>0.806</strong></td>
 <td style="text-align: right;">0.14%</td>
 <td style="text-align: right;">—</td>
+<td style="text-align: right;">1.01%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Florida</td>
@@ -967,6 +973,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">44.20%</td>
 <td style="text-align: right;"><em>88.06%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">5.32%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Georgia</td>
@@ -979,6 +986,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.13%</td>
 <td style="text-align: right;"><em>99.09%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">3.16%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Iowa<span
@@ -990,6 +998,7 @@ class="math inline"><sup>⋆</sup></span></td>
 <td style="text-align: center;">0.883</td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;">0.29%</td>
+<td style="text-align: right;">0.69%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Idaho<span
@@ -1003,6 +1012,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>48.77%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.18%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Illinois</td>
@@ -1015,6 +1025,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>74.52%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.04%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Indiana</td>
@@ -1027,6 +1038,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>64.45%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.23%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Kansas</td>
@@ -1039,6 +1051,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>82.83%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.31%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Kentucky<span
@@ -1052,6 +1065,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.03%</td>
 <td style="text-align: right;"><em>42.54%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.58%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Louisiana</td>
@@ -1064,6 +1078,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>54.67%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.26%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Massachusetts<span
@@ -1077,6 +1092,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.12%</td>
 <td style="text-align: right;"><em>41.56%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.61%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Maryland<span
@@ -1090,6 +1106,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>71.88%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">2.64%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Michigan<span
@@ -1103,6 +1120,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>84.22%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.65%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Minnesota</td>
@@ -1115,6 +1133,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.06%</td>
 <td style="text-align: right;"><em>76.14%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.97%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Missouri<span
@@ -1128,6 +1147,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>92.35%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.48%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Mississippi</td>
@@ -1140,6 +1160,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>31.40%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.07%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Montana</td>
@@ -1152,6 +1173,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.02%</td>
 <td style="text-align: right;"><em>15.57%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.16%</td>
 </tr>
 <tr>
 <td style="text-align: left;">North Carolina</td>
@@ -1164,6 +1186,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.11%</td>
 <td style="text-align: right;"><em>10.27%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">3.30%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Nebraska<span
@@ -1177,6 +1200,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.00%</td>
 <td style="text-align: right;"><em>89.37%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.33%</td>
 </tr>
 <tr>
 <td style="text-align: left;">New Hampshire<span
@@ -1190,6 +1214,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.01%</td>
 <td style="text-align: right;"><em>55.95%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.20%</td>
 </tr>
 <tr>
 <td style="text-align: left;">New Jersey<span
@@ -1203,6 +1228,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>67.97%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.10%</td>
 </tr>
 <tr>
 <td style="text-align: left;">New Mexico</td>
@@ -1215,6 +1241,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.03%</td>
 <td style="text-align: right;"><em>92.55%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.49%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Nevada</td>
@@ -1227,6 +1254,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>6.27%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.70%</td>
 </tr>
 <tr>
 <td style="text-align: left;">New York</td>
@@ -1239,6 +1267,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">13.25%</td>
 <td style="text-align: right;"><em>74.03%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.18%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Ohio</td>
@@ -1251,6 +1280,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>63.52%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.77%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Oklahoma<span
@@ -1264,6 +1294,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>84.51%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">2.90%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Pennsylvania<span
@@ -1277,6 +1308,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>74.42%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.41%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Rhode Island<span
@@ -1290,6 +1322,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.01%</td>
 <td style="text-align: right;"><em>10.66%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.62%</td>
 </tr>
 <tr>
 <td style="text-align: left;">South Carolina</td>
@@ -1302,6 +1335,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;"><em>71.80%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.48%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Tennessee<span
@@ -1315,6 +1349,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.55%</td>
 <td style="text-align: right;"><em>92.20%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">0.97%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Texas</td>
@@ -1327,6 +1362,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.90%</td>
 <td style="text-align: right;"><em>24.58%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">2.72%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Utah<span
@@ -1340,6 +1376,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.05%</td>
 <td style="text-align: right;"><em>79.77%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.33%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Virginia<span
@@ -1353,6 +1390,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.19%</td>
 <td style="text-align: right;"><em>61.26%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">2.11%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Washington</td>
@@ -1365,6 +1403,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">0.02%</td>
 <td style="text-align: right;"><em>54.03%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">1.13%</td>
 </tr>
 <tr>
 <td style="text-align: left;">Wisconsin</td>
@@ -1375,6 +1414,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: center;">0.741</td>
 <td style="text-align: right;">0.04%</td>
 <td style="text-align: right;">0.50%</td>
+<td style="text-align: right;">0.88%</td>
 </tr>
 <tr>
 <td style="text-align: left;">West Virginia<span
@@ -1388,6 +1428,7 @@ class="math inline"><sup>‡</sup></span></td>
 <td style="text-align: right;">10.44%</td>
 <td style="text-align: right;"><em>6.48%</em><span
 class="math inline"><sup>‡</sup></span></td>
+<td style="text-align: right;">14.38%</td>
 </tr>
 </tbody>
 </table>
@@ -1475,9 +1516,12 @@ data-cites="rucho2019">(Supreme Court of the United States 2019)</span>.
 class="math inline">0.811</span> vs. <span
 class="math inline">0.769</span> enacted) but violates <em>Karcher</em>
 at <span class="math inline">pop_dev_max = 10.27 %</span> and cannot
-legally be enacted. <strong>Right:</strong> DualBalance plan,
-<em>Karcher</em>-compliant (<span class="math inline">0.11 %</span>) and
-reducing EG to <span class="math inline">+0.063</span> with no political
+legally be enacted. <strong>Right:</strong> DualBalance plan (<span
+class="math inline">pop_dev_max = 0.11 %</span>, a confirmed structural
+limitation; see §<a href="#sec:discussion-limitations"
+data-reference-type="ref"
+data-reference="sec:discussion-limitations">4.5</a>), reducing EG to
+<span class="math inline">+0.063</span> with no political
 input.</figcaption>
 </figure>
 
@@ -1512,7 +1556,7 @@ Maryland (0–3 R). Kansas ($`|\mathrm{EG}|`$ std $`= 0.132`$), Maine
 variation; Illinois, Iowa, Kentucky, and Missouri show near-zero EG
 variation ($`\leq 0.003`$) because their partisan geography is robust to
 the anchor choice. The full cross-state distribution is in Supplementary
-Table S2.
+Table S1.
 
 These results confirm that rotation is a consequential pre-committed
 choice for some states, and that any legislative adoption of DualBalance
@@ -1522,7 +1566,7 @@ prime meridian longitude as a universal reference, or (2) a
 state-specific rotation that minimizes $`|\mathrm{EG}|`$ on the most
 recent available composite election (pre-committed before any
 redistricting cycle begins). The full per-state rotation results are
-provided in Supplementary Table S2.
+provided in Supplementary Table S1.
 
 ## Illustrative House projection under uniform-swing assumptions
 
@@ -1549,8 +1593,8 @@ outcomes. Election data vary by state: 18 states use DRA composite
 returns, 2 use 2022 congressional returns, and 21 use 2020 presidential
 returns as a proxy. Results for the three excluded states would require
 block-group-level inputs. The full per-state breakdown (seats R/D,
-statewide R share, all four algorithms) appears in Supplementary
-Table S1.
+statewide R share, all four algorithms) is available in the replication
+materials.
 
 # Discussion
 
