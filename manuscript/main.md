@@ -1505,24 +1505,20 @@ effect is geographic, not by design. States with large differences are
 labeled.</figcaption>
 </figure>
 
-<figure id="fig:nc-maps" data-latex-placement="htbp">
-<img src="nc_comparison.png" />
-<figcaption>North Carolina congressional districts under three plans (14
+<figure id="fig:wi-maps" data-latex-placement="htbp">
+<img src="wi_comparison.png" />
+<figcaption>Wisconsin congressional districts under three plans (8
 seats, 2020 PL 94-171). <strong>Left:</strong> enacted 119th-Congress
-plan, with the Efficiency Gap of <span class="math inline">+0.20</span>
-that gave rise to <em>Rucho v. Common Cause</em> <span class="citation"
-data-cites="rucho2019">(Supreme Court of the United States 2019)</span>.
-<strong>Center:</strong> Cascade plan, which scores better on DBS (<span
-class="math inline">0.811</span> vs. <span
-class="math inline">0.769</span> enacted) but violates <em>Karcher</em>
-at <span class="math inline">pop_dev_max = 10.27 %</span> and cannot
-legally be enacted. <strong>Right:</strong> DualBalance plan (<span
-class="math inline">pop_dev_max = 0.11 %</span>, a confirmed structural
-limitation; see §<a href="#sec:discussion-limitations"
-data-reference-type="ref"
-data-reference="sec:discussion-limitations">4.5</a>), reducing EG to
-<span class="math inline">+0.063</span> with no political
-input.</figcaption>
+plan, with the Efficiency Gap of <span class="math inline">+0.279</span>
+that gave rise to <em>Whitford v. Gill</em> <span class="citation"
+data-cites="whitford2018">(Supreme Court of the United States
+2018)</span>. <strong>Center:</strong> Cascade plan (DBS <span
+class="math inline">0.802</span>, <span
+class="math inline">pop_dev_max = 0.497 %</span>); close to but still
+above the <em>Karcher</em> threshold and legally non-viable.
+<strong>Right:</strong> DualBalance plan, <em>Karcher</em>-compliant
+(<span class="math inline">0.038 %</span>), reducing EG to <span
+class="math inline">+0.032</span> with no political input.</figcaption>
 </figure>
 
 ## Rotation sensitivity
@@ -2622,6 +2618,13 @@ U.S. 30.
 <div id="ref-shaw1993" class="csl-entry">
 
 Supreme Court of the United States. 1993. *Shaw v. Reno*. 509 U.S. 630.
+
+</div>
+
+<div id="ref-whitford2018" class="csl-entry">
+
+Supreme Court of the United States. 2018. *Gill v. Whitford, 585 U.S.
+48*.
 
 </div>
 
